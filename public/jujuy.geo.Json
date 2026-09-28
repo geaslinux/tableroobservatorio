@@ -1,0 +1,43 @@
+{
+    "type": "FeatureCollection",
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "nombre": "Localidad 1",
+                "parametro": 8
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [-65.25, -24.15],
+                        [-65.3, -24.15],
+                        [-65.3, -24.2],
+                        [-65.25, -24.2],
+                        [-65.25, -24.15]
+                    ]
+                ]
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "nombre": "Localidad 2",
+                "parametro": 12
+            },
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [-65.35, -24.25],
+                        [-65.4, -24.25],
+                        [-65.4, -24.3],
+                        [-65.35, -24.3],
+                        [-65.35, -24.25]
+                    ]
+                ]
+            }
+        }
+    ]
+}

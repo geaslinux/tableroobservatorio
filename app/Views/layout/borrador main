@@ -1,0 +1,73 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title><?= $this->renderSection('title');?></title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+
+        <link rel="stylesheet" href="http://code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+        <link rel="stylesheet" href="/css/modal.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" integrity="sha512-KfkfwYDsLkIlwQp6LFnl8zNdLGxu9YAA1QvwINks4PhcElQSvqcyVLLD9aMhXd13uQjoXtEKNosOWaZqXgel0g==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.17/dist/sweetalert2.all.min.js"></script>
+        <style>
+            .pie-pagina{
+                //position:absolute;
+                position: sticky;
+                width: 100%;
+                height: 4rem;
+                //bottom: 0;
+                top: calc(100vh - 4rem);
+            }
+
+            body{
+                height: 100vh;
+            }
+
+            .is-vhcenter{
+                display:flex;
+                justify-content:center;
+                align-items:center;
+            }
+
+        </style>   
+    </head>
+    <?= $this->renderSection('css');?>
+
+    <body>
+        <?= $this->include('layout/header');?>
+        <section class="section">
+            <div class="container">
+                <?php if(session('msg')):?>
+                    <script>
+                        Swal.fire({
+                          //position: 'top-end',
+                          icon: '<?=session('msg.type');?>',
+                          title:'',
+                          text: '<?= session('msg.body')?>',
+                          showConfirmButton: false,
+                          timer: 2000
+                        })
+                    </script>
+                    <!--<article class="message is-<?=session('msg.type');?>">
+                        <div class="message-body">
+                            <?= session('msg.body')?>
+                        </div>    
+                    </article>-->
+                <?php endif;?>        
+                <?= $this->renderSection('content');?>
+                <?= $this->renderSection('main');?>
+            </div>
+        </section>  
+                  
+        <?= $this->include('layout/footer');?>
+
+        <script defer src="https://use.fontawesome.com/releases/v5.14.0/js/all.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+        <script src="/js/modal.js"></script>
+
+        <?= $this->renderSection('js');?>
+    </body>
+</html>
