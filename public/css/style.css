@@ -1,0 +1,246 @@
+/* Fonts */
+:root {
+    --default-font: "Poppins", sans-serif, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --heading-font: "Poppins", sans-serif;
+    --nav-font: "Poppins", sans-serif;
+}
+
+/* Colores Globales */
+:root {
+    /* Background Color - Color de Fondo. */
+    --background-color: #13304d;
+
+    /* Default Color - Color de texto. */
+    --default-color: #ee7511;
+
+    /* Heading Color - Color de titulos */
+    --heading-color: #f2f2f2;
+
+    /* Accent Color - Se utiliza para botones, enlaces y otros elementos que deben destacarse. */
+    --accent-color: #ee7511;
+
+    /* Contrast Color - Este es un color que se utiliza para el texto cuando el color de fondo es uno de los colores de titulo, acento o predeterminado. Su proposito es garantizar el contraste y la legibilidad adecuados cuando se coloca sobre estos colores mas dominantes. */
+    --contrast-color: #ffffff;
+}
+
+/* Menu colores */
+:root {
+    /* Nav Color - Este es el color predeterminado de los enlaces del menu de navegacion principal.. */
+    --nav-color: #ee7511;
+
+    /* Nav Hover Color - Color de menu de navegacion principal cuando se pasa el cursor sobre ellos. */
+    --nav-hover-color: #f2f2f2;
+
+    /* Nav Dropdown Background Color - color de fondo para los cuadros desplegables,al pasar el cursor sobre los elementos de navegacion principales.*/
+    --nav-dropdown-background-color: #ee7511;
+
+    /* Nav Dropdown Color - Este color se utiliza para los enlaces de navegacion de los elementos desplegables en el menu de navegacion. */
+    --nav-dropdown-color: #f2f2f2;
+
+    /* Nav Dropdown Hover Color - Similar a --nav-hover-color, color se aplica a los enlaces de navegacion desplegables cuando se pasa el cursor sobre ellos.. */
+    --nav-dropdown-hover-color: #13304d;
+}
+
+/* Desplazamiento suave */
+:root {
+    scroll-behavior: smooth;
+}
+
+/*--------------------------------------------------------------
+  # General
+  --------------------------------------------------------------*/
+
+body {
+    min-height: 100vh;
+    color: var(--default-color);
+    background-color: var(--background-color);
+    font-family: var(--default-font);
+}
+
+body.form-view {
+    background-image: url('/imag/bg.jpg');
+    background-size: cover;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+color: #13304d;
+font-family: "Poppins", sans-serif;
+}
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+a:hover {
+    color: color-mix(in srgb, var(--accent-color), transparent 25%);
+    text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--heading-color);
+    font-family: var(--heading-font);
+}
+
+body {
+    min-height: 100vh;
+    background-color:var(--heading-color);
+}
+/* hero {
+    min-height: 100vh;
+    background-size: cover;
+    background-color: #13304d;
+} */
+
+logoapp {
+    max-height:60px;
+    margin-right: 1rem;
+}
+
+/*--------------------------------------------------------------
+# Global Header
+--------------------------------------------------------------*/
+.header {
+    color: var(--default-color);
+    background-color: var(--background-color);
+    padding: 15px 0;
+    transition: all 0.5s;
+    z-index: 997;
+  }
+
+  .header .logo {
+    line-height: 1;
+  }
+
+  .header .logo img {
+    max-height: 36px;
+    margin-right: 5px;
+  }
+
+  .header .logo h1 {
+    font-size: 30px;
+    margin: 0;
+    font-weight: 700;
+    color: var(--heading-color);
+  }
+
+  .header .btn-getstarted,
+  .header .btn-open,
+  .header .btn-getstarted:focus,
+  .header .btn-open:focus {
+    color: var(--contrast-color);
+    background: var(--accent-color);
+    font-size: 14px;
+    padding: 8px 25px;
+    margin: 0 0 0 10px;
+    border-radius: 50px;
+    transition: 0.3s;
+  }
+
+  .header .btn-getstarted:hover,
+  .header .btn-open:hover,
+  .header .btn-getstarted:focus:hover
+  .header .btn-open:focus:hover {
+    color: var(--contrast-color);
+    background: color-mix(in srgb, var(--heading-color), transparent 50%);
+  }
+
+  @media (max-width: 1200px) {
+    .header .logo {
+      order: 1;
+    }
+
+    .header .btn-getstarted,
+    .header .btn-open    {
+      order: 2;
+      margin: 0 15px 0 0;
+      padding: 6px 15px;
+    }
+
+    .header .navmenu {
+      order: 3;
+    }
+  }
+
+  .scrolled .header {
+    box-shadow: 0px 0 18px color-mix(in srgb, var(--default-color), transparent 85%);
+  }
+
+  /*--------------------------------------------------------------
+# Global Footer
+--------------------------------------------------------------*/
+.footer {
+    color: var(--contrast-color);
+    background-color: var(--background-color);
+    font-size: 14px;
+    padding: 10px 0;
+    position: center;
+    /* box-shadow: 0px 0px 12px 0px color-mix(in srgb, var(--default-color), transparent 90%); */
+  }
+
+  .footer .copyright p {
+    margin-bottom: 0;
+  }
+
+  .footer .social-links {
+    margin-top: 20px;
+  }
+
+  .footer .social-links a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid color-mix(in srgb, var(--default-color), transparent 50%);
+    font-size: 16px;
+    color: color-mix(in srgb, var(--default-color), transparent 50%);
+    margin: 0 5px;
+    transition: 0.3s;
+  }
+
+  .footer .social-links a:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+  }
+
+  .footer .credits {
+    margin-top: 10px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .footer .logoapp {
+    max-height: 30px;
+    margin-right: 5px;
+  }
+
+  .footer .container {
+    display: flex; /* Utilizar Flexbox para alineación */
+    justify-content: center; /* Alinear horizontalmente al centro */
+    align-items: center; /* Alinear verticalmente al centro */
+    gap: 15px; /* Espaciado entre elementos */
+    padding: 10px;
+  }
+
+  .footer-last-update {
+    font-size: 0.8rem;
+    color: #ccc; /* Color claro para que contraste con el fondo oscuro del footer */
+    margin: 0;
+    white-space: nowrap;
+    position: absolute;
+    left: -180px; /* Ajusta según el padding interno de tu contenedor */
+
+}
