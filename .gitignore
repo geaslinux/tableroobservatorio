@@ -132,3 +132,7 @@ nb-configuration.xml
 
 # Credenciales
 app/Config/google-credentials.json
+
+# Docker: volcados de base de datos (contienen datos reales)
+docker/mysql/init/*.sql
+!docker/mysql/init/00-crear-bases.sql

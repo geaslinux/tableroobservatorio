@@ -1,0 +1,29 @@
+# Control de versiones e IDE
+.git
+.gitignore
+.vscode
+.idea
+.claude
+
+# Dependencias (se instalan dentro de la imagen)
+vendor
+
+# Entorno y credenciales: no se copian a la imagen
+.env
+app/Config/google-credentials.json
+
+# Archivos temporales de writable/
+writable/cache/*
+writable/logs/*
+writable/session/*
+writable/debugbar/*
+!writable/cache/index.html
+!writable/logs/index.html
+!writable/session/index.html
+
+# Volcados de base de datos y documentación
+docker/mysql/init
+*.sql
+documentacion
+builds
+tests/coverage*
