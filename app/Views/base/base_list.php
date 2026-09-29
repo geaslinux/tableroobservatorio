@@ -449,12 +449,12 @@
                     <input type="hidden"
                         name="estado_modo"
                         id="input-estado-modo"
-                        value="<?= esc($estado_modo ?? 'todos') ?>">
+                        value="<?= esc($estado_modo ?? 'ninguno') ?>">
 
                     <div style="display:flex; gap:4px; height:36px; align-items:center;">
 
                         <button type="button"
-                                class="bl-btn ghost sm btn-status <?= (($estado_modo ?? 'todos') === 'todos') ? 'pushed' : '' ?>"
+                                class="bl-btn ghost sm btn-status <?= (($estado_modo ?? 'ninguno') === 'todos') ? 'pushed' : '' ?>"
                                 data-val=""
                                 data-modo="todos">
                             Todos
@@ -482,7 +482,7 @@
         <!-- ── TARJETAS KPI: BASES / USES / TOTAL + ACTIVIDAD ── -->
         <?php
             $filtroActivo = !empty($search) || !empty($filtro_tipo) || !empty($filtro_region) || !empty($filtro_provincia) || !empty($filtro_estado);
-            $mostrarTodasKpi = $filtroActivo || ($estado_modo ?? 'todos') === 'todos';
+            $mostrarTodasKpi = $filtroActivo || ($estado_modo ?? 'ninguno') === 'todos';
         ?>
         <div class="bl-kpi-cards <?= $mostrarTodasKpi ? '' : 'bl-kpi-cards--compact' ?>">
             <div class="bl-kpi-card kpi-teal">
@@ -783,7 +783,7 @@
             var borderColor = '#ffffff';
 
             // Determinar color de relleno basado en estado
-           var estadoModo = <?= json_encode($estado_modo ?? 'todos') ?>;
+           var estadoModo = <?= json_encode($estado_modo ?? 'ninguno') ?>;
 
         var fillColor;
 

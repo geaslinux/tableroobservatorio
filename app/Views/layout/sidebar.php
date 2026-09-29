@@ -731,30 +731,12 @@ $userAvatarColor = generateColorFromString($userName);
         const subGroup = document.getElementById(subGroupId);
         const navItem = document.getElementById('nav-' + subGroupId) || event.currentTarget;
         const isOpen = subGroup.classList.contains('open');
-        const parentGroup = subGroup.parentElement.closest('.nav-sub-group');
-        const siblingGroups = parentGroup
-            ? parentGroup.querySelectorAll(':scope > .nav-sub-group.open')
-            : document.querySelectorAll('.sidebar-nav > .nav-sub-group.open');
-        const siblingItems = parentGroup
-            ? parentGroup.querySelectorAll(':scope > .nav-sub-toggle.open')
-            : document.querySelectorAll('.sidebar-nav > .nav-item.open');
 
-        siblingGroups.forEach(group => {
-            if (group !== subGroup) {
-                group.classList.remove('open');
-                group.querySelectorAll('.nav-sub-group.open, .nav-sub-toggle.open')
-                    .forEach(item => item.classList.remove('open'));
-            }
-        });
-        siblingItems.forEach(item => {
-            if (item !== navItem) item.classList.remove('open');
-        });
-
+        // Cada submenú se abre y cierra de forma independiente; no se toca ningún otro grupo.
         if (!isOpen) {
             subGroup.classList.add('open');
             navItem.classList.add('open');
             openSubGroupId = subGroupId;
-            if (typeof restoreSidebarActive === 'function') restoreSidebarActive(subGroupId);
         } else {
             subGroup.classList.remove('open');
             // Cerrar el menú no cambia el módulo activo; solo oculta sus enlaces.

@@ -16,7 +16,7 @@ private function aplicarFiltros($model)
     $filtro_region    = $this->request->getGet('region') ?? '';
     $filtro_provincia = $this->request->getGet('provincia') ?? '';
     $filtro_estado    = $this->request->getGet('estado') ?? '';
-    $estado_modo      = $this->request->getGet('estado_modo') ?? 'todos';
+    $estado_modo      = $this->request->getGet('estado_modo') ?? 'ninguno';
 
     // ── Búsqueda ───────────────────────────────────────────────
     if ($search != '') {

@@ -487,19 +487,20 @@
             '#c7ceea', '#e2f0cb', '#ef9a9a', '#ffdac1', '#90caf9', '#a5d6a7'
         ];
 
+        // Colores por mes: tonos de azul (misma gama que ejercicio), alternando oscuro/claro
         var colorMesMap = {
-            'ENERO':      '#ce93d8',
-            'FEBRERO':    '#7fd8be',
-            'MARZO':      '#85c1e9',
-            'ABRIL':      '#f8c471',
-            'MAYO':       '#d2b4de',
-            'JUNIO':      '#f1948a',
-            'JULIO':      '#82e0aa',
-            'AGOSTO':     '#f9e79f',
-            'SEPTIEMBRE': '#ffb7b2',
-            'OCTUBRE':    '#76d7c4',
-            'NOVIEMBRE':  '#edbb99',
-            'DICIEMBRE':  '#7dcea0'
+            'ENERO':      '#0B2E59',
+            'FEBRERO':    '#8FD3F4',
+            'MARZO':      '#1A5FA8',
+            'ABRIL':      '#C6E9FA',
+            'MAYO':       '#123F73',
+            'JUNIO':      '#4FB3E6',
+            'JULIO':      '#2F80C8',
+            'AGOSTO':     '#A9DDF5',
+            'SEPTIEMBRE': '#1E4E8C',
+            'OCTUBRE':    '#6EC6EA',
+            'NOVIEMBRE':  '#0F5E9C',
+            'DICIEMBRE':  '#7FBEE8'
         };
 
         function colorParaMes(mes) {

@@ -533,21 +533,25 @@ document.addEventListener('DOMContentLoaded', function () {
         return ejercicioColorMap[clave] || '#95a5a6';
     }
 
+    // Colores por departamento: tonos de azul (misma gama que ejercicio), alternando oscuro/claro
     var coloresDepartamento = {
-        'CAPITAL': '#ce93d8',
-        'COCHINOCA': '#7fd8be',
-        'DR. MANUEL BELGRANO': '#85c1e9',
-        'EL CARMEN': '#f8c471',
-        'HUMAHUACA': '#d2b4de',
-        'LEDESMA': '#f1948a',
-        'PALPALA': '#82e0aa',
-        'PERICO': '#f9e79f',
-        'SAN PEDRO': '#c7ceea',
-        'SANTA BARBARA': '#76d7c4',
-        'SUSQUE': '#edbb99',
-        'TILCARA': '#7dcea0',
-        'YAVI': '#bb8fce'
+        'CAPITAL': '#0B2E59',
+        'COCHINOCA': '#8FD3F4',
+        'DR. MANUEL BELGRANO': '#1A5FA8',
+        'EL CARMEN': '#C6E9FA',
+        'HUMAHUACA': '#123F73',
+        'LEDESMA': '#4FB3E6',
+        'PALPALA': '#2F80C8',
+        'PERICO': '#A9DDF5',
+        'SAN PEDRO': '#1E4E8C',
+        'SANTA BARBARA': '#6EC6EA',
+        'SUSQUE': '#0F5E9C',
+        'TILCARA': '#7FBEE8',
+        'YAVI': '#07203F'
     };
+
+    // Departamentos que no estén en el mapa fijo también reciben un azul
+    var paletaDepartamentos = Object.keys(coloresDepartamento).map(function (k) { return coloresDepartamento[k]; });
 
     var coloresTipo = {
         'ADULTO': '#81e6d9',  
@@ -558,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Mapa de colores por departamento
     var colorDepMap = {};
     (todosLosDepartamentos || []).forEach(function (dep, i) {
-        colorDepMap[dep] = paleta[i % paleta.length];
+        colorDepMap[dep] = paletaDepartamentos[i % paletaDepartamentos.length];
     });
 
     function colorParaDepartamento(dep) {
