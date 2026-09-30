@@ -1,0 +1,95 @@
+# sistemabase en Docker: aplicación (PHP 8.1 + Apache), MySQL 8.0 y phpMyAdmin
+#
+#   docker compose up -d --build     -> levantar
+#   docker compose down              -> detener
+#   http://localhost:8080            -> aplicación
+#   http://localhost:8081            -> phpMyAdmin
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sistemabase_app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    environment:
+      CI_ENVIRONMENT: ${CI_ENVIRONMENT:-development}
+      app.baseURL: "http://localhost:${APP_PORT:-8080}/"
+      # Estas variables tienen prioridad sobre .env y app/Config/Database.php
+      database.default.hostname: db
+      database.default.database: rep
+      database.default.username: ${DB_USER:-sistemabase}
+      database.default.password: ${DB_PASSWORD:-sistemabase}
+      database.default.port: 3306
+      database.base2.hostname: db
+      database.base2.database: base2
+      database.base2.username: ${DB_USER:-sistemabase}
+      database.base2.password: ${DB_PASSWORD:-sistemabase}
+      database.base2.port: 3306
+    volumes:
+      # Código montado para desarrollo: los cambios se ven sin reconstruir la imagen
+      - ./:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sistemabase
+
+  db:
+    image: mysql:8.0
+    container_name: sistemabase_db
+    restart: unless-stopped
+    # La configuración va como argumentos: MySQL ignora los .cnf montados desde Windows
+    # por tener permisos de escritura para todos ("World-writable config file ... is ignored")
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-time-zone=-03:00
+      - --sql-mode=NO_ENGINE_SUBSTITUTION
+      - --max-allowed-packet=256M
+      - --lower-case-table-names=1
+    ports:
+      # 3307 en el host para no chocar con el MySQL de Laragon (3306)
+      - "${DB_PORT:-3307}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: rep
+      MYSQL_USER: ${DB_USER:-sistemabase}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-sistemabase}
+      TZ: America/Argentina/Jujuy
+    volumes:
+      - db_data:/var/lib/mysql
+      # Los .sql de esta carpeta se importan solo la primera vez (volumen vacío)
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - sistemabase
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: sistemabase_pma
+    restart: unless-stopped
+    ports:
+      - "${PMA_PORT:-8081}:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 256M
+    depends_on:
+      - db
+    networks:
+      - sistemabase
+
+volumes:
+  db_data:
+
+networks:
+  sistemabase:
