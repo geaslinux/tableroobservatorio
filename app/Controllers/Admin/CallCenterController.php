@@ -19,6 +19,8 @@ private function aplicarFiltros($model, $ejercicios = [])
     $ejercicioRaw   = $this->request->getGet('ejercicio'); // null = primera carga
     $filtro_mes     = $this->request->getGet('mes')    ?? '';
     $filtro_estado  = $this->request->getGet('estado') ?? '';
+    $filtro_desde   = $this->fechaValida($this->request->getGet('desde'));
+    $filtro_hasta   = $this->fechaValida($this->request->getGet('hasta'));
 
     // Si es la primera carga (sin GET), se usa por defecto el último ejercicio cargado
     if ($ejercicioRaw === null) {
@@ -29,6 +31,8 @@ private function aplicarFiltros($model, $ejercicios = [])
 
     if ($filtro_ejercicio !== '') $model->where('call_center.ejercicio', $filtro_ejercicio);
     if ($filtro_mes)              $model->where('call_center.mes', $filtro_mes);
+    if ($filtro_desde !== '')     $model->where('call_center.fecha >=', $filtro_desde);
+    if ($filtro_hasta !== '')     $model->where('call_center.fecha <=', $filtro_hasta);
 
     if ($filtro_estado != '') {
         $model->where('call_center.estado', $filtro_estado);
@@ -36,23 +40,14 @@ private function aplicarFiltros($model, $ejercicios = [])
         $model->whereIn('call_center.estado', ['activo', 'desactivado']);
     }
 
-    return compact('filtro_ejercicio', 'filtro_mes', 'filtro_estado');
+    return compact('filtro_ejercicio', 'filtro_mes', 'filtro_estado', 'filtro_desde', 'filtro_hasta');
 }
 
-private function statsBuilder($db, $filtro_ejercicio, $filtro_mes, $filtro_estado)
+// Fecha del filtro de período (AAAA-MM-DD); cualquier otro valor se ignora
+private function fechaValida($valor): string
 {
-    $builder = $db->table('call_center');
-
-    if ($filtro_ejercicio !== '') $builder->where('ejercicio', $filtro_ejercicio);
-    if ($filtro_mes)              $builder->where('mes', $filtro_mes);
-
-    if ($filtro_estado != '') {
-        $builder->where('estado', $filtro_estado);
-    } else {
-        $builder->whereIn('estado', ['activo', 'desactivado']);
-    }
-
-    return $builder;
+    $valor = trim((string) $valor);
+    return preg_match('/^\d{4}-\d{2}-\d{2}$/', $valor) ? $valor : '';
 }
 
 public function index()
@@ -64,91 +59,80 @@ public function index()
         'ejercicio'
     );
 
-    // ── Filtros ──────────────────────────────────────────────────────
+    // ── Registros con los filtros (una sola consulta; el resto se arma a partir de ella) ──
     $model   = model('CallCenterModel');
     $filtros = $this->aplicarFiltros($model, $ejercicios);
-    $filtro_ejercicio = $filtros['filtro_ejercicio'];
-    $filtro_mes       = $filtros['filtro_mes'];
-    $filtro_estado    = $filtros['filtro_estado'];
-
-    $db = \Config\Database::connect();
     $ordenMeses = implode(',', array_map(fn($m) => "'$m'", $this->mesesValidos));
 
-    // ── Consultar datos filtrados ────────────────────────────────────
-    $registros = $model->orderBy('ejercicio', 'DESC')
-                        ->orderBy("FIELD(mes,{$ordenMeses})", '')
-                        ->orderBy('fecha', 'ASC')
-                        ->findAll();
+    $registros = $model->orderBy('ejercicio', 'ASC')
+                       ->orderBy("FIELD(mes,{$ordenMeses})", '')
+                       ->orderBy('fecha', 'ASC')
+                       ->findAll();
 
-    // ── KPIs generales ───────────────────────────────────────────────
-    $totalAtendidos   = 0;
-    $totalAbandonadas = 0;
-
+    // El total de cada fila es atendidos + abandonadas (así cierra siempre con sus partes)
+    $porMes = $porDia = $porEjercicio = [];
+    $totalAtendidos = $totalAbandonadas = 0;
     foreach ($registros as $r) {
-        $totalAtendidos   += (int) $r->atendidos;
-        $totalAbandonadas += (int) $r->abandonadas;
+        $at = (int) $r->atendidos;
+        $ab = (int) $r->abandonadas;
+        $totalAtendidos   += $at;
+        $totalAbandonadas += $ab;
+
+        $kMes = $r->ejercicio . '|' . $r->mes;
+        $porMes[$kMes] = $porMes[$kMes] ?? ['ejercicio' => $r->ejercicio, 'mes' => $r->mes, 'atendidos' => 0, 'abandonadas' => 0];
+        $porMes[$kMes]['atendidos']   += $at;
+        $porMes[$kMes]['abandonadas'] += $ab;
+
+        $kDia = $r->fecha ?: ('sin-fecha|' . $r->ejercicio);
+        $porDia[$kDia] = $porDia[$kDia] ?? ['ejercicio' => $r->ejercicio, 'fecha' => $r->fecha, 'atendidos' => 0, 'abandonadas' => 0];
+        $porDia[$kDia]['atendidos']   += $at;
+        $porDia[$kDia]['abandonadas'] += $ab;
+
+        $porEjercicio[$r->ejercicio] = ($porEjercicio[$r->ejercicio] ?? 0) + $at + $ab;
     }
+
+    $conTotal = function (array $filas) {
+        return array_values(array_map(function ($f) {
+            $f['total'] = $f['atendidos'] + $f['abandonadas'];
+            return $f;
+        }, $filas));
+    };
+    $porMes = $conTotal($porMes);                          // orden cronológico
+    $porDia = $conTotal($porDia);
+    usort($porDia, function ($a, $b) {                     // lo más reciente primero (sin fecha al final)
+        return strcmp((string) $b['fecha'], (string) $a['fecha']);
+    });
+
     $totalGeneral = $totalAtendidos + $totalAbandonadas;
-    $pctAtendidos = $totalGeneral > 0 ? round(($totalAtendidos / $totalGeneral) * 100, 2) : 0;
-
-    // ── Agrupado por ejercicio + mes (para tabla) ────────────────────
-    $statsFilas = $this->statsBuilder($db, $filtro_ejercicio, $filtro_mes, $filtro_estado)
-        ->select('mes, ejercicio, SUM(atendidos) as atendidos, SUM(abandonadas) as abandonadas')
-        ->groupBy('mes, ejercicio')
-        ->orderBy('ejercicio', 'DESC')
-        ->orderBy("FIELD(mes,{$ordenMeses})", '')
-        ->get()->getResultArray();
-
-    // ── Todos los ejercicios de la BD para paleta de colores dinámicas ─
-    $todosLosEjercicios = array_column(
-        $db->table('call_center')
-            ->select('ejercicio')
-            ->distinct()
-            ->whereIn('estado', ['activo', 'desactivado'])
-            ->orderBy('ejercicio', 'ASC')
-            ->get()->getResultArray(),
-        'ejercicio'
-    );
-
-    // Ejercicios a comparar en los gráficos:
-    $statsEjercicios = ($filtro_ejercicio !== '')
-        ? [$filtro_ejercicio]
-        : $ejercicios;
-
-    $statsBarras = [];
-    $statsTorta  = [];
-
-    if (!empty($statsEjercicios)) {
-        // Datos para Gráfico de Barras
-        $statsBarras = $this->statsBuilder($db, '', $filtro_mes, $filtro_estado)
-            ->whereIn('ejercicio', $statsEjercicios)
-            ->select('mes, ejercicio, SUM(total) as cantidad')
-            ->groupBy('mes, ejercicio')
-            ->orderBy('ejercicio', 'DESC')
-            ->orderBy("FIELD(mes,{$ordenMeses})", '')
-            ->get()->getResultArray();
-
-        // Datos para Gráfico de Torta
-        $statsTorta = $this->statsBuilder($db, '', $filtro_mes, $filtro_estado)
-            ->whereIn('ejercicio', $statsEjercicios)
-            ->select('ejercicio, SUM(total) as total')
-            ->groupBy('ejercicio')
-            ->orderBy('ejercicio', 'DESC')
-            ->get()->getResultArray();
+    $diasConDatos = count(array_filter($porDia, fn($d) => !empty($d['fecha'])));
+    $diaPico = null;
+    foreach ($porDia as $d) {
+        if (!empty($d['fecha']) && ($diaPico === null || $d['total'] > $diaPico['total'])) $diaPico = $d;
     }
+
+    $kpi = [
+        'total'           => $totalGeneral,
+        'atendidos'       => $totalAtendidos,
+        'abandonadas'     => $totalAbandonadas,
+        'pct_atendidos'   => $totalGeneral > 0 ? round($totalAtendidos * 100 / $totalGeneral, 1) : 0,
+        'pct_abandonadas' => $totalGeneral > 0 ? round($totalAbandonadas * 100 / $totalGeneral, 1) : 0,
+        'dias'            => $diasConDatos,
+        'promedio_diario' => $diasConDatos > 0 ? (int) round($totalGeneral / $diasConDatos) : 0,
+        'dia_pico'        => $diaPico,
+    ];
+
+    // Todos los ejercicios de la BD, para que cada año tenga siempre el mismo color
+    $todosLosEjercicios = array_values(array_map('intval', $ejercicios));
+    sort($todosLosEjercicios);
 
     return view('call_center/call_center_list', array_merge($filtros, [
         'ejercicios'         => $ejercicios,
-        'todosLosEjercicios'  => $todosLosEjercicios,
+        'todosLosEjercicios' => $todosLosEjercicios,
         'meses'              => $this->mesesValidos,
-        'totalAtendidos'     => $totalAtendidos,
-        'totalAbandonadas'   => $totalAbandonadas,
-        'totalGeneral'       => $totalGeneral,
-        'pctAtendidos'       => $pctAtendidos,
-        'statsFilas'         => $statsFilas,
-        'statsBarras'        => $statsBarras,
-        'statsEjercicios'    => $statsEjercicios,
-        'statsTorta'         => $statsTorta,
+        'kpi'                => $kpi,
+        'porMes'             => $porMes,
+        'porDia'             => $porDia,
+        'porEjercicio'       => $porEjercicio,
     ]));
 }
     // ─── Marcar visto ────────────────────────────────────────────────────

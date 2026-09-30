@@ -1,4 +1,5 @@
 <?= $this->extend('layout/main'); ?> //3333
+<?= $this->extend('layout/main'); ?> //cambios
 <?= $this->section('title') ?> Bases · Ministerio de Salud <?= $this->endSection() ?>
 <?= $this->section('menu') ?> <?= $this->include('admin/menu'); ?> <?= $this->endSection() ?>
 
@@ -72,12 +73,13 @@
         font-size: 11px; font-weight: 700; color: #718096; text-transform: uppercase; 
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .kpi-teal { border-left: 6px solid #38b2ac; }
-    .kpi-orange { border-left: 6px solid #ed8936; }
-    .kpi-blue { border-left: 6px solid #4299e1; }
-    .kpi-green { border-left: 6px solid #48bb78; }
-    .kpi-red { border-left: 6px solid #f56565; }
-     .kpi-purple { border-left: 6px solid #9f7aea; }
+    .kpi-teal   { border-left: 6px solid #81e6d9; } 
+    .kpi-blue   { border-left: 6px solid #90cdf4; }
+    .kpi-green  { border-left: 6px solid #9ae6b4; }
+    .kpi-red    { border-left: 6px solid #feb2b2; } 
+    .kpi-amber  { border-left: 6px solid #fbd38d; } 
+    .kpi-purple { border-left: 6px solid #d6bcfa; } 
+    .kpi-navy   { border-left: 6px solid #a0aec0; } 
 
      .bl-kpi-icon {
         width: 70px; height:70px;
@@ -86,11 +88,12 @@
         font-size: 30px;
     }
     .kpi-teal .bl-kpi-icon { background: #e6fffa; color: #319795; }
-    .kpi-orange .bl-kpi-icon { background: #fffaf0; color: #dd6b20; }
     .kpi-blue .bl-kpi-icon { background: #ebf8ff; color: #3182ce; }
     .kpi-green .bl-kpi-icon { background: #f0fff4; color: #38a169; }
-    .kpi-red .bl-kpi-icon { background: #fff5f5; color: #e53e3e; }
+    .kpi-red  .bl-kpi-icon { background: #fff5f5; color: #e53e3e; }
+    .kpi-amber .bl-kpi-icon { background: #fffaf0; color: #dd5620; }
     .kpi-purple .bl-kpi-icon { background: #faf5ff; color: #805ad5; }
+    .kpi-navy .bl-kpi-icon { background: #eef3f8; color: var(--navy); }
 
     .bl-kpi-label { font-size: 11px; font-weight: 700; color: #718096; text-transform: uppercase; }
     .bl-kpi-value { font-size: 25px; 
@@ -152,7 +155,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .bl-panel-title i { color: var(--teal); font-size: 17px; }
+    .bl-panel-title i { color: #fff; font-size: 17px; }
     .bl-panel-body { padding: 18px 20px; }
 
     .bl-kpi-group { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -447,12 +450,12 @@
                     <input type="hidden"
                         name="estado_modo"
                         id="input-estado-modo"
-                        value="<?= esc($estado_modo ?? 'todos') ?>">
+                        value="<?= esc($estado_modo ?? 'ninguno') ?>">
 
                     <div style="display:flex; gap:4px; height:36px; align-items:center;">
 
                         <button type="button"
-                                class="bl-btn ghost sm btn-status <?= (($estado_modo ?? 'todos') === 'todos') ? 'pushed' : '' ?>"
+                                class="bl-btn ghost sm btn-status <?= (($estado_modo ?? 'ninguno') === 'todos') ? 'pushed' : '' ?>"
                                 data-val=""
                                 data-modo="todos">
                             Todos
@@ -480,7 +483,7 @@
         <!-- ── TARJETAS KPI: BASES / USES / TOTAL + ACTIVIDAD ── -->
         <?php
             $filtroActivo = !empty($search) || !empty($filtro_tipo) || !empty($filtro_region) || !empty($filtro_provincia) || !empty($filtro_estado);
-            $mostrarTodasKpi = $filtroActivo || ($estado_modo ?? 'todos') === 'todos';
+            $mostrarTodasKpi = $filtroActivo || ($estado_modo ?? 'ninguno') === 'todos';
         ?>
         <div class="bl-kpi-cards <?= $mostrarTodasKpi ? '' : 'bl-kpi-cards--compact' ?>">
             <div class="bl-kpi-card kpi-teal">
@@ -494,7 +497,7 @@
                     </span>
                 </div>
             </div>
-            <div class="bl-kpi-card kpi-orange">
+            <div class="bl-kpi-card kpi-amber">
                 <div class="bl-kpi-icon"><i class="fas fa-clock"></i></div>
                 <div class="bl-kpi-content">
                     <div class="bl-kpi-label">Uses</div>
@@ -781,7 +784,7 @@
             var borderColor = '#ffffff';
 
             // Determinar color de relleno basado en estado
-           var estadoModo = <?= json_encode($estado_modo ?? 'todos') ?>;
+           var estadoModo = <?= json_encode($estado_modo ?? 'ninguno') ?>;
 
         var fillColor;
 

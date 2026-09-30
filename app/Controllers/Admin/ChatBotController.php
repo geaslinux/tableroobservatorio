@@ -49,78 +49,86 @@ class ChatBotController extends BaseController
         );
 
         $efectores = model('EfectorModel')->orderBy('nombre', 'ASC')->findAll();
-        $regiones  = array_column(
+        $regiones  = array_values(array_filter(array_column(
             model('EfectorModel')->select('region')->distinct()->orderBy('region', 'ASC')->findAll(),
             'region'
-        );
+        ), function ($r) { return trim((string) $r) !== ''; }));
 
-        // Instancia limpia solo para capturar los valores de filtro
-        $modelFiltros = new \App\Models\ChatBotModel();
-        $filtros      = $this->aplicarFiltros($modelFiltros);
-
-        // ── KPIs por región ──
-        $mTotalesRegion = new \App\Models\ChatBotModel();
-        $this->aplicarFiltros($mTotalesRegion);
-        $filasRegion = $mTotalesRegion
+        // ── Una sola consulta con los filtros: turnos por ejercicio / mes / hospital ──
+        // (el join con efector es necesario para el filtro de región)
+        $ordenMeses = implode(',', array_map(fn($m) => "'$m'", $this->mesesValidos));
+        $model      = new \App\Models\ChatBotModel();
+        $filtros    = $this->aplicarFiltros($model);
+        $filas      = $model
             ->join('efector', 'efector.efector_id = chat_bot.efector_id', 'left')
             ->asArray()
-            ->select('efector.region as region, SUM(chat_bot.turnos_otorgados) as total')
-            ->groupBy('efector.region')
-            ->orderBy('efector.region', 'ASC')
+            ->select("
+                chat_bot.ejercicio,
+                chat_bot.mes,
+                chat_bot.efector_id,
+                COALESCE(efector.nombre, 'SIN HOSPITAL')                  AS hospital,
+                COALESCE(NULLIF(TRIM(efector.region), ''), 'SIN DATO')    AS region,
+                SUM(chat_bot.turnos_otorgados)                            AS turnos
+            ", false)
+            ->groupBy('chat_bot.ejercicio, chat_bot.mes, chat_bot.efector_id, efector.nombre, efector.region')
+            ->orderBy('chat_bot.ejercicio', 'ASC')
+            ->orderBy("FIELD(chat_bot.mes,{$ordenMeses})", '', false)
+            ->orderBy('efector.nombre', 'ASC')
             ->findAll();
 
-        $totalesPorRegion = [];
-        foreach ($filasRegion as $fila) {
-            $totalesPorRegion[$fila['region'] ?? '—'] = (int) $fila['total'];
+        $variosAnios = count(array_unique(array_column($filas, 'ejercicio'))) > 1;
+
+        // ── Agregados para tabla, gráficos y tarjetas ──
+        $porMes = $porRegion = $porHospital = [];
+        foreach ($filas as &$f) {
+            $f['turnos'] = (int) $f['turnos'];
+            $claveMes    = $f['ejercicio'] . '|' . $f['mes'];
+            if (!isset($porMes[$claveMes])) {
+                $porMes[$claveMes] = [
+                    'etiqueta' => $f['mes'] . ($variosAnios ? ' ' . $f['ejercicio'] : ''),
+                    'turnos'   => 0,
+                ];
+            }
+            $porMes[$claveMes]['turnos']     += $f['turnos'];
+            $porRegion[$f['region']]          = ($porRegion[$f['region']] ?? 0) + $f['turnos'];
+            $porHospital[$f['hospital']]      = ($porHospital[$f['hospital']] ?? 0) + $f['turnos'];
+        }
+        unset($f);
+
+        $porMes = array_values($porMes);    // orden cronológico (viene ordenado de la consulta)
+        arsort($porRegion);
+        arsort($porHospital);
+
+        $totalGeneral = array_sum(array_column($filas, 'turnos'));
+        $mesPico      = null;
+        foreach ($porMes as $m) {
+            if ($mesPico === null || $m['turnos'] > $mesPico['turnos']) $mesPico = $m;
         }
 
-        $mTotal = new \App\Models\ChatBotModel();
-        $this->aplicarFiltros($mTotal);
-        $resTotal     = $mTotal->selectSum('turnos_otorgados')->first();
-        $totalGeneral = (int) ($resTotal->turnos_otorgados ?? 0);
+        $kpi = [
+            'total'           => $totalGeneral,
+            'meses'           => count($porMes),
+            'promedio'        => count($porMes) > 0 ? (int) round($totalGeneral / count($porMes)) : 0,
+            'hospitales'      => count($porHospital),
+            'mes_pico'        => $mesPico,
+            'hospital_top'    => $porHospital ? array_key_first($porHospital) : null,
+            'hospital_top_n'  => $porHospital ? reset($porHospital) : 0,
+        ];
 
-        // ── Tabla detalle: región / ejercicio / cantidad ──
-        $mTabla = new \App\Models\ChatBotModel();
-        $this->aplicarFiltros($mTabla);
-        $statsFilas = $mTabla
-            ->join('efector', 'efector.efector_id = chat_bot.efector_id', 'left')
-            ->asArray()
-            ->select('efector.region as region, chat_bot.ejercicio as ejercicio, SUM(chat_bot.turnos_otorgados) as cantidad')
-            ->groupBy('efector.region, chat_bot.ejercicio')
-            ->orderBy('chat_bot.ejercicio', 'DESC')
-            ->orderBy('efector.region', 'ASC')
-            ->findAll();
-
-        // ── Ejercicios recientes (para barras) ──
-        $ejerciciosDisponibles = array_values(array_unique(array_column($statsFilas, 'ejercicio')));
-        rsort($ejerciciosDisponibles);
-        $statsEjercicios = array_slice($ejerciciosDisponibles, 0, 2);
-
-        // ── Barras: región vs ejercicios recientes ──
-        $statsBarras = array_values(array_filter($statsFilas, function ($f) use ($statsEjercicios) {
-            return in_array($f['ejercicio'], $statsEjercicios);
-        }));
-
-        // ── Torta: distribución por ejercicio (todos) ──
-        $mTorta = new \App\Models\ChatBotModel();
-        $this->aplicarFiltros($mTorta);
-        $statsTorta = $mTorta->asArray()
-            ->select('chat_bot.ejercicio as ejercicio, SUM(chat_bot.turnos_otorgados) as total')
-            ->groupBy('chat_bot.ejercicio')
-            ->orderBy('chat_bot.ejercicio', 'DESC')
-            ->findAll();
+        // Tabla (como la planilla de referencia): hospital / mes / turnos, en orden cronológico
+        $statsFilas = $filas;
 
         return view('chat_bot/chat_bot_list', array_merge($filtros, [
-            'ejercicios'       => $ejercicios,
-            'efectores'        => $efectores,
-            'regiones'         => $regiones,
-            'meses'            => $this->mesesValidos,
-            'totalesPorRegion' => $totalesPorRegion,
-            'totalGeneral'     => $totalGeneral,
-            'statsFilas'       => $statsFilas,
-            'statsBarras'      => $statsBarras,
-            'statsEjercicios'  => $statsEjercicios,
-            'statsTorta'       => $statsTorta,
+            'ejercicios'  => $ejercicios,
+            'efectores'   => $efectores,
+            'regiones'    => $regiones,
+            'meses'       => $this->mesesValidos,
+            'kpi'         => $kpi,
+            'variosAnios' => $variosAnios,
+            'statsFilas'  => $statsFilas,
+            'porMes'      => $porMes,
+            'porRegion'   => $porRegion,
+            'porHospital' => $porHospital,
         ]));
     }
     // ─── Marcar visto ────────────────────────────────────────────────────

@@ -102,9 +102,12 @@ class GuardiaController extends BaseController
         // ── KPI CARDS ──
         $totalGeneral = (int) ($model->selectSum('cantidad')->first()->cantidad ?? 0);
 
-        $totalPorSemestre = $model
-            ->select('semestre, SUM(cantidad) as total')
-            ->groupBy('semestre')
+        // Datos de los gráficos: respetan los filtros (instancia propia del modelo)
+        $modelGrafico = model('GuardiaModel', false);
+        $this->aplicarFiltros($modelGrafico);
+        $totalPorSemestre = $modelGrafico
+            ->select('guardia.semestre, SUM(guardia.cantidad) as total')
+            ->groupBy('guardia.semestre')
             ->asArray()
             ->findAll();
 

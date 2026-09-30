@@ -80,7 +80,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .ml-panel-title i { color: var(--teal); font-size: 17px; }
+    .ml-panel-title i { color: #fff; font-size: 17px; }
     .ml-panel-body { padding: 18px 20px; }
     .ml-toolbar {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -142,6 +142,13 @@
     .ml-stats-vacio { padding: 14px 10px; color: var(--text-muted); font-style: italic; text-align: center; }
 
     .ml-chart-box { display: flex; flex-direction: column; min-width: 0; }
+    .ml-sin-datos {
+        height: 330px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+        color: var(--text-muted); font-size: 13px; font-style: italic; text-align: center;
+        border: 1px dashed var(--border); border-radius: 10px;
+    }
+    .ml-sin-datos i { font-size: 28px; opacity: 0.4; font-style: normal; }
     .ml-chart-canvas { position: relative; width: 100%; height: 330px; }
     .ml-chart-title {
         font-size: 10.5px; font-weight: 700; text-transform: uppercase;
@@ -188,7 +195,7 @@
         background: var(--navy); color: #fff;
         box-shadow: 0 2px 6px rgba(14,42,77,0.18);
     }
-    .ml-tab.is-active i { color: var(--teal); }
+    .ml-tab.is-active i { color: #fff; }
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
@@ -201,7 +208,7 @@
         .ml-filtro-group { flex: 1 1 100%; }
         .ml-filtro-select { width: 100%; }
         .ml-kpi-card { flex: 1 1 100%; max-width: none; }
-        .ml-chart-canvas { height: 280px; }
+        .ml-chart-canvas, .ml-sin-datos { height: 280px; }
     }
 </style>
 
@@ -364,7 +371,7 @@
                         </thead>
                         <tbody>
                             <?php if (empty($cartaPorEspecialidad)): ?>
-                                <tr><td colspan="3" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                <tr><td colspan="3" class="ml-stats-vacio">Sin turnos por especialidad para los filtros elegidos</td></tr>
                             <?php endif; ?>
                             <?php foreach ($cartaPorEspecialidad as $f): ?>
                             <tr>
@@ -450,7 +457,7 @@
                         </thead>
                         <tbody>
                             <?php if (empty($rrhhPorEspecialidad)): ?>
-                                <tr><td colspan="2" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                <tr><td colspan="2" class="ml-stats-vacio">Sin profesionales por especialidad para los filtros elegidos</td></tr>
                             <?php endif; ?>
                             <?php foreach ($rrhhPorEspecialidad as $f): ?>
                             <tr>
@@ -472,6 +479,9 @@
                             <tr><th>Actividad</th><th class="num">Profesionales</th></tr>
                         </thead>
                         <tbody>
+                            <?php if (empty($rrhhActividades)): ?>
+                                <tr><td colspan="2" class="ml-stats-vacio">Sin actividades asignadas para los filtros elegidos</td></tr>
+                            <?php endif; ?>
                             <?php foreach ($rrhhActividades as $a): ?>
                             <tr>
                                 <td><?= esc($a['actividad']) ?></td>
@@ -553,25 +563,45 @@
         id: 'centerText',
         afterDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
+            var arco = chart.getDatasetMeta(0).data[0];
+            if (!arco) return;
+            // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+            var total = chart.options.plugins.centerTotal;
+            if (typeof total !== 'number') {
+                total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                    return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                }, 0);
+            }
+            // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+            var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+            var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
             var ctx = chart.ctx;
-            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-            var total = chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 16px sans-serif';
+            ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
             ctx.fillStyle = '#555555';
-            ctx.fillText('TOTAL', centerX, centerY - 13);
-            ctx.font = 'bold 22px sans-serif';
+            ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+            ctx.font = 'bold ' + tamNumero + 'px sans-serif';
             ctx.fillStyle = '#222222';
-            ctx.fillText(total.toLocaleString('es-AR'), centerX, centerY + 14);
+            ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
             ctx.restore();
         }
     };
 
-    function crearDona(canvasId, etiquetas, valores) {
+    // Reemplaza el canvas por el aviso de "sin datos"
+    function mostrarSinDatos(canvasId, mensaje) {
+        var canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        var caja = canvas.parentNode;
+        caja.className = 'ml-sin-datos';
+        caja.innerHTML = '<i class="fas fa-chart-bar"></i>';
+        caja.appendChild(document.createTextNode(mensaje));
+    }
+
+    function crearDona(canvasId, etiquetas, valores, mensajeSinDatos) {
         var seccionesConDatos = valores.filter(function (v) { return Number(v) > 0; }).length;
+        if (seccionesConDatos === 0) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
 
         new Chart(document.getElementById(canvasId), {
             type: 'doughnut',
@@ -622,6 +652,7 @@
         var dias = diasGrafico.filter(function (dia) {
             return turnos.some(function (t) { return (cartaPorDia[t][dia] || 0) > 0; });
         });
+        if (dias.length === 0) { mostrarSinDatos('chartCartaDias', 'Sin turnos por día de atención para los filtros elegidos'); return; }
 
         var datasets = turnos.map(function (t, i) {
             return {
@@ -660,7 +691,8 @@
     crearDona(
         'chartCartaTipo',
         cartaPorTipoProfesional.map(function (d) { return d.tipo_profesional; }),
-        cartaPorTipoProfesional.map(function (d) { return parseInt(d.turnos, 10); })
+        cartaPorTipoProfesional.map(function (d) { return parseInt(d.turnos, 10); }),
+        'Sin turnos por tipo de profesional para los filtros elegidos'
     );
     }
 
@@ -668,6 +700,7 @@
     function graficosRrhh() {
     // ── 3. Profesionales por especialidad (barras horizontales) ──
     (function () {
+        if (rrhhPorEspecialidad.length === 0) { mostrarSinDatos('chartRrhhEspecialidad', 'Sin profesionales por especialidad para los filtros elegidos'); return; }
         new Chart(document.getElementById('chartRrhhEspecialidad'), {
             type: 'bar',
             data: {
@@ -706,7 +739,8 @@
     crearDona(
         'chartRrhhRevista',
         rrhhPorRevista.map(function (d) { return d.revista; }),
-        rrhhPorRevista.map(function (d) { return parseInt(d.cantidad, 10); })
+        rrhhPorRevista.map(function (d) { return parseInt(d.cantidad, 10); }),
+        'Sin profesionales por situación de revista para los filtros elegidos'
     );
     }
 

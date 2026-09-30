@@ -33,7 +33,7 @@
 .rh-panel { background: #fff; border-radius: 12px; border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 16px; }
 .rh-panel-header { padding: 14px 20px; background: var(--navy); }
 .rh-panel-title { font-size: 15px; font-weight: 700; color: #fff; }
-.rh-panel-title i { color: var(--teal); margin-right: 8px; }
+.rh-panel-title i { color: #fff; margin-right: 8px; }
 .rh-panel-body { padding: 18px 20px; }
 
 .rh-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
@@ -182,6 +182,9 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($registros)): ?>
+                            <tr><td colspan="21" style="text-align:center; color:#718096; font-style:italic; padding:14px 10px;">Sin rendimiento hospitalario para los filtros elegidos</td></tr>
+                        <?php endif; ?>
                     <?php foreach ($registros as $r): ?>
                         <tr>
                             <td><?= esc($r->nombre) ?></td>

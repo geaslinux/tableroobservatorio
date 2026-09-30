@@ -66,7 +66,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     }
-    .hv-modulo-titulo i { color: var(--teal); font-size: 17px; }
+    .hv-modulo-titulo i { color: #fff; font-size: 17px; }
     .hv-periodo {
         font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
         padding: 3px 10px; border-radius: 10px;
@@ -131,6 +131,7 @@
         grid-template-columns: 1.4fr 1fr;
         gap: 18px;
     }
+    .hv-graficos .ml-chart-box.completo { grid-column: 1 / -1; }
     .ml-chart-box {
         display: flex; flex-direction: column; min-width: 0;
         background: #fafbfc; border: 0.5px solid var(--border); border-radius: 10px;
@@ -202,7 +203,7 @@
         background: var(--navy); color: #fff;
         box-shadow: 0 2px 6px rgba(14,42,77,0.18);
     }
-    .ml-tab.is-active i { color: var(--teal); }
+    .ml-tab.is-active i { color: #fff; }
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
@@ -228,7 +229,9 @@
     $fmt = function ($n) { return number_format((int) $n, 0, ',', '.'); };
     $dec = function ($n, $d = 1) { return number_format((float) $n, $d, ',', '.'); };
 
-    $textoPeriodo = $ejercicio . ($semestre !== '' ? ' · ' . $semestre : '');
+    $todos        = $ejercicio === '';
+    $textoPeriodo = $todos ? 'Todos los ejercicios' : $ejercicio;
+    $paramEj      = '&ejercicio=' . $ejercicio;
 
     // Tarjeta KPI
     $kpi = function ($color, $icono, $label, $valor, $sub = '', $claseSub = '') {
@@ -243,17 +246,20 @@
     };
 
     // Caja de gráfico (o mensaje si no hay datos)
-    $grafico = function ($id, $titulo, $hayDatos) {
-        return '<div class="ml-chart-box">
+    $grafico = function ($id, $titulo, $hayDatos, $clase = '', $mensaje = 'Sin datos para el período') {
+        return '<div class="ml-chart-box ' . $clase . '">
                     <div class="ml-chart-title">' . esc($titulo) . '</div>'
                     . ($hayDatos
                         ? '<div class="ml-chart-canvas"><canvas id="' . $id . '"></canvas></div>'
-                        : '<div class="ml-sin-datos"><i class="fas fa-chart-bar"></i>Sin datos para el período</div>') .
+                        : '<div class="ml-sin-datos"><i class="fas fa-chart-bar"></i>' . esc($mensaje) . '</div>') .
                 '</div>';
     };
 
     // Variación de guardia contra el mismo período del año anterior
-    if ($gua['no_comparable']) {
+    if ($todos) {
+        $subVariacion = 'suma de todos los ejercicios';
+        $claseVariacion = '';
+    } elseif ($gua['no_comparable']) {
         $subVariacion = 'carga distinta a ' . ($ejercicio - 1) . ': no comparable';
         $claseVariacion = '';
     } elseif ($gua['variacion'] === null) {
@@ -304,17 +310,9 @@
         <div class="ml-filtro-group">
             <span class="ml-filtro-label">Ejercicio</span>
             <select name="ejercicio" class="ml-filtro-select">
+                <option value="" <?= $todos ? 'selected' : '' ?>>Todos</option>
                 <?php foreach ($ejercicios as $ej): ?>
-                    <option value="<?= esc($ej) ?>" <?= $ejercicio == $ej ? 'selected' : '' ?>><?= esc($ej) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="ml-filtro-group">
-            <span class="ml-filtro-label">Semestre</span>
-            <select name="semestre" class="ml-filtro-select">
-                <option value="">Año completo</option>
-                <?php foreach ($semestres as $s): ?>
-                    <option value="<?= esc($s) ?>" <?= $semestre == $s ? 'selected' : '' ?>><?= esc($s) ?></option>
+                    <option value="<?= esc($ej) ?>" <?= !$todos && $ejercicio == $ej ? 'selected' : '' ?>><?= esc($ej) ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -331,7 +329,7 @@
         </div>
         <div class="ml-filtro-nota">
             <i class="fas fa-info-circle"></i>
-            Por defecto se muestra el último año cerrado. El semestre aplica a Guardia y Rendimiento.
+            Por defecto se muestra el último año cerrado. "Todos" suma todos los ejercicios.
         </div>
     </div>
 </form>
@@ -364,8 +362,8 @@
             <?= $kpi('navy', 'fa-users', 'RRHH', $fmt($amb['rrhh']), 'profesionales registrados') ?>
         </div>
         <div class="hv-graficos">
-            <?= $grafico('chartAmbEspecialidad', 'Turnos por especialidad', !empty($ambPorEspecialidad)) ?>
-            <?= $grafico('chartAmbTipo', 'Turnos por tipo de profesional', !empty($ambPorTipo)) ?>
+            <?= $grafico('chartAmbEspecialidad', 'Turnos por especialidad', !empty($ambPorEspecialidad), '', 'Sin turnos por especialidad en la agenda vigente') ?>
+            <?= $grafico('chartAmbTipo', 'Turnos por tipo de profesional', !empty($ambPorTipo), '', 'Sin turnos por tipo de profesional en la agenda vigente') ?>
         </div>
     </div>
 </div>
@@ -381,7 +379,7 @@
             <span class="hv-periodo"><?= esc($textoPeriodo) ?></span>
             <span class="hv-periodo"><?= esc($gua['cobertura']['texto']) ?></span>
         </span>
-        <a href="<?= base_url(route_to('guardia_views')) . '?anio=' . $ejercicio . ($semestre !== '' ? '&semestre=' . urlencode($semestre) : ''); ?>" class="hv-ver">Ver panel <i class="fas fa-arrow-right"></i></a>
+        <a href="<?= base_url(route_to('guardia_views')) . ($todos ? '' : '?anio=' . $ejercicio); ?>" class="hv-ver">Ver panel <i class="fas fa-arrow-right"></i></a>
     </div>
     <div class="hv-modulo-body">
         <div class="ml-kpi-cards">
@@ -391,8 +389,9 @@
             <?= $kpi('navy', 'fa-stethoscope', 'Servicio principal', '<span style="font-size:17px;">' . esc($gua['servicio_principal']) . '</span>', $fmt($gua['servicios']) . ' servicios con datos') ?>
         </div>
         <div class="hv-graficos">
-            <?= $grafico('chartGuaHospitales', 'Top 5 hospitales', !empty($guaTopHospitales)) ?>
-            <?= $grafico('chartGuaServicios', 'Atenciones por servicio', !empty($guaPorServicio)) ?>
+            <?= $grafico('chartGuaHospitales', 'Top 5 hospitales', !empty($guaTopHospitales), '', 'Sin atenciones de guardia por hospital en el período elegido') ?>
+            <?= $grafico('chartGuaServicios', 'Atenciones por servicio', !empty($guaPorServicio), '', 'Sin atenciones de guardia por servicio en el período elegido') ?>
+            <?= $grafico('chartGuaEjercicios', 'Atenciones por ejercicio', !empty($guaPorEjercicio), 'completo', 'Sin atenciones de guardia cargadas') ?>
         </div>
     </div>
 </div>
@@ -405,22 +404,21 @@
     <div class="hv-modulo-header">
         <span class="hv-modulo-titulo">
             <i class="fas fa-procedures"></i> INTERNACIÓN
-            <span class="hv-periodo">Rendimiento <?= esc($textoPeriodo) ?></span>
-            <span class="hv-periodo"><?= esc($int['cobertura']) ?></span>
+            <span class="hv-periodo">Rendimiento <?= esc($todos ? $textoPeriodo : $ejercicio . ' · anual') ?></span>
             <span class="hv-periodo">Camas: oferta vigente</span>
         </span>
-        <a href="<?= base_url(route_to('internacion_views')) . '?tab=rend&ejercicio=' . $ejercicio . ($semestre !== '' ? '&semestre=' . urlencode($semestre) : ''); ?>" class="hv-ver">Ver panel <i class="fas fa-arrow-right"></i></a>
+        <a href="<?= base_url(route_to('internacion_views')) . '?tab=rend' . ($todos ? '' : $paramEj); ?>" class="hv-ver">Ver panel <i class="fas fa-arrow-right"></i></a>
     </div>
     <div class="hv-modulo-body">
         <div class="ml-kpi-cards">
-            <?= $kpi('navy', 'fa-sign-out-alt', 'Egresos', $fmt($int['egresos']), 'estada prom. ' . $dec($int['estada']) . ' días') ?>
+            <?= $kpi('navy', 'fa-sign-out-alt', 'Egresos', $fmt($int['egresos']), 'estadia prom. ' . $dec($int['estada']) . ' días') ?>
             <?= $kpi('teal', 'fa-bed', '% Ocupacional', $dec($int['ocupacion']) . '%', 'mortalidad ' . $dec($int['mortalidad'], 2) . '%') ?>
             <?= $kpi('blue', 'fa-procedures', 'Camas disponibles', $fmt($int['camas']['disponibles']), 'UTI ' . $fmt($int['camas']['uti']) . ' · UTIN ' . $fmt($int['camas']['utin']) . ' · salud mental ' . $fmt($int['salud_mental'])) ?>
-            <?= $kpi('red', 'fa-user-clock', 'Lista de espera', $fmt($int['espera']), 'pacientes quirúrgicos ' . $ejercicio) ?>
+            <?= $kpi('red', 'fa-user-clock', 'Lista de espera', $fmt($int['espera']), 'pacientes quirúrgicos ' . ($todos ? '(todos)' : $ejercicio)) ?>
         </div>
         <div class="hv-graficos">
-            <?= $grafico('chartIntEvolucion', 'Evolución de egresos y % ocupacional', !empty($intEvolucion)) ?>
-            <?= $grafico('chartIntCamas', 'Camas disponibles por tipo', $int['camas']['disponibles'] > 0) ?>
+            <?= $grafico('chartIntEvolucion', 'Evolución de egresos y % ocupacional', !empty($intEvolucion), '', 'Sin egresos hospitalarios cargados') ?>
+            <?= $grafico('chartIntCamas', 'Camas disponibles por tipo', $int['camas']['disponibles'] > 0, '', 'Sin capacidad de camas cargada') ?>
         </div>
     </div>
 </div>
@@ -433,9 +431,9 @@
     <div class="hv-modulo-header">
         <span class="hv-modulo-titulo">
             <i class="fas fa-syringe"></i> QUIRÓFANO
-            <span class="hv-periodo"><?= esc($ejercicio) ?> · anual</span>
+            <span class="hv-periodo"><?= esc($todos ? $textoPeriodo : $ejercicio . ' · anual') ?></span>
         </span>
-        <a href="<?= base_url(route_to('quirofano_views')) . '?tab=hosp&ejercicio=' . $ejercicio; ?>" class="hv-ver">Ver panel <i class="fas fa-arrow-right"></i></a>
+        <a href="<?= base_url(route_to('quirofano_views')) . '?tab=hosp' . ($todos ? '' : $paramEj); ?>" class="hv-ver">Ver panel <i class="fas fa-arrow-right"></i></a>
     </div>
     <div class="hv-modulo-body">
         <div class="ml-kpi-cards">
@@ -445,8 +443,20 @@
             <?= $kpi('purple', 'fa-door-open', 'Quirófanos', $fmt($qui['quirofanos']), $qui['quirofanos'] > 0 ? $fmt(round($qui['total'] / $qui['quirofanos'])) . ' cirugías por quirófano' : '') ?>
         </div>
         <div class="hv-graficos">
-            <?= $grafico('chartQuiHospitales', 'Top 5 hospitales · urgencia / programadas', !empty($quiTopHospitales)) ?>
-            <?= $grafico('chartQuiComplejidad', 'Cirugías por complejidad', ($qui['alta'] + $qui['mediana'] + $qui['baja'] + $qui['desconocido']) > 0) ?>
+            <?= $grafico('chartQuiHospitales', 'Top 5 hospitales · urgencia / programadas', !empty($quiTopHospitales), '', 'Sin cirugías por hospital en el período elegido') ?>
+            <?= $grafico('chartQuiComplejidad', 'Cirugías por complejidad', ($qui['alta'] + $qui['mediana'] + $qui['baja'] + $qui['desconocido']) > 0, '', 'Sin cirugías programadas por complejidad en el período elegido') ?>
+            <?php if ($todos): ?>
+                <?= $grafico('chartQuiEjercicios', 'Cirugías por ejercicio', !empty($quiPorEjercicio), 'completo', 'Sin cirugías cargadas') ?>
+            <?php else: ?>
+                <?php $quiHayAnterior = in_array((string) ($ejercicio - 1), array_column($quiComparativo, 'ejercicio')); ?>
+                <?= $grafico(
+                    'chartQuiComparativo',
+                    $quiHayAnterior ? 'Cirugías por tipo · ' . $ejercicio . ' vs ' . ($ejercicio - 1) : 'Cirugías por tipo · ' . $ejercicio . ' (sin datos de ' . ($ejercicio - 1) . ')',
+                    $qui['total'] > 0,
+                    'completo',
+                    'Sin cirugías registradas en ' . $ejercicio
+                ) ?>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -466,16 +476,86 @@
     var ambPorTipo         = <?= json_encode($ambPorTipo) ?>;
     var guaTopHospitales   = <?= json_encode($guaTopHospitales) ?>;
     var guaPorServicio     = <?= json_encode($guaPorServicio) ?>;
+    var guaTopHospitalesAnio = <?= json_encode($guaTopHospitalesAnio) ?>;
+    var guaPorEjercicio    = <?= json_encode($guaPorEjercicio) ?>;
     var intEvolucion       = <?= json_encode($intEvolucion) ?>;
+    var quiPorEjercicio    = <?= json_encode($quiPorEjercicio) ?>;
+    var todosLosEjercicios = <?= json_encode($ejercicios) ?>;
+    var filtroEjercicio    = <?= json_encode($todos ? '' : (string) $ejercicio) ?>;
     var intCamas           = <?= json_encode($int['camas']) ?>;
     var qui                = <?= json_encode($qui) ?>;
     var quiTopHospitales   = <?= json_encode($quiTopHospitales) ?>;
+    var quiComparativo     = <?= json_encode($quiComparativo) ?>;
 
     // Paleta pastel (misma línea que Móviles)
     var paleta = [
         '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
         '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99'
     ];
+
+    // Colores por ejercicio: cada año recibe siempre el mismo color,
+    // ordenando todos los ejercicios de la BD.
+    // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
+    var paletaEjercicios = [
+        '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
+        '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
+    ];
+
+    var ejercicioColorMap = {};
+    (todosLosEjercicios || [])
+        .map(function (ej) { return parseInt(ej, 10); })
+        .filter(function (ej, i, arr) { return !isNaN(ej) && arr.indexOf(ej) === i; })
+        .sort(function (a, b) { return a - b; })
+        .forEach(function (ej, i) { ejercicioColorMap[String(ej)] = paletaEjercicios[i % paletaEjercicios.length]; });
+
+    function colorParaEjercicio(ejercicio) {
+        return ejercicioColorMap[String(parseInt(ejercicio, 10))] || '#95a5a6';
+    }
+
+    // Con un ejercicio filtrado, los demás años se atenúan
+    function colorResaltado(ejercicio) {
+        var color = colorParaEjercicio(ejercicio);
+        if (!filtroEjercicio || String(parseInt(ejercicio, 10)) === filtroEjercicio) return color;
+        return color + '40';
+    }
+
+    // Barras verticales: un valor por ejercicio, cada uno con su color
+    function crearBarrasEjercicio(id, filas, etiqueta) {
+        if (!existe(id)) return;
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: filas.map(function (d) { return String(d.ejercicio); }),
+                datasets: [{
+                    label: etiqueta,
+                    data: filas.map(function (d) { return parseInt(d.valor, 10) || 0; }),
+                    backgroundColor: filas.map(function (d) { return colorResaltado(d.ejercicio); }),
+                    borderColor: filas.map(function (d) { return colorParaEjercicio(d.ejercicio); }),
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    maxBarThickness: 60
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: function (ctx) { return etiqueta + ': ' + formatoNumero(ctx.parsed.y); } } },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        color: '#333333',
+                        font: { weight: 'bold', size: 10 },
+                        formatter: function (v) { return formatoNumero(v); }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true, grace: '12%', grid: { color: '#f0f0f0' }, ticks: { callback: function (v) { return formatoNumero(v); } } }
+                }
+            }
+        });
+    }
 
     function esMovil() {
         return window.matchMedia('(max-width: 600px)').matches;
@@ -499,19 +579,28 @@
         id: 'centerText',
         afterDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
+            var arco = chart.getDatasetMeta(0).data[0];
+            if (!arco) return;
+            // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+            var total = chart.options.plugins.centerTotal;
+            if (typeof total !== 'number') {
+                total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                    return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                }, 0);
+            }
+            // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+            var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+            var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
             var ctx = chart.ctx;
-            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-            var total = chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 13px sans-serif';
+            ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
             ctx.fillStyle = '#555555';
-            ctx.fillText('TOTAL', centerX, centerY - 11);
-            ctx.font = 'bold 17px sans-serif';
+            ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+            ctx.font = 'bold ' + tamNumero + 'px sans-serif';
             ctx.fillStyle = '#222222';
-            ctx.fillText(formatoNumero(total), centerX, centerY + 11);
+            ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
             ctx.restore();
         }
     };
@@ -590,7 +679,15 @@
                         }
                     },
                     datalabels: apiladas ? {
-                        color: '#333333',
+                        color: function (ctx) {
+                            // Texto blanco sobre fondos oscuros (azules de los ejercicios), gris sobre los claros
+                            var bg = ctx.dataset.backgroundColor;
+                            bg = Array.isArray(bg) ? bg[ctx.dataIndex] : bg;
+                            var m = /^#([0-9a-f]{6})/i.exec(bg || '');
+                            if (!m) return '#333333';
+                            var n = parseInt(m[1], 16);
+                            return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 150 ? '#ffffff' : '#333333';
+                        },
                         font: { weight: 'bold', size: 10 },
                         formatter: function (v, ctx) {
                             // Solo se muestra si el tramo es visible
@@ -635,16 +732,35 @@
 
     // ══ GUARDIA ══
     graficos.gua = function () {
-    crearBarrasH(
-        'chartGuaHospitales',
-        guaTopHospitales.map(function (d) { return d.etiqueta; }),
-        [{ label: 'Atenciones', data: guaTopHospitales.map(function (d) { return parseInt(d.valor, 10); }), color: '#90cdf4' }]
-    );
+    // Con "Todos": una barra apilada por ejercicio; con un año: el color de ese ejercicio
+    var datasetsGua;
+    if (!filtroEjercicio && guaTopHospitalesAnio.length) {
+        var aniosGua = guaTopHospitalesAnio
+            .map(function (d) { return parseInt(d.ejercicio, 10); })
+            .filter(function (a, i, arr) { return arr.indexOf(a) === i; })
+            .sort(function (a, b) { return a - b; });
+        datasetsGua = aniosGua.map(function (anio) {
+            return {
+                label: String(anio),
+                color: colorParaEjercicio(anio),
+                data: guaTopHospitales.map(function (h) {
+                    var fila = guaTopHospitalesAnio.find(function (d) {
+                        return String(d.efector_id) === String(h.efector_id) && parseInt(d.ejercicio, 10) === anio;
+                    });
+                    return fila ? parseInt(fila.valor, 10) : 0;
+                })
+            };
+        });
+    } else {
+        datasetsGua = [{ label: 'Atenciones', data: guaTopHospitales.map(function (d) { return parseInt(d.valor, 10); }), color: colorParaEjercicio(filtroEjercicio) }];
+    }
+    crearBarrasH('chartGuaHospitales', guaTopHospitales.map(function (d) { return d.etiqueta; }), datasetsGua);
     crearDona(
         'chartGuaServicios',
         guaPorServicio.map(function (d) { return d.etiqueta; }),
         guaPorServicio.map(function (d) { return parseInt(d.valor, 10); })
     );
+    crearBarrasEjercicio('chartGuaEjercicios', guaPorEjercicio, 'Atenciones');
     };
 
     // ══ INTERNACIÓN ══
@@ -659,7 +775,9 @@
                         type: 'bar',
                         label: 'Egresos',
                         data: intEvolucion.map(function (d) { return parseInt(d.egresos, 10); }),
-                        backgroundColor: '#90cdf4',
+                        backgroundColor: intEvolucion.map(function (d) { return colorResaltado(d.ejercicio); }),
+                        borderColor: intEvolucion.map(function (d) { return colorParaEjercicio(d.ejercicio); }),
+                        borderWidth: 1.5,
                         borderRadius: 4,
                         maxBarThickness: 40,
                         yAxisID: 'y',
@@ -674,10 +792,45 @@
                         tension: 0.3,
                         pointRadius: 4,
                         yAxisID: 'y1',
-                        order: 1
+                        order: 1,
+                        datalabels: {
+                            display: true,
+                            align: 'top',
+                            offset: 6,
+                            color: '#319795',
+                            backgroundColor: '#ffffff',
+                            borderColor: '#319795',
+                            borderWidth: 1,
+                            borderRadius: 4,
+                            padding: { top: 2, bottom: 2, left: 6, right: 6 },
+                            font: { weight: 'bold', size: 11 },
+                            formatter: function (v) { return formatoNumero(v, 1) + '%'; }
+                        }
                     }
                 ]
             },
+            plugins: [{
+                // Si el punto queda por encima de la barra, lo une a ella con una guía punteada
+                id: 'unirPuntoBarra',
+                afterDatasetsDraw: function (chart) {
+                    var barras = chart.getDatasetMeta(0).data;
+                    var puntos = chart.getDatasetMeta(1).data;
+                    var ctx = chart.ctx;
+                    ctx.save();
+                    ctx.strokeStyle = '#319795';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([4, 3]);
+                    puntos.forEach(function (p, i) {
+                        var b = barras[i];
+                        if (!b || p.y >= b.y) return;
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p.x, b.y);
+                        ctx.stroke();
+                    });
+                    ctx.restore();
+                }
+            }],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -731,7 +884,106 @@
         }
         crearDona('chartQuiComplejidad', etiquetas, valores, colores);
     })();
+    crearBarrasEjercicio('chartQuiEjercicios', quiPorEjercicio, 'Cirugías');
+    crearComparativoQui('chartQuiComparativo');
     };
+
+    // Año filtrado vs año anterior, agrupado por tipo de cirugía
+    function crearComparativoQui(id) {
+        if (!existe(id)) return;
+
+        var actual   = parseInt(filtroEjercicio, 10);
+        var filaDe   = function (ej) { return quiComparativo.filter(function (f) { return parseInt(f.ejercicio, 10) === ej; })[0] || null; };
+        var filaAct  = filaDe(actual);
+        var filaAnt  = filaDe(actual - 1);
+        if (!filaAct) return;
+
+        var tipos = [
+            { campo: 'urgencia', label: 'Urgencia' },
+            { campo: 'alta',     label: 'Prog. alta' },
+            { campo: 'mediana',  label: 'Prog. mediana' },
+            { campo: 'baja',     label: 'Prog. baja' }
+        ];
+        if ((parseInt(filaAct.desconocido, 10) || 0) + (filaAnt ? parseInt(filaAnt.desconocido, 10) || 0 : 0) > 0) {
+            tipos.push({ campo: 'desconocido', label: 'Prog. s/complejidad' });
+        }
+        tipos.push({ campo: 'total', label: 'Total' });
+
+        var valores = function (fila) { return tipos.map(function (t) { return parseInt(fila[t.campo], 10) || 0; }); };
+        var datosAct = valores(filaAct);
+        var datosAnt = filaAnt ? valores(filaAnt) : null;
+
+        // Variación % del año filtrado contra el anterior (null si no hay base)
+        function variacion(i) {
+            if (!datosAnt || !datosAnt[i]) return null;
+            return (datosAct[i] - datosAnt[i]) * 100 / datosAnt[i];
+        }
+        function textoVariacion(v) {
+            return (v >= 0 ? '▲ ' : '▼ ') + formatoNumero(Math.abs(v), 1) + '%';
+        }
+
+        var datasets = [];
+        if (datosAnt) {
+            datasets.push({
+                label: String(actual - 1) + ' (' + filaAnt.hospitales + ' hosp.)',
+                data: datosAnt,
+                backgroundColor: colorParaEjercicio(actual - 1) + '66',
+                borderColor: colorParaEjercicio(actual - 1),
+                borderWidth: 1.5, borderRadius: 4, maxBarThickness: 48,
+                esActual: false
+            });
+        }
+        datasets.push({
+            label: String(actual) + ' (' + filaAct.hospitales + ' hosp.)',
+            data: datosAct,
+            backgroundColor: colorParaEjercicio(actual),
+            borderColor: colorParaEjercicio(actual),
+            borderWidth: 1.5, borderRadius: 4, maxBarThickness: 48,
+            esActual: true
+        });
+
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: { labels: tipos.map(function (t) { return t.label; }), datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top', labels: { boxWidth: 12 } },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) { return ctx.dataset.label + ': ' + formatoNumero(ctx.parsed.y); },
+                            afterLabel: function (ctx) {
+                                if (!ctx.dataset.esActual) return '';
+                                var v = variacion(ctx.dataIndex);
+                                return v === null ? '' : textoVariacion(v) + ' vs ' + (actual - 1);
+                            }
+                        }
+                    },
+                    datalabels: {
+                        anchor: 'end',
+                        align: 'end',
+                        textAlign: 'center',
+                        font: { weight: 'bold', size: 10 },
+                        color: function (ctx) {
+                            if (!ctx.dataset.esActual) return '#333333';
+                            var v = variacion(ctx.dataIndex);
+                            return v === null ? '#333333' : (v >= 0 ? '#2f855a' : '#c53030');
+                        },
+                        formatter: function (v, ctx) {
+                            if (!ctx.dataset.esActual) return formatoNumero(v);
+                            var vari = variacion(ctx.dataIndex);
+                            return vari === null ? formatoNumero(v) : [formatoNumero(v), textoVariacion(vari)];
+                        }
+                    }
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grace: '18%', grid: { color: '#f0f0f0' }, ticks: { callback: function (v) { return formatoNumero(v); } } }
+                }
+            }
+        });
+    }
 
     // ══ Pestañas ══
     // Los gráficos se dibujan la primera vez que se muestra su pestaña

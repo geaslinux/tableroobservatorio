@@ -196,6 +196,9 @@
             </tr>
         </thead>
         <tbody>
+            <?php if (empty($registros)): ?>
+                <tr><td colspan="20" style="text-align:center; color:#718096; font-style:italic; padding:14px 10px;">Sin transfusiones para los filtros elegidos</td></tr>
+            <?php endif; ?>
         <?php foreach ($registros as $r):
             $esNuevo      = $r->created_at > $ultimaVista;
             $esModificado = ($r->updated_at > $ultimaVista) && ($r->updated_at != $r->created_at);

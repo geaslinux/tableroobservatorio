@@ -80,7 +80,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .ml-panel-title i { color: var(--teal); font-size: 17px; }
+    .ml-panel-title i { color: #fff; font-size: 17px; }
     .ml-panel-body { padding: 18px 20px; }
     .ml-toolbar {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -117,9 +117,12 @@
     .ml-stats-body {
         padding: 18px;
         display: grid;
-        grid-template-columns: 1.1fr 1.3fr 0.9fr;
+        grid-template-columns: 1fr 1.4fr;
         gap: 18px;
+        align-items: start;
     }
+    /* Columna derecha: los dos gráficos uno debajo del otro */
+    .ml-stats-graficos { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
     .ml-stats-table-wrap { overflow-x: auto; }
     .ml-stats-table {
         width: 100%; border-collapse: collapse; font-size: 12.5px;
@@ -188,7 +191,7 @@
         background: var(--navy); color: #fff;
         box-shadow: 0 2px 6px rgba(14,42,77,0.18);
     }
-    .ml-tab.is-active i { color: var(--teal); }
+    .ml-tab.is-active i { color: #fff; }
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
@@ -381,7 +384,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($tablaServicios)): ?>
-                                    <tr><td colspan="<?= count($aniosGrafico) + 2 ?>" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                    <tr><td colspan="<?= count($aniosGrafico) + 2 ?>Sin atenciones de guardia por servicio para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($tablaServicios as $s): ?>
                                 <tr>
@@ -403,16 +406,19 @@
                         </table>
                     </div>
 
-                    <!-- Barras comparativas por año -->
-                    <div class="ml-chart-box">
-                        <div class="ml-chart-title">Comparativo por servicio y año</div>
-                        <div class="ml-chart-canvas"><canvas id="chartServicioAnio"></canvas></div>
-                    </div>
+                    <!-- Gráficos apilados: barras arriba, dona abajo -->
+                    <div class="ml-stats-graficos">
+                        <!-- Barras comparativas por año -->
+                        <div class="ml-chart-box">
+                            <div class="ml-chart-title">Comparativo por servicio y año</div>
+                            <div class="ml-chart-canvas" style="height:440px;"><canvas id="chartServicioAnio"></canvas></div>
+                        </div>
 
-                    <!-- Dona distribución por servicio -->
-                    <div class="ml-chart-box">
-                        <div class="ml-chart-title">Distribución por servicio</div>
-                        <div class="ml-chart-canvas"><canvas id="chartServicioDona"></canvas></div>
+                        <!-- Dona distribución por servicio -->
+                        <div class="ml-chart-box">
+                            <div class="ml-chart-title">Distribución por servicio</div>
+                            <div class="ml-chart-canvas"><canvas id="chartServicioDona"></canvas></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -437,7 +443,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($tablaHospitales)): ?>
-                                    <tr><td colspan="4" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                    <tr><td colspan="4" class="ml-stats-vacio">Sin atenciones de guardia por hospital para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($tablaHospitales as $h): ?>
                                 <tr>
@@ -456,16 +462,19 @@
                         </table>
                     </div>
 
-                    <!-- Barras horizontales por hospital -->
-                    <div class="ml-chart-box">
-                        <div class="ml-chart-title">Atenciones por hospital</div>
-                        <div class="ml-chart-canvas" style="height:<?= $altoHospitales ?>px;"><canvas id="chartHospitales"></canvas></div>
-                    </div>
+                    <!-- Gráficos apilados: dona arriba, barras abajo -->
+                    <div class="ml-stats-graficos">
+                        <!-- Dona por región -->
+                        <div class="ml-chart-box">
+                            <div class="ml-chart-title">Distribución por región</div>
+                            <div class="ml-chart-canvas"><canvas id="chartRegion"></canvas></div>
+                        </div>
 
-                    <!-- Dona por región -->
-                    <div class="ml-chart-box">
-                        <div class="ml-chart-title">Distribución por región</div>
-                        <div class="ml-chart-canvas"><canvas id="chartRegion"></canvas></div>
+                        <!-- Barras horizontales por hospital -->
+                        <div class="ml-chart-box">
+                            <div class="ml-chart-title">Atenciones por hospital</div>
+                            <div class="ml-chart-canvas" style="height:<?= $altoHospitales ?>px;"><canvas id="chartHospitales"></canvas></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -504,6 +513,20 @@
         return Number(n).toLocaleString('es-AR');
     }
 
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvasId, mensaje) {
+        var canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+
     // ── Colapsar / expandir paneles de estadísticas ──
     document.querySelectorAll('[data-stats-panel]').forEach(function (panel) {
         var btn   = panel.querySelector('[data-stats-toggle]');
@@ -522,38 +545,60 @@
         id: 'centerText',
         afterDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
+            var arco = chart.getDatasetMeta(0).data[0];
+            if (!arco) return;
+            // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+            var total = chart.options.plugins.centerTotal;
+            if (typeof total !== 'number') {
+                total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                    return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                }, 0);
+            }
+            // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+            var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+            var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
             var ctx = chart.ctx;
-            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-            var total = chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 16px sans-serif';
+            ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
             ctx.fillStyle = '#555555';
-            ctx.fillText('TOTAL', centerX, centerY - 13);
-            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+            ctx.font = 'bold ' + tamNumero + 'px sans-serif';
             ctx.fillStyle = '#222222';
-            ctx.fillText(formatoNumero(total), centerX, centerY + 14);
+            ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
             ctx.restore();
         }
     };
 
-    function crearDona(canvasId, etiquetas, valores) {
-        var seccionesConDatos = valores.filter(function (v) { return Number(v) > 0; }).length;
+    function crearDona(canvasId, etiquetas, valores, mensajeSinDatos) {
+        if (sinDatos(valores)) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
+
+        // Las secciones de menos del 2% se agrupan en "Otros": son ilegibles en la dona
+        // y, con separación entre secciones, Chart.js las dibuja como un aro completo.
+        var total = valores.reduce(function (a, v) { return a + (Number(v) || 0); }, 0);
+        var etiq = [], vals = [], otros = 0;
+        valores.forEach(function (v, i) {
+            v = Number(v) || 0;
+            if (v <= 0) return;
+            if (v * 100 / total < 2) { otros += v; return; }
+            etiq.push(etiquetas[i]);
+            vals.push(v);
+        });
+        if (otros > 0) { etiq.push('OTROS'); vals.push(otros); }
+        var seccionesConDatos = vals.length;
 
         new Chart(document.getElementById(canvasId), {
             type: 'doughnut',
             data: {
-                labels: etiquetas,
+                labels: etiq,
                 datasets: [{
-                    data: valores,
-                    backgroundColor: etiquetas.map(function (e, i) { return paleta[i % paleta.length]; }),
+                    data: vals,
+                    backgroundColor: etiq.map(function (e, i) { return e === 'OTROS' ? '#cbd5e0' : paleta[i % paleta.length]; }),
                     borderColor: '#ffffff',
-                    borderWidth: 0,
-                    spacing: seccionesConDatos > 1 ? 6 : 0,
-                    offset: seccionesConDatos > 1 ? 10 : 0,
-                    borderRadius: 5
+                    borderWidth: seccionesConDatos > 1 ? 3 : 0,
+                    hoverOffset: seccionesConDatos > 1 ? 8 : 0,
+                    borderRadius: 4
                 }]
             },
             plugins: [centerTextPlugin],
@@ -586,15 +631,25 @@
         });
     }
 
-    // Color fijo por año (el más viejo primero)
+    // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
+    var paletaEjercicios = [
+        '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
+        '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
+    ];
+    var todosLosAnios = <?= json_encode(array_map('intval', $anios)) ?>.sort(function (x, y) { return x - y; });
+
+    // Color fijo por año (el más viejo primero); no cambia al filtrar un año
     function colorAnio(anio) {
-        var idx = aniosGrafico.indexOf(parseInt(anio, 10));
-        return paleta[(idx < 0 ? 0 : idx) % paleta.length];
+        var idx = todosLosAnios.indexOf(parseInt(anio, 10));
+        return paletaEjercicios[(idx < 0 ? 0 : idx) % paletaEjercicios.length];
     }
 
     // ══ Gráficos POR SERVICIO ══
     function graficosServicio() {
         // ── 1. Comparativo por servicio y año ──
+        if (sinDatos(tablaServicios.map(function (s) { return s.total; }))) {
+            mostrarSinDatos('chartServicioAnio', 'Sin atenciones de guardia por servicio para los filtros elegidos');
+        } else
         new Chart(document.getElementById('chartServicioAnio'), {
             type: 'bar',
             data: {
@@ -633,13 +688,17 @@
         crearDona(
             'chartServicioDona',
             tablaServicios.map(function (s) { return s.servicio; }),
-            tablaServicios.map(function (s) { return s.total; })
+            tablaServicios.map(function (s) { return s.total; }),
+            'Sin atenciones de guardia por servicio para los filtros elegidos'
         );
     }
 
     // ══ Gráficos POR HOSPITAL ══
     function graficosHospital() {
         // ── 3. Atenciones por hospital (barras horizontales) ──
+        if (sinDatos(tablaHospitales.map(function (h) { return h.cantidad; }))) {
+            mostrarSinDatos('chartHospitales', 'Sin atenciones de guardia por hospital para los filtros elegidos');
+        } else
         new Chart(document.getElementById('chartHospitales'), {
             type: 'bar',
             data: {
@@ -683,7 +742,8 @@
         crearDona(
             'chartRegion',
             porRegion.map(function (r) { return r.region; }),
-            porRegion.map(function (r) { return parseInt(r.cantidad, 10); })
+            porRegion.map(function (r) { return parseInt(r.cantidad, 10); }),
+            'Sin atenciones de guardia por región para los filtros elegidos'
         );
     }
 

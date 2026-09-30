@@ -31,7 +31,19 @@ class ConsultaReclamoController extends BaseController
         if ($filtro_ejercicio) $model->where('consulta_reclamo.ejercicio',    $filtro_ejercicio);
         if ($filtro_mes)       $model->where('consulta_reclamo.mes',          $filtro_mes);
         if ($filtro_tipo)      $model->where('consulta_reclamo.tipo_llamado', $filtro_tipo);
-        if ($filtro_categoria) $model->where('consulta_reclamo.categoria_id', $filtro_categoria);
+        // Categoría: selección múltiple (categoria[]); el valor 0 representa "Sin categoría"
+        $filtro_categoria = array_values(array_unique(array_map('intval', array_filter(
+            (array) $filtro_categoria,
+            function ($v) { return is_scalar($v) && ctype_digit((string) $v); }
+        ))));
+        if ($filtro_categoria) {
+            $ids       = array_values(array_filter($filtro_categoria));
+            $sinCatego = in_array(0, $filtro_categoria, true);
+            $model->groupStart();
+            if ($ids)       $model->whereIn('consulta_reclamo.categoria_id', $ids);
+            if ($sinCatego) $model->orWhere('consulta_reclamo.categoria_id', null);
+            $model->groupEnd();
+        }
 
         if ($filtro_estado != '') {
             $model->where('consulta_reclamo.estado', $filtro_estado);
@@ -42,8 +54,7 @@ class ConsultaReclamoController extends BaseController
         return compact('filtro_ejercicio', 'filtro_mes', 'filtro_tipo', 'filtro_categoria', 'filtro_estado');
     }
 
-    // ─── Index ───────────────────────────────────────────────────────────
-  // ─── Index (estadísticas, sin CRUD) ─────────────────────────────────
+    // ─── Index (estadísticas, sin CRUD) ─────────────────────────────────
     public function index()
     {
         helper('auth');
@@ -55,94 +66,94 @@ class ConsultaReclamoController extends BaseController
 
         $categorias = model('CategoriaModel')->orderBy('nombre', 'ASC')->findAll();
 
-        // Instancia limpia solo para capturar los valores de filtro (no se usa para consultar)
-        $modelFiltros = new \App\Models\ConsultaReclamoModel();
-        $filtros      = $this->aplicarFiltros($modelFiltros);
-
-        // ── KPIs por tipo de llamado ──
-        $totalesPorTipo = [];
-        foreach ($this->tiposLlamado as $tipo) {
-            $m = new \App\Models\ConsultaReclamoModel();
-            $this->aplicarFiltros($m);
-            $m->where('consulta_reclamo.tipo_llamado', $tipo);
-            $res = $m->selectSum('atencion')->first();
-            $totalesPorTipo[$tipo] = (int) ($res->atencion ?? 0);
-        }
-
-        $mTotal = new \App\Models\ConsultaReclamoModel();
-        $this->aplicarFiltros($mTotal);
-        $resTotal     = $mTotal->selectSum('atencion')->first();
-        $totalGeneral = (int) ($resTotal->atencion ?? 0);
-
-        $mostrarMesEnTabla = $filtros['filtro_ejercicio']
-            && $filtros['filtro_tipo']
-            && $filtros['filtro_mes'] === '';
-
-        // ── Tabla detalle ──
-        $mTabla = new \App\Models\ConsultaReclamoModel();
-        $this->aplicarFiltros($mTabla);
-        $statsFilas = $mTabla->asArray();
-
-        if ($mostrarMesEnTabla) {
-            $statsFilas = $statsFilas
-                ->select('consulta_reclamo.tipo_llamado as tipo, consulta_reclamo.ejercicio as ejercicio, consulta_reclamo.mes as mes, SUM(consulta_reclamo.atencion) as cantidad')
-                ->groupBy('consulta_reclamo.tipo_llamado, consulta_reclamo.ejercicio, consulta_reclamo.mes')
-                ->orderBy('consulta_reclamo.ejercicio', 'DESC')
-                ->findAll();
-        } else {
-            $statsFilas = $statsFilas
-                ->select('consulta_reclamo.tipo_llamado as tipo, consulta_reclamo.ejercicio as ejercicio, SUM(consulta_reclamo.atencion) as cantidad')
-                ->groupBy('consulta_reclamo.tipo_llamado, consulta_reclamo.ejercicio')
-                ->orderBy('consulta_reclamo.ejercicio', 'DESC')
-                ->orderBy('consulta_reclamo.tipo_llamado', 'ASC')
-                ->findAll();
-        }
-
-        // ── Ejercicios recientes (para barras) ──
-        $ejerciciosDisponibles = array_values(array_unique(array_column($statsFilas, 'ejercicio')));
-        rsort($ejerciciosDisponibles);
-        $statsEjercicios = $ejerciciosDisponibles;
-
-        // ── Barras: tipo vs ejercicios recientes ──
-        $statsBarras = array_values(array_filter($statsFilas, function ($f) use ($statsEjercicios) {
-            return in_array($f['ejercicio'], $statsEjercicios);
-        }));
-
-        // ── Torta: distribución por ejercicio (todos) ──
-        $mTorta = new \App\Models\ConsultaReclamoModel();
-        $this->aplicarFiltros($mTorta);
-        $statsTorta = $mTorta->asArray()
-            ->select('consulta_reclamo.ejercicio as ejercicio, SUM(consulta_reclamo.atencion) as total')
-            ->groupBy('consulta_reclamo.ejercicio')
-            ->orderBy('consulta_reclamo.ejercicio', 'DESC')
+        // ── Una sola consulta filtrada, agrupada por ejercicio / mes / tipo / categoría ──
+        $model   = new \App\Models\ConsultaReclamoModel();
+        $filtros = $this->aplicarFiltros($model);
+        $filas   = $model->asArray()
+            ->select('consulta_reclamo.ejercicio, consulta_reclamo.mes, consulta_reclamo.tipo_llamado AS tipo,
+                      categoria.nombre AS categoria, SUM(consulta_reclamo.atencion) AS cantidad')
+            ->join('categoria', 'categoria.categoria_id = consulta_reclamo.categoria_id', 'left')
+            ->groupBy('consulta_reclamo.ejercicio, consulta_reclamo.mes, consulta_reclamo.tipo_llamado, categoria.nombre')
             ->findAll();
 
-        $paletaTipos = ['#ce93d8', '#7fd8be', '#85c1e9', '#f8c471'];
-        $tipoColorMap = [];
-        foreach ($this->tiposLlamado as $index => $tipo) {
-            $tipoColorMap[$tipo] = $paletaTipos[$index % count($paletaTipos)];
+        // Tipos: los 4 conocidos siempre, más cualquier otro cargado en la base
+        $tipos = $this->tiposLlamado;
+        foreach ($filas as $f) {
+            if (!in_array($f['tipo'], $tipos, true)) $tipos[] = $f['tipo'];
         }
 
-         // ── Última vista ────────────────────────────────────────────────
+        $porTipo      = array_fill_keys($tipos, 0);
+        $porMes       = [];
+        $porCategoria = [];
+        $porEjercicio = [];
+        $ordenMes     = array_flip($this->mesesValidos);
+
+        foreach ($filas as $f) {
+            $cant = (int) $f['cantidad'];
+            $porTipo[$f['tipo']] += $cant;
+
+            $clave = $f['ejercicio'] . '|' . $f['mes'];
+            if (!isset($porMes[$clave])) {
+                $porMes[$clave] = [
+                    'ejercicio' => (string) $f['ejercicio'],
+                    'mes'       => $f['mes'],
+                    'tipos'     => array_fill_keys($tipos, 0),
+                    'total'     => 0,
+                ];
+            }
+            $porMes[$clave]['tipos'][$f['tipo']] += $cant;
+            $porMes[$clave]['total']             += $cant;
+
+            $cat = $f['categoria'] ?: 'SIN CATEGORÍA';
+            $porCategoria[$cat] = ($porCategoria[$cat] ?? 0) + $cant;
+
+            $porEjercicio[$f['ejercicio']] = ($porEjercicio[$f['ejercicio']] ?? 0) + $cant;
+        }
+
+        // Meses en orden cronológico
+        $porMes = array_values($porMes);
+        usort($porMes, function ($a, $b) use ($ordenMes) {
+            return [(int) $a['ejercicio'], $ordenMes[$a['mes']] ?? 99] <=> [(int) $b['ejercicio'], $ordenMes[$b['mes']] ?? 99];
+        });
+        arsort($porCategoria);
+        ksort($porEjercicio);
+
+        // ── KPIs ──
+        $total    = array_sum($porTipo);
+        $mesPico  = null;
+        foreach ($porMes as $m) {
+            if ($m['total'] > 0 && ($mesPico === null || $m['total'] > $mesPico['total'])) $mesPico = $m;
+        }
+        $kpi = [
+            'total'      => $total,
+            'meses'      => count($porMes),
+            'promedio'   => count($porMes) ? round($total / count($porMes)) : 0,
+            'mes_pico'   => $mesPico,
+            'categorias' => count($porCategoria),
+        ];
+
+        // Todos los ejercicios de la base (para asignar el mismo color azul siempre)
+        $todosLosEjercicios = array_map('intval', $ejercicios);
+        sort($todosLosEjercicios);
+
+        // ── Última vista ────────────────────────────────────────────────
         $ultimaVista = model('UserLastVisitModel')
             ->where('user_id', user_id())
             ->where('modulo', 'consulta_reclamo')
             ->first()->ultima_vista ?? '2000-01-01 00:00:00';
 
         return view('consulta_reclamo/consulta_reclamo_list', array_merge($filtros, [
-            'ejercicios'      => $ejercicios,
-            'categorias'      => $categorias,
-            'meses'           => $this->mesesValidos,
-            'tipos'           => $this->tiposLlamado,
-            'tipoColorMap'    => $tipoColorMap,
-            'totalesPorTipo'  => $totalesPorTipo,
-            'totalGeneral'    => $totalGeneral,
-            'statsFilas'      => $statsFilas,
-            'mostrarMesEnTabla' => $mostrarMesEnTabla,
-            'statsBarras'     => $statsBarras,
-            'statsEjercicios' => $statsEjercicios,
-            'statsTorta'      => $statsTorta,
-            'ultimaVista'      => $ultimaVista,
+            'ejercicios'         => $ejercicios,
+            'categorias'         => $categorias,
+            'meses'              => $this->mesesValidos,
+            'tipos'              => $tipos,
+            'porTipo'            => $porTipo,
+            'porMes'             => $porMes,
+            'porCategoria'       => $porCategoria,
+            'porEjercicio'       => $porEjercicio,
+            'kpi'                => $kpi,
+            'todosLosEjercicios' => $todosLosEjercicios,
+            'ultimaVista'        => $ultimaVista,
         ]));
     }
     // ─── Marcar visto ────────────────────────────────────────────────────

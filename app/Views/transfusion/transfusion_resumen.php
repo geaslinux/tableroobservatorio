@@ -167,7 +167,7 @@
         <?php endif; ?>
 
         <?php if (empty($registros)): ?>
-            <tr><td colspan="7" class="has-text-centered">No hay registros para mostrar.</td></tr>
+            <tr><td colspan="7" class="has-text-centered">Sin transfusiones para los filtros elegidos</td></tr>
         <?php endif; ?>
         </tbody>
     </table>

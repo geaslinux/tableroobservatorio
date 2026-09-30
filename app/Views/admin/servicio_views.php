@@ -82,7 +82,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .ml-panel-title i { color: var(--teal); font-size: 17px; }
+    .ml-panel-title i { color: #fff; font-size: 17px; }
     .ml-panel-body { padding: 18px 20px; }
     .ml-toolbar {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -196,12 +196,21 @@
         background: var(--navy); color: #fff;
         box-shadow: 0 2px 6px rgba(14,42,77,0.18);
     }
-    .ml-tab.is-active i { color: var(--teal); }
+    .ml-tab.is-active i { color: #fff; }
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
+    /* Tabla a la izquierda; a la derecha el gráfico de barras y debajo la dona */
+    .ml-stats-body.graf-apilados { grid-template-columns: 1fr 1.4fr; align-items: start; }
+    .graf-apilados > .ml-stats-table-wrap { grid-column: 1; grid-row: 1 / span 2; padding-right: 12px; }
+    .graf-apilados > .ml-chart-box { grid-column: 2; }
+    .graf-apilados > .ml-chart-box + .ml-chart-box { padding-top: 16px; border-top: 1px solid #eef0f3; }
+
     @media (max-width: 992px) {
         .ml-stats-body { grid-template-columns: 1fr; }
+        .ml-stats-body.graf-apilados { grid-template-columns: 1fr; }
+        .graf-apilados > .ml-stats-table-wrap,
+        .graf-apilados > .ml-chart-box { grid-column: 1; grid-row: auto; padding-right: 0; }
     }
     @media (max-width: 600px) {
         .ml-panel-body { padding: 14px 12px; }
@@ -395,7 +404,7 @@
 
             <div class="ml-panel ml-stats-panel" data-stats-panel>
                 <?= $headerStats('ESTADÍSTICAS DE OPERATIVOS') ?>
-                <div class="ml-stats-body">
+                <div class="ml-stats-body graf-apilados">
                     <div class="ml-stats-table-wrap">
                         <div class="ml-chart-title" style="text-align:left;">Cantidad por operativo</div>
                         <table class="ml-stats-table">
@@ -404,7 +413,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($opPorOperativo)): ?>
-                                    <tr><td colspan="4" class="ml-stats-vacio">Sin datos para el ejercicio elegido</td></tr>
+                                    <tr><td colspan="4" class="ml-stats-vacio">Sin operativos para el ejercicio elegido</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($opPorOperativo as $f): ?>
                                 <tr>
@@ -490,7 +499,7 @@
             <div class="ml-panel ml-stats-panel" data-stats-panel>
                 <?= $headerStats('ESTADÍSTICAS DE TRANSFUSIÓN') ?>
                 <div class="ml-stats-content">
-                    <div class="ml-stats-body">
+                    <div class="ml-stats-body graf-apilados">
                         <div class="ml-stats-table-wrap">
                             <div class="ml-chart-title" style="text-align:left;">Transfusiones por hospital</div>
                             <table class="ml-stats-table">
@@ -499,7 +508,7 @@
                                 </thead>
                                 <tbody>
                                     <?php if (empty($trPorHospital)): ?>
-                                        <tr><td colspan="4" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                        <tr><td colspan="4" class="ml-stats-vacio">Sin transfusiones para los filtros elegidos</td></tr>
                                     <?php endif; ?>
                                     <?php foreach ($trPorHospital as $f): ?>
                                     <tr>
@@ -584,6 +593,20 @@
         return Number(n).toLocaleString('es-AR');
     }
 
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvas, mensaje) {
+        if (typeof canvas === 'string') canvas = document.getElementById(canvas);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+
     function acortar(texto, max) {
         texto = String(texto || '');
         return texto.length > max ? texto.slice(0, max - 1) + '…' : texto;
@@ -611,25 +634,35 @@
         id: 'centerText',
         afterDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
+            var arco = chart.getDatasetMeta(0).data[0];
+            if (!arco) return;
+            // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+            var total = chart.options.plugins.centerTotal;
+            if (typeof total !== 'number') {
+                total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                    return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                }, 0);
+            }
+            // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+            var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+            var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
             var ctx = chart.ctx;
-            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-            var total = chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 15px sans-serif';
+            ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
             ctx.fillStyle = '#555555';
-            ctx.fillText('TOTAL', centerX, centerY - 12);
-            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+            ctx.font = 'bold ' + tamNumero + 'px sans-serif';
             ctx.fillStyle = '#222222';
-            ctx.fillText(formatoNumero(total), centerX, centerY + 13);
+            ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
             ctx.restore();
         }
     };
 
-    function crearDona(id, etiquetas, valores) {
+    function crearDona(id, etiquetas, valores, mensajeSinDatos) {
         if (!existe(id)) return;
+        if (sinDatos(valores)) { mostrarSinDatos(id, mensajeSinDatos); return; }
         var seccionesConDatos = valores.filter(function (v) { return Number(v) > 0; }).length;
         new Chart(document.getElementById(id), {
             type: 'doughnut',
@@ -667,8 +700,11 @@
     }
 
     // Barras horizontales; con más de un dataset se apilan
-    function crearBarrasH(id, etiquetas, datasets) {
+    function crearBarrasH(id, etiquetas, datasets, mensajeSinDatos) {
         if (!existe(id)) return;
+        var todos = [];
+        datasets.forEach(function (d) { todos = todos.concat(d.data); });
+        if (sinDatos(todos)) { mostrarSinDatos(id, mensajeSinDatos); return; }
         var apiladas = datasets.length > 1;
         new Chart(document.getElementById(id), {
             type: 'bar',
@@ -715,8 +751,9 @@
     }
 
     // Barras verticales simples
-    function crearBarrasV(id, etiquetas, valores, color) {
+    function crearBarrasV(id, etiquetas, valores, color, mensajeSinDatos) {
         if (!existe(id)) return;
+        if (sinDatos(valores)) { mostrarSinDatos(id, mensajeSinDatos); return; }
         new Chart(document.getElementById(id), {
             type: 'bar',
             data: {
@@ -751,12 +788,14 @@
                 [
                     { label: 'Vía pública',      data: opPorOperativo.map(function (d) { return parseInt(d.via_publica, 10) || 0; }),      color: '#81e6d9' },
                     { label: 'Vía hospitalaria', data: opPorOperativo.map(function (d) { return parseInt(d.via_hospitalaria, 10) || 0; }), color: '#90cdf4' }
-                ]
+                ],
+                'Sin operativos registrados para los filtros elegidos'
             );
             crearDona(
                 'chartOpTipo',
                 opPorTipo.map(function (d) { return d.tipo; }),
-                opPorTipo.map(function (d) { return parseInt(d.total, 10); })
+                opPorTipo.map(function (d) { return parseInt(d.total, 10); }),
+                'Sin operativos por tipo para los filtros elegidos'
             );
         },
 
@@ -764,24 +803,28 @@
             crearBarrasH(
                 'chartTrHospital',
                 trPorHospital.map(function (d) { return d.hospital; }),
-                [{ label: 'Transfusiones', data: trPorHospital.map(function (d) { return parseInt(d.total, 10); }), color: '#feb2b2' }]
+                [{ label: 'Transfusiones', data: trPorHospital.map(function (d) { return parseInt(d.total, 10); }), color: '#feb2b2' }],
+                'Sin transfusiones por hospital para los filtros elegidos'
             );
             crearDona(
                 'chartTrRegion',
                 trPorRegion.map(function (d) { return d.region; }),
-                trPorRegion.map(function (d) { return parseInt(d.total, 10); })
+                trPorRegion.map(function (d) { return parseInt(d.total, 10); }),
+                'Sin transfusiones por región para los filtros elegidos'
             );
             crearBarrasV(
                 'chartTrAnio',
                 trPorAnio.map(function (d) { return d.ejercicio + ' (' + d.hospitales + ' hosp.)'; }),
                 trPorAnio.map(function (d) { return parseInt(d.total, 10); }),
-                '#90cdf4'
+                '#90cdf4',
+                'Sin transfusiones por año para los filtros elegidos'
             );
             crearBarrasV(
                 'chartTrMes',
                 trMensual.map(function (d) { return d.mes; }),
                 trMensual.map(function (d) { return d.total; }),
-                '#feb2b2'
+                '#feb2b2',
+                'Sin transfusiones mensuales para los filtros elegidos'
             );
         }
     };

@@ -45,10 +45,9 @@
         --text-main:  #1a2b45;
         --text-muted: #5a6a7e;
         --border:     #d0d5de;
-        --sidebar-w:  240px;
-        --sidebar-collapsed-w: 100px;
+        --sidebar-w:  210px;
+        --sidebar-collapsed-w: 84px;
         --sidebar-tab: 42px;
-        --topbar-h:   70px;
    
         position: fixed; top: 0; left: 0; right: 0;
         height: var(--topbar-h);
@@ -60,15 +59,15 @@
     .topbar-brand {
         width: calc(var(--sidebar-w) + var(--sidebar-tab));
         display: flex; align-items: center; gap: 12px;
-        padding: 0 20px; flex-shrink: 0;
+        padding: 0 35px; flex-shrink: 0;
         border-right: 1px solid rgba(255,255,255,0.08);
         height: 100%;
         transition: width 0.22s ease;
         text-decoration: none;
     }
-    .topbar-brand img { height: auto; width: auto; margin-top: -20px; margin-bottom: -20px; }
+    .topbar-brand img { display: block; width: 100%; height: auto; }
     .topbar-center { flex: 1; padding: 0 20px; display: flex; align-items: center; position: relative; }
-    .topbar-secretary-label { font-size: 30px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; position: absolute; left: 50%; transform: translateX(-50%); }
+    .topbar-secretary-label { font-size: 20px; font-weight: 600; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; }
     .topbar-title  { font-size: 15px; font-weight: 600; }
    
     .topbar-title #topbar-parent-name { 
@@ -104,27 +103,187 @@
     .avatar-btn:hover { filter: brightness(90%); }
     .avatar-initials { color: #fff; font-size: 20px; font-weight: bold; font-family: sans-serif; line-height: 1; }
     
-    .dropdown-menu {
+    .topbar .dropdown-menu {
         display: none; position: absolute; right: 0 !important;      /* Alinea el borde derecho al botón */
         left: auto !important; top: calc(100% + 8px);
         background: rgba(255, 255, 255, 0.98); border: 1px solid var(--border);
         border-radius: 16px; min-width: 220px; box-shadow: var(--shadow);
         z-index: 9999; padding: 8px; backdrop-filter: blur(10px);
     }
-    .dropdown-menu.show { display: block; }
-    .dropdown-user-info { padding: 8px 14px; display: flex; flex-direction: column; }
-    .dropdown-user-info strong { font-size: 14px; color: var(--navy); }
-    .dropdown-user-info span { font-size: 11px; color: var(--muted); }
-    .nav-section { margin: 18px 0 8px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 6px 14px 4px; }
-    .dropdown-item {
+    .topbar .dropdown-menu.show { display: block; }
+    .topbar .dropdown-user-info { padding: 8px 14px; display: flex; flex-direction: column; }
+    .topbar .dropdown-user-info strong { font-size: 14px; color: var(--navy); }
+    .topbar .dropdown-user-info span { font-size: 11px; color: var(--muted); }
+    .topbar .nav-section { margin: 18px 0 8px; font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 6px 14px 4px; }
+    .topbar .dropdown-item {
         text-decoration: none !important; display: flex; align-items: center; gap: 12px;
         padding: 10px 14px; color: var(--text); font-size: 13.5px; font-weight: 600;
         border-radius: 10px; transition: background 0.15s ease, color 0.15s ease;
     }
-    .dropdown-item:hover { background: var(--blue-soft); color: var(--blue); }
-    .dropdown-item.danger { color: #ea3b3b; }
-    .dropdown-item.danger:hover { background: rgba(234, 59, 59, 0.08); }
-    .dropdown-item i { width: 18px; text-align: center; font-size: 14px; }
+    .topbar .dropdown-item:hover { background: var(--blue-soft); color: var(--blue); }
+    .topbar .dropdown-item.danger { color: #ea3b3b; }
+    .topbar .dropdown-item.danger:hover { background: rgba(234, 59, 59, 0.08); }
+    .topbar .dropdown-item i { width: 18px; text-align: center; font-size: 14px; }
+
+    /* ===== Responsive ===== */
+    .topbar { max-width: 100vw; }
+    /* El logo escala con el ancho de la ventana (también al hacer zoom) */
+    .topbar-brand {
+        width: clamp(110px, 18vw, calc(var(--sidebar-w) + var(--sidebar-tab)));
+        padding: 0 clamp(10px, 2vw, 35px);
+    }
+    .topbar-brand img { max-height: calc(var(--topbar-h) - 10px); object-fit: contain; }
+
+    /* Título a la izquierda y etiqueta centrada, sin superponerse */
+    .topbar-center {
+        min-width: 0; height: 100%;
+        display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: center; column-gap: 16px;
+    }
+    .topbar-title {
+        grid-column: 1; grid-row: 1;
+        min-width: 0; max-width: 100%;
+        font-size: clamp(11px, 1vw, 15px);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .topbar-secretary-label {
+        grid-column: 2; grid-row: 1;
+        font-size: clamp(13px, 1.3vw, 20px);
+        white-space: nowrap;
+    }
+    /* Si el título no entra al lado de la etiqueta, se apilan (lo decide el JS o el breakpoint) */
+    .topbar-center.is-stacked {
+        display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+        gap: 2px; padding: 0 12px;
+    }
+    .topbar-center.is-stacked .topbar-secretary-label { font-size: 13px; letter-spacing: 0.3px; opacity: 0.9; }
+    .topbar-center.is-stacked .topbar-title { font-size: 13px; }
+
+    /* Bloque derecho: fecha, notificaciones y perfil escalan con el ancho */
+    .topbar-right {
+        flex-shrink: 0; height: 100%;
+        gap: clamp(4px, 0.6vw, 10px);
+        padding: 0 clamp(8px, 1.2vw, 16px);
+    }
+    .topbar-date {
+        white-space: nowrap;
+        font-size: clamp(12px, 0.95vw, 15px);
+        padding: 4px clamp(6px, 0.7vw, 10px);
+    }
+    .topbar-icon-btn {
+        flex-shrink: 0;
+        width: clamp(30px, 2.4vw, 36px); height: clamp(30px, 2.4vw, 36px);
+        font-size: clamp(16px, 1.3vw, 20px);
+    }
+    .avatar-btn {
+        flex-shrink: 0;
+        width: clamp(34px, 3vw, 48px); height: clamp(34px, 3vw, 48px);
+    }
+    .avatar-initials { font-size: clamp(13px, 1.25vw, 20px); }
+
+    /* Menú de perfil: nunca más ancho ni más alto que la pantalla */
+    .topbar .dropdown-menu {
+        width: max-content;
+        max-width: calc(100vw - 16px);
+        max-height: calc(100vh - var(--topbar-h) - 16px);
+        overflow-y: auto;
+    }
+    .topbar .dropdown-user-info strong,
+    .topbar .dropdown-user-info span { overflow-wrap: anywhere; }
+
+    /* Tablets */
+    @media (max-width: 992px) {
+        .topbar-center {
+            display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+            gap: 2px; padding: 0 12px;
+        }
+        .topbar-secretary-label { font-size: 13px; letter-spacing: 0.3px; opacity: 0.9; }
+        .topbar-title { font-size: 13px; }
+    }
+
+    /* Móviles */
+    @media (max-width: 1024px) {
+        .topbar-date { display: none; }
+    }
+    /* En pantallas angostas el menú se fija a la ventana para que nunca quede fuera de vista */
+    @media (max-width: 768px) {
+        .topbar .dropdown-menu {
+            position: fixed; top: calc(var(--topbar-h) + 6px);
+            right: 8px !important; left: auto !important;
+            min-width: 180px;
+        }
+    }
+
+    /* Móviles pequeños */
+    @media (max-width: 480px) {
+        .topbar-brand { width: 80px; padding: 0 8px; border-right: none; }
+        .topbar-center, .topbar-center.is-stacked { padding: 0 6px; }
+        .topbar-secretary-label, .topbar-center.is-stacked .topbar-secretary-label { font-size: 11px; }
+        .topbar-title, .topbar-center.is-stacked .topbar-title { font-size: 11px; }
+        .topbar-right { padding: 0 8px 0 0; }
+    }
+
+    /* Ventanas bajas o angostas (zoom alto, celulares): menú compacto para que entren todas las opciones */
+    @media (max-height: 560px), (max-width: 480px) {
+        .topbar .dropdown-menu {
+            padding: 4px; border-radius: 10px; min-width: 160px;
+            max-height: calc(100vh - var(--topbar-h) - 8px);
+            overscroll-behavior: contain;
+        }
+        .topbar .dropdown-user-info { padding: 4px 10px; }
+        .topbar .dropdown-user-info strong { font-size: 12px; }
+        .topbar .dropdown-user-info span { font-size: 10px; }
+        .topbar .dropdown-menu hr { margin: 2px 0 !important; }
+        .topbar .dropdown-menu .nav-section { margin: 2px 0 0; padding: 2px 10px !important; font-size: 9px; }
+        .topbar .dropdown-menu .dropdown-item { padding: 5px 10px; font-size: 12px; gap: 8px; border-radius: 6px; }
+        .topbar .dropdown-item i { font-size: 12px; }
+    }
+
+    /* Zoom alto / ventanas bajas: el header se achica para no ocupar media pantalla.
+       --topbar-h se redefine en :root para que contenido y sidebar se desplacen igual. */
+    @media (max-height: 700px) {
+        :root { --topbar-h: 58px; }
+    }
+    @media (max-height: 520px), (max-width: 480px) {
+        :root { --topbar-h: 50px; }
+        .topbar-center, .topbar-center.is-stacked { gap: 0; }
+        .topbar-secretary-label, .topbar-center.is-stacked .topbar-secretary-label { font-size: 11px; line-height: 1.2; }
+        .topbar-title, .topbar-center.is-stacked .topbar-title { font-size: 11px; line-height: 1.2; }
+    }
+    @media (max-height: 360px) {
+        :root { --topbar-h: 40px; }
+        .topbar-brand { width: 70px; padding: 0 6px; }
+    }
+    /* Zoom extremo (400% o más): solo logo, nombre del módulo y avatar */
+    @media (max-height: 260px) {
+        :root { --topbar-h: 32px; }
+        .topbar-secretary-label,
+        .topbar-center.is-stacked .topbar-secretary-label,
+        .topbar-icon-btn { display: none; }
+        .topbar-brand { width: 56px; border-right: none; }
+        .topbar-title, .topbar-center.is-stacked .topbar-title { font-size: 11px; }
+        .topbar-right { padding: 0 6px 0 0; }
+    }
+    /* Logo, campana y avatar nunca más altos que el header */
+    .topbar-brand img { max-height: calc(var(--topbar-h) - 14px); }
+    .avatar-btn {
+        max-width: calc(var(--topbar-h) - 8px);
+        max-height: calc(var(--topbar-h) - 8px);
+        overflow: hidden;
+    }
+    /* Las iniciales y la campana escalan con el header para no desbordar el círculo */
+    .avatar-initials { font-size: min(clamp(13px, 1.25vw, 20px), calc(var(--topbar-h) * 0.36)); }
+    .topbar-icon-btn {
+        max-height: calc(var(--topbar-h) - 8px);
+        font-size: min(clamp(16px, 1.3vw, 20px), calc(var(--topbar-h) * 0.42));
+    }
+    .topbar-right { min-width: 0; }
+
+    /* Pantallas muy angostas: priorizar título de la vista */
+    @media (max-width: 360px) {
+        .topbar-secretary-label { display: none; }
+        .topbar-brand { width: 64px; }
+    }
 </style>
 
 <!-- TOPBAR -->
@@ -253,5 +412,20 @@
                 viewSpan.textContent = mainText.toUpperCase();
             }
         }
+
+        fitTopbarTitle();
     });
+
+    // Apila la etiqueta y el título cuando no entran uno al lado del otro (ancho chico o zoom)
+    function fitTopbarTitle() {
+        const center = document.querySelector('.topbar-center');
+        const title = document.getElementById('topbar-dynamic-title');
+        if (!center || !title) return;
+
+        center.classList.remove('is-stacked');
+        if (title.scrollWidth > title.clientWidth + 1) {
+            center.classList.add('is-stacked');
+        }
+    }
+    window.addEventListener('resize', fitTopbarTitle);
 </script>

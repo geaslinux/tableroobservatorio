@@ -38,188 +38,116 @@ class TurnoHospitalarioController extends BaseController
         return compact('filtro_ejercicio', 'filtro_mes', 'filtro_efector', 'filtro_region', 'filtro_estado');
     }
 
-    // ─── Index ───────────────────────────────────────────────────────────
-   // ─── Index ───────────────────────────────────────────────────────────
+    // ─── Index (estadísticas de gestión de especialidades) ─────────────
     public function index()
     {
         helper('auth');
-
-        $config  = config('Obse');
-        $perPage = $config->regPerPage ?? 15;
 
         $ejercicios = array_column(
             model('TurnoHospitalarioModel')->select('ejercicio')->distinct()->orderBy('ejercicio', 'DESC')->findAll(),
             'ejercicio'
         );
 
-        $efectores = model('EfectorModel')->orderBy('nombre', 'ASC')->findAll();
-        $regiones  = array_column(
+        // Solo los efectores que tienen turnos cargados
+        $efectores = model('EfectorModel')
+            ->select('efector.efector_id, efector.nombre')
+            ->join('turno_hospitalario', 'turno_hospitalario.efector_id = efector.efector_id')
+            ->groupBy('efector.efector_id, efector.nombre')
+            ->orderBy('efector.nombre', 'ASC')
+            ->findAll();
+
+        $regiones = array_values(array_filter(array_column(
             model('EfectorModel')->select('region')->distinct()->orderBy('region', 'ASC')->findAll(),
             'region'
-        );
+        )));
 
-        // ── Auditoría ─────────────────────────────────────────────────────
-        $userId     = user()->id;
-        $visitModel = model('UserLastVisitModel');
+        // ── Una sola consulta filtrada (con efector unido para poder filtrar por región) ──
+        $model   = new \App\Models\TurnoHospitalarioModel();
+        $model->join('efector', 'efector.efector_id = turno_hospitalario.efector_id', 'left');
+        $filtros = $this->aplicarFiltros($model);
+        $filas   = $model->asArray()
+            ->select('turno_hospitalario.ejercicio, turno_hospitalario.mes,
+                      turno_hospitalario.efector_id, efector.nombre AS efector, efector.region,
+                      SUM(turno_hospitalario.turnos_atendidos) AS atendidos,
+                      SUM(turno_hospitalario.ausentes)         AS ausentes,
+                      SUM(turno_hospitalario.cancelados)       AS cancelados,
+                      SUM(turno_hospitalario.sin_codificar)    AS sin_codificar')
+            ->groupBy('turno_hospitalario.ejercicio, turno_hospitalario.mes, turno_hospitalario.efector_id, efector.nombre, efector.region')
+            ->findAll();
 
-        $reg         = $visitModel->where('user_id', $userId)->where('modulo', 'turno_hospitalario')->first();
+        $ordenMes  = array_flip($this->mesesValidos);
+        $vacio     = ['atendidos' => 0, 'ausentes' => 0, 'cancelados' => 0, 'sin_codificar' => 0, 'total' => 0];
+        $porFila   = [];   // mes + efector
+        $porMes    = [];
+        $porEfector = [];
+        $totales   = $vacio;
+
+        foreach ($filas as $f) {
+            $v = [
+                'atendidos'     => (int) $f['atendidos'],
+                'ausentes'      => (int) $f['ausentes'],
+                'cancelados'    => (int) $f['cancelados'],
+                'sin_codificar' => (int) $f['sin_codificar'],
+            ];
+            // Total otorgados = suma de sus partes (así los % siempre cierran en 100)
+            $v['total'] = array_sum($v);
+            $nombre = $f['efector'] ?: 'SIN EFECTOR';
+
+            $porFila[] = ['ejercicio' => (string) $f['ejercicio'], 'mes' => $f['mes'], 'efector' => $nombre] + $v;
+
+            $clave = $f['ejercicio'] . '|' . $f['mes'];
+            if (!isset($porMes[$clave])) $porMes[$clave] = ['ejercicio' => (string) $f['ejercicio'], 'mes' => $f['mes']] + $vacio;
+            if (!isset($porEfector[$nombre])) $porEfector[$nombre] = $vacio;
+            foreach ($v as $k => $n) {
+                $porMes[$clave][$k]    += $n;
+                $porEfector[$nombre][$k] += $n;
+                $totales[$k]           += $n;
+            }
+        }
+
+        $cronologico = function ($a, $b) use ($ordenMes) {
+            return [(int) $a['ejercicio'], $ordenMes[$a['mes']] ?? 99] <=> [(int) $b['ejercicio'], $ordenMes[$b['mes']] ?? 99];
+        };
+        // Tabla: el mes más reciente primero y, dentro del mes, los efectores con más turnos
+        usort($porFila, function ($a, $b) use ($cronologico) {
+            return $cronologico($b, $a) ?: ($b['total'] <=> $a['total']);
+        });
+        $porMes = array_values($porMes);
+        usort($porMes, $cronologico);
+        uasort($porEfector, function ($a, $b) { return $b['total'] <=> $a['total']; });
+
+        // ── KPIs ──
+        $pct = function ($n) use ($totales) { return $totales['total'] > 0 ? $n * 100 / $totales['total'] : 0; };
+        $efectorTop = array_key_first($porEfector);
+        $kpi = $totales + [
+            'pct_atendidos'     => $pct($totales['atendidos']),
+            'pct_ausentes'      => $pct($totales['ausentes']),
+            'pct_cancelados'    => $pct($totales['cancelados']),
+            'pct_sin_codificar' => $pct($totales['sin_codificar']),
+            'efectores'         => count($porEfector),
+            'efector_top'       => $efectorTop,
+            'efector_top_n'     => $efectorTop !== null ? $porEfector[$efectorTop]['total'] : 0,
+        ];
+
+        // Todos los ejercicios de la base (para asignar el mismo color azul siempre)
+        $todosLosEjercicios = array_map('intval', $ejercicios);
+        sort($todosLosEjercicios);
+
+        // ── Última vista ──
+        $reg         = model('UserLastVisitModel')->where('user_id', user_id())->where('modulo', 'turno_hospitalario')->first();
         $ultimaVista = $reg ? $reg->ultima_vista : '2000-01-01 00:00:00';
 
-        $nuevas = model('TurnoHospitalarioModel')
-            ->whereIn('turno_hospitalario.estado', ['activo', 'desactivado'])
-            ->where('turno_hospitalario.created_at >', $ultimaVista)
-            ->countAllResults();
-
-        $modificadas = model('TurnoHospitalarioModel')
-            ->whereIn('turno_hospitalario.estado', ['activo', 'desactivado'])
-            ->where('turno_hospitalario.updated_at >', $ultimaVista)
-            ->where('turno_hospitalario.updated_at != turno_hospitalario.created_at')
-            ->countAllResults();
-
-        // ── Definir orden de meses para consultas ─────────────────────────
-        $ordenMeses = implode(',', array_map(fn($m) => "'$m'", $this->mesesValidos));
-
-        // ── Filtros (para valores del form) ───────────────────────────────
-        $modelFiltros = new \App\Models\TurnoHospitalarioModel();
-        $filtros      = $this->aplicarFiltros($modelFiltros);
-
-        // ── KPIs por región (sin conRelaciones, join manual) ──────────────
-        $mTotalesRegion = new \App\Models\TurnoHospitalarioModel();
-        $this->aplicarFiltros($mTotalesRegion);
-        $filasRegion = $mTotalesRegion
-            ->join('efector', 'efector.efector_id = turno_hospitalario.efector_id', 'left')
-            ->asArray()
-            ->select('efector.region as region,
-                      SUM(turno_hospitalario.turnos_atendidos + turno_hospitalario.ausentes
-                          + turno_hospitalario.cancelados + turno_hospitalario.sin_codificar) as total')
-            ->groupBy('efector.region')
-            ->orderBy('efector.region', 'ASC')
-            ->findAll();
-
-        $totalesPorRegion = [];
-        foreach ($filasRegion as $fila) {
-            $totalesPorRegion[$fila['region'] ?? '—'] = (int) $fila['total'];
-        }
-
-        // ── Total general y por categoría ─────────────────────────────────
-        $mTotal = new \App\Models\TurnoHospitalarioModel();
-        $this->aplicarFiltros($mTotal);
-        $resTotal = $mTotal->asArray()
-            ->select('SUM(turnos_atendidos)  as tot_atendidos,
-                      SUM(ausentes)          as tot_ausentes,
-                      SUM(cancelados)        as tot_cancelados,
-                      SUM(sin_codificar)     as tot_sin_codificar')
-            ->first();
-
-        $totAtendidos    = (int) ($resTotal['tot_atendidos']    ?? 0);
-        $totAusentes     = (int) ($resTotal['tot_ausentes']     ?? 0);
-        $totCancelados   = (int) ($resTotal['tot_cancelados']   ?? 0);
-        $totSinCodificar = (int) ($resTotal['tot_sin_codificar'] ?? 0);
-        $totalGeneral    = $totAtendidos + $totAusentes + $totCancelados + $totSinCodificar;
-
-        // ── Tabla detalle: región / ejercicio / total ─────────────────────
-        $mTabla = new \App\Models\TurnoHospitalarioModel();
-        $this->aplicarFiltros($mTabla);
-        $statsFilas = $mTabla
-            ->join('efector', 'efector.efector_id = turno_hospitalario.efector_id', 'left')
-            ->asArray()
-            ->select('efector.region as region, turno_hospitalario.ejercicio as ejercicio,
-                      SUM(turno_hospitalario.turnos_atendidos + turno_hospitalario.ausentes
-                          + turno_hospitalario.cancelados + turno_hospitalario.sin_codificar) as cantidad')
-            ->groupBy('efector.region, turno_hospitalario.ejercicio')
-            ->orderBy('turno_hospitalario.ejercicio', 'DESC')
-            ->orderBy('efector.region', 'ASC')
-            ->findAll();
-
-        // ── Obtener filtro de ejercicio ──────────────────────────────────────
-        $filtro_ejercicio = $filtros['filtro_ejercicio'] ?? '';
-
-        // ── Ejercicios disponibles (para barras) ────────────────────────────
-        $ejerciciosDisponibles = array_values(array_unique(array_column($statsFilas, 'ejercicio')));
-        rsort($ejerciciosDisponibles);
-
-        $statsEjercicios = ($filtro_ejercicio !== '')
-            ? [$filtro_ejercicio]
-            : $ejerciciosDisponibles;
-
-        // ── Barras / Torta (si se filtra ejercicio y mes, mostrar datos específicos) ────────
-        $statsBarras = [];
-        $statsTorta  = [];
-        $statsMeses  = [];
-
-        if ($filtros['filtro_ejercicio'] !== '' && $filtros['filtro_mes'] !== '') {
-            // Cuando se filtra por ejercicio y mes específico
-            $mDatos = new \App\Models\TurnoHospitalarioModel();
-            $this->aplicarFiltros($mDatos);
-            $statsDatos = $mDatos->asArray()
-                ->select('ejercicio, mes, SUM(turnos_atendidos + ausentes + cancelados + sin_codificar) as total')
-                ->groupBy('ejercicio, mes')
-                ->orderBy("FIELD(mes,{$ordenMeses})", '')
-                ->findAll();
-
-            $statsBarras = $statsDatos;
-            $statsTorta  = $statsDatos;
-        } elseif ($filtros['filtro_ejercicio'] !== '' && $filtros['filtro_mes'] === '') {
-            // Cuando se filtra solo por ejercicio (mostrar todos los meses)
-            $mMes = new \App\Models\TurnoHospitalarioModel();
-            $this->aplicarFiltros($mMes);
-            $statsMeses = $mMes->asArray()
-                ->select('mes, ejercicio, SUM(turnos_atendidos + ausentes + cancelados + sin_codificar) as total')
-                ->groupBy('mes, ejercicio')
-                ->orderBy("FIELD(mes,{$ordenMeses})", '')
-                ->findAll();
-
-            $statsBarras = $statsMeses;
-            $statsTorta  = $statsMeses;
-        } else {
-            // ── Barras: región vs ejercicios recientes (si no hay filtro de ejercicio específico) ────────────────────────
-            $statsBarras = array_values(array_filter($statsFilas, function ($f) use ($statsEjercicios) {
-                return in_array($f['ejercicio'], $statsEjercicios);
-            }));
-
-            // ── Torta: distribución por ejercicio (todos) ─────────────────────
-            $mTorta = new \App\Models\TurnoHospitalarioModel();
-            $this->aplicarFiltros($mTorta);
-            $statsTorta = $mTorta->asArray()
-                ->select('ejercicio,
-                          SUM(turnos_atendidos + ausentes + cancelados + sin_codificar) as total')
-                ->groupBy('ejercicio')
-                ->orderBy('ejercicio', 'DESC')
-                ->findAll();
-        }
-
-        // ── Listado paginado (con relaciones, sin agregación) ─────────────
-        $model = model('TurnoHospitalarioModel')->conRelaciones();
-        $this->aplicarFiltros($model);
-
-        $ordenMeses = implode(',', array_map(fn($m) => "'$m'", $this->mesesValidos));
-
-        $registros = $model->orderBy('turno_hospitalario.ejercicio', 'DESC')
-                            ->orderBy("FIELD(turno_hospitalario.mes,{$ordenMeses})")
-                            ->orderBy('efector.nombre', 'ASC')
-                            ->paginate($perPage);
-
         return view('turno_hospitalario/turno_hospitalario_list', array_merge($filtros, [
-            'registros'        => $registros,
-            'pager'            => $model->pager,
-            'ejercicios'       => $ejercicios,
-            'efectores'        => $efectores,
-            'regiones'         => $regiones,
-            'meses'            => $this->mesesValidos,
-            'nuevas'           => $nuevas,
-            'modificadas'      => $modificadas,
-            'ultimaVista'      => $ultimaVista,
-            'totalesPorRegion' => $totalesPorRegion,
-            'totalGeneral'     => $totalGeneral,
-            'totAtendidos'     => $totAtendidos,
-            'totAusentes'      => $totAusentes,
-            'totCancelados'    => $totCancelados,
-            'totSinCodificar'  => $totSinCodificar,
-            'statsFilas'       => $statsFilas,
-            'statsBarras'      => $statsBarras,
-            'statsEjercicios'  => $statsEjercicios,
-            'statsTorta'       => $statsTorta,
-            'statsMeses'       => $statsMeses,
+            'ejercicios'         => $ejercicios,
+            'efectores'          => $efectores,
+            'regiones'           => $regiones,
+            'meses'              => $this->mesesValidos,
+            'porFila'            => $porFila,
+            'porMes'             => $porMes,
+            'porEfector'         => $porEfector,
+            'kpi'                => $kpi,
+            'todosLosEjercicios' => $todosLosEjercicios,
+            'ultimaVista'        => $ultimaVista,
         ]));
     }
     // ─── Marcar visto ────────────────────────────────────────────────────

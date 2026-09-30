@@ -361,7 +361,7 @@
                         <td><a href="<?= base_url(route_to('electrodependiente_historial', $r->electrodependiente_id)) ?>" class="button is-small is-info is-outlined"><span class="icon"><i class="fas fa-history"></i></span><span>Historial</span></a></td>
                     </tr>
                 <?php endforeach; ?>
-                <?php if (empty($registros)): ?><tr><td colspan="27" class="has-text-centered">No hay registros cargados.</td></tr><?php endif; ?>
+                <?php if (empty($registros)): ?><tr><td colspan="27" class="has-text-centered">Sin pacientes electrodependientes para los filtros elegidos</td></tr><?php endif; ?>
                 </tbody>
             </table>
         </div>

@@ -58,7 +58,7 @@
         display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
     }
     .gq-panel-title { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
-    .gq-panel-title i { color: var(--teal); font-size: 17px; }
+    .gq-panel-title i { color: #fff; font-size: 17px; }
     .gq-panel-body { padding: 18px 20px; }
 
     .gq-tag {
@@ -229,6 +229,9 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($registros)): ?>
+                            <tr><td colspan="16" style="text-align:center; color:#718096; font-style:italic; padding:14px 10px;">Sin producción de quirófano para los filtros elegidos</td></tr>
+                        <?php endif; ?>
                     <?php foreach ($registros as $r): ?>
                         <tr>
                             <td><?= esc($r->ejercicio) ?></td>

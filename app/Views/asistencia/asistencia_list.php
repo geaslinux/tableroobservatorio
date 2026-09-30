@@ -26,7 +26,7 @@
         padding: 13px;
         border: 1px solid #d0d7e0;
         flex: 0 1 300px;
-        max-width: 350px;
+        max-width: 260px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         display: flex;
         flex-direction: row;
@@ -43,12 +43,13 @@
         flex: 1;
         align-items: center;
     }
-    .kpi-teal { border-left: 6px solid #38b2ac; }
-    .kpi-blue { border-left: 6px solid #4299e1; }
-    .kpi-red  { border-left: 6px solid #f56565; }
-    .kpi-orange { border-left: 6px solid #ed8936; }
-    .kpi-purple { border-left: 6px solid #9f7aea; }
-    .kpi-navy { border-left: 6px solid var(--navy); }
+    .kpi-teal   { border-left: 6px solid #81e6d9; } 
+    .kpi-blue   { border-left: 6px solid #90cdf4; }
+    .kpi-green  { border-left: 6px solid #9ae6b4; }
+    .kpi-red    { border-left: 6px solid #feb2b2; } 
+    .kpi-amber  { border-left: 6px solid #fbd38d; } 
+    .kpi-purple { border-left: 6px solid #d6bcfa; } 
+    .kpi-navy   { border-left: 6px solid #a0aec0; } 
     
     .at-kpi-icon {
         width: 60px; height:60px;
@@ -59,7 +60,7 @@
     .kpi-teal .at-kpi-icon { background: #e6fffa; color: #319795; }
     .kpi-blue .at-kpi-icon { background: #ebf8ff; color: #3182ce; }
     .kpi-red  .at-kpi-icon { background: #fff5f5; color: #e53e3e; }
-    .kpi-orange .at-kpi-icon { background: #fffaf0; color: #dd6b20; }
+    .kpi-amber .at-kpi-icon { background: #fffaf0; color: #dd6b20; }
     .kpi-purple .at-kpi-icon { background: #faf5ff; color: #805ad5; }
     .kpi-navy .at-kpi-icon { background: #eef3f8; color: var(--navy); }
     
@@ -83,7 +84,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .at-panel-title i { color: var(--teal); font-size: 17px; }
+    .at-panel-title i { color: #fff; font-size: 17px; }
     .at-panel-body { padding: 18px 20px; }
     .at-toolbar {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -161,44 +162,62 @@
     .at-kpi-badge.orange { background: #fffaf0; color: #dd6b20; }
     .at-kpi-badge.teal { background: #e6fffa; color: #319795; }
 
-    @media (min-width: 993px) {
-        .at-stats-body {
-            grid-template-columns: 1fr 2fr;
-            grid-template-areas:
-                "table bar"
-                "table pie";
-            column-gap: 35px;
-            row-gap: 55px;
-        }
 
-        .at-stats-table-wrap {
-            grid-area: table;
-        }
-
-        #containerBarras {
-            grid-area: bar;
-            margin-bottom: 15px;
-        }
-
-        #containerTorta {
-            grid-area: pie;
-            margin-top: 15px;
-            padding-top: 25px;
-        }
+    /* ── Formato de los paneles de Hospitalario ── */
+    /* El botón "Ocultar estadísticas" marca #statsBody con is-hidden */
+    #statsBody.is-hidden { display: none; }
+    .at-kpi-card  { flex: 0 1 260px; max-width: 320px; }
+    .at-kpi-icon  { flex-shrink: 0; }
+    .at-kpi-label { font-size: 14px; text-align: center; }
+    .at-filtro-group { min-width: 0; }
+    .at-stats-header { gap: 10px; flex-wrap: wrap; }
+    .at-stats-body {
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 1fr 1.4fr;
+        grid-template-areas: none;
+        gap: 18px;
+        align-items: start;
     }
-
+    /* Columna derecha: los dos gráficos uno debajo del otro */
+    .at-stats-graficos { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+    .at-stats-table-wrap { overflow-x: auto; grid-area: auto; }
+    .at-stats-table thead th { white-space: nowrap; }
+    .at-stats-table .num { text-align: right; white-space: nowrap; }
+    .at-stats-table thead th.num { text-align: right; }
+    .at-stats-table tfoot td {
+        padding: 8px 10px; font-weight: 700; color: var(--text-main);
+        border-top: 2px solid var(--border);
+    }
+    .at-stats-vacio { padding: 14px 10px; color: var(--text-muted); font-style: italic; text-align: center; }
+    .at-chart-box {
+        display: flex; flex-direction: column; min-width: 0;
+        position: static; height: auto; padding: 0; grid-area: auto;
+    }
+    .at-chart-box.is-large { height: auto; }
+    .at-chart-canvas { position: relative; width: 100%; height: 330px; }
+    .at-chart-canvas canvas { height: 100% !important; width: 100% !important; }
+    .at-chart-title {
+        font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; text-align: center;
+    }
     @media (max-width: 992px) {
-        .at-stats-body {
-            grid-template-columns: 1fr;
-            row-gap: 45px;
-        }
-}
+        .at-stats-body { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+        .at-panel-body { padding: 14px 12px; }
+        .at-stats-body { padding: 12px; }
+        .at-filtro-group { flex: 1 1 100%; }
+        .at-filtro-select { width: 100%; }
+        .at-kpi-card { flex: 1 1 100%; max-width: none; }
+        .at-chart-canvas { height: 280px; }
+    }
 </style>
 
 <!-- BREADCRUMB -->
 <div class="at-breadcrumb">
     <a href="<?= base_url(route_to('home')); ?>" class="fas fa-home"></a>
-    <a href="<?= base_url(route_to('base_views')); ?>">Inicio</a> ›
+    <a href="<?= base_url(route_to('inicio_views')); ?>">Inicio</a> ›
     <a href="<?= base_url(route_to('base_views')); ?>">Prehospitalario</a> ›
     <strong>Asistencias — Listado</strong>
 </div>
@@ -281,6 +300,10 @@
                         <button type="submit" class="bl-btn teal" style="height:36px; padding:0 16px;">
                             <i class="fas fa-filter"></i>
                         </button>
+                        <a href="<?= base_url(route_to('asistencia_list')); ?>" class="bl-btn ghost"
+                           style="height:36px; padding:0 14px;" title="Limpiar filtros">
+                            <i class="fas fa-times"></i>
+                        </a>
                         <button type="button" class="bl-btn ghost" id="btnToggle"
                                 style="height:36px; padding:0 14px;"
                                 title="Mostrar/ocultar Estado">
@@ -317,7 +340,7 @@
                 </div>
             </div>
             
-            <div class="at-kpi-card kpi-orange">
+            <div class="at-kpi-card kpi-amber">
                 <div class="at-kpi-icon"><i class="fas fa-clinic-medical"></i></div>
                 <div class="at-kpi-content">
                     <div class="at-kpi-label">BASES</div>
@@ -328,7 +351,7 @@
             <div class="at-kpi-card kpi-navy">
                 <div class="at-kpi-icon"><i class="fas fa-chart-bar"></i></div>
                 <div class="at-kpi-content">
-                    <div class="at-kpi-label">TOTAL GENERAL</div>
+                    <div class="at-kpi-label">TOTAL</div>
                     <div class="at-kpi-value"><?= number_format($totalGeneral, 0, ',', '.') ?></div>
                 </div>
             </div>
@@ -337,7 +360,7 @@
         <!-- ── PANEL ESTADÍSTICAS ── -->
         <div class="at-panel at-stats-panel" id="statsPanel">
             <div class="at-stats-header">
-                <span><i class="fas fa-chart-pie"></i> ESTADÍSTICAS DE ATENCIONES</span>
+                <span><i class="fas fa-chart-pie"></i> ESTADÍSTICAS DE ASISTENCIAS</span>
                 <button type="button" class="bl-btn ghost sm" id="btnToggleStats" title="Mostrar/ocultar estadísticas">
                     <i class="fas fa-eye-slash" id="iconoToggleStats"></i> <span id="textoToggleStats">Ocultar estadísticas</span>
                 </button>
@@ -353,38 +376,51 @@
                                     <th>Base</th>
                                     <th>Ejercicio</th>
                                     <?php if ($mostrarMesEnTabla): ?><th>Mes</th><?php endif; ?>
-                                    <th>Total</th>
+                                    <th class="num">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
+                                <?php if (empty($statsFilas)): ?>
+                                    <tr><td colspan="<?= $mostrarMesEnTabla ? 4 : 3 ?>" class="at-stats-vacio">Sin asistencias para los filtros elegidos</td></tr>
+                                <?php endif; ?>
                                 <?php foreach ($statsFilas as $f): ?>
                                 <tr>
                                     <td><?= esc($f['nombre']) ?></td>
                                     <td><?= esc($f['ejercicio']) ?></td>
                                     <?php if ($mostrarMesEnTabla): ?><td><?= esc($f['mes']) ?></td><?php endif; ?>
-                                    <td><?= number_format($f['cantidad'], 0, ',', '.') ?></td>
+                                    <td class="num"><?= number_format((int) $f['cantidad'], 0, ',', '.') ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
+                            <?php if (!empty($statsFilas)): ?>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="<?= $mostrarMesEnTabla ? 3 : 2 ?>">Total</td>
+                                    <td class="num"><?= number_format((int) array_sum(array_map('intval', array_column($statsFilas, 'cantidad'))), 0, ',', '.') ?></td>
+                                </tr>
+                            </tfoot>
+                            <?php endif; ?>
                         </table>
                     </div>
 
-                    <!-- Barras comparativas -->
-                    <div class="at-chart-box is-large" id="containerBarras">
-                        <div class="at-chart-controls" style="text-align: center; margin-top: 10px; display: flex; justify-content: center; gap: 10px; align-items: center;">
-                            <button type="button" id="btnPrev" class="bl-btn ghost sm" disabled>Anterior</button>
-                            <span id="pageInfo" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Página 1</span>
-                            <button type="button" id="btnNext" class="bl-btn ghost sm">Siguiente</button>
+                    <!-- Gráficos apilados: barras arriba, dona abajo -->
+                    <div class="at-stats-graficos">
+                        <!-- Barras comparativas (paginadas de a 10 bases) -->
+                        <div class="at-chart-box" id="containerBarras">
+                            <div class="at-chart-title">Comparativo por base (últimos ejercicios)</div>
+                            <div class="at-chart-controls" style="display:flex; justify-content:center; gap:10px; align-items:center; margin-bottom:8px;">
+                                <button type="button" id="btnPrev" class="bl-btn ghost sm" disabled>Anterior</button>
+                                <span id="pageInfo" style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Página 1</span>
+                                <button type="button" id="btnNext" class="bl-btn ghost sm">Siguiente</button>
+                            </div>
+                            <div class="at-chart-canvas" style="height:400px;"><canvas id="chartBarras"></canvas></div>
                         </div>
 
-                        <div class="at-chart-title">Comparativo por base (últimos ejercicios)</div>
-                        <canvas id="chartBarras"></canvas>
-                    </div>
-
-                    <!-- Torta distribución -->
-                    <div class="at-chart-box" id="containerTorta">
-                        <div class="at-chart-title">Distribución por ejercicio</div>
-                        <canvas id="chartTorta"></canvas>
+                        <!-- Torta distribución -->
+                        <div class="at-chart-box" id="containerTorta">
+                            <div class="at-chart-title">Distribución por ejercicio</div>
+                            <div class="at-chart-canvas"><canvas id="chartTorta"></canvas></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -451,19 +487,20 @@
             '#c7ceea', '#e2f0cb', '#ef9a9a', '#ffdac1', '#90caf9', '#a5d6a7'
         ];
 
+        // Colores por mes: tonos de azul (misma gama que ejercicio), alternando oscuro/claro
         var colorMesMap = {
-            'ENERO':      '#ce93d8',
-            'FEBRERO':    '#7fd8be',
-            'MARZO':      '#85c1e9',
-            'ABRIL':      '#f8c471',
-            'MAYO':       '#d2b4de',
-            'JUNIO':      '#f1948a',
-            'JULIO':      '#82e0aa',
-            'AGOSTO':     '#f9e79f',
-            'SEPTIEMBRE': '#ffb7b2',
-            'OCTUBRE':    '#76d7c4',
-            'NOVIEMBRE':  '#edbb99',
-            'DICIEMBRE':  '#7dcea0'
+            'ENERO':      '#0B2E59',
+            'FEBRERO':    '#8FD3F4',
+            'MARZO':      '#1A5FA8',
+            'ABRIL':      '#C6E9FA',
+            'MAYO':       '#123F73',
+            'JUNIO':      '#4FB3E6',
+            'JULIO':      '#2F80C8',
+            'AGOSTO':     '#A9DDF5',
+            'SEPTIEMBRE': '#1E4E8C',
+            'OCTUBRE':    '#6EC6EA',
+            'NOVIEMBRE':  '#0F5E9C',
+            'DICIEMBRE':  '#7FBEE8'
         };
 
         function colorParaMes(mes) {
@@ -474,9 +511,15 @@
             return parseInt(a, 10) - parseInt(b, 10);
         });
 
+        // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
+        var paletaEjercicios = [
+            '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
+            '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
+        ];
+
         var ejercicioColorMap = {};
         listaEjerciciosOrdenada.forEach(function (ejercicio, index) {
-            ejercicioColorMap[String(ejercicio)] = paleta[index % paleta.length];
+            ejercicioColorMap[String(ejercicio)] = paletaEjercicios[index % paletaEjercicios.length];
         });
 
         function colorParaEjercicio(ejercicio) {
@@ -501,6 +544,29 @@
         }
 
         var chartBarrasInstance;
+
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvas, mensaje) {
+        if (typeof canvas === 'string') canvas = document.getElementById(canvas);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+    // Crea el gráfico solo si la configuración trae algún valor mayor a 0
+    function crearGrafico(canvas, mensaje, config) {
+        var valores = [];
+        ((config.data && config.data.datasets) || []).forEach(function (ds) {
+            (ds.data || []).forEach(function (v) { valores.push(v && typeof v === 'object' ? v.y : v); });
+        });
+        if (sinDatos(valores)) { mostrarSinDatos(canvas, mensaje); return null; }
+        return new Chart(canvas, config);
+    }
         var paginaActual = 0;
         var tamanoPagina = 10;
 
@@ -638,7 +704,7 @@
             }
 
             // Gráfico de Barras
-            chartBarrasInstance = new Chart(document.getElementById('chartBarras'), {
+            chartBarrasInstance = crearGrafico(document.getElementById('chartBarras'), 'Sin asistencias por base para los filtros elegidos', {
                 type: 'bar',
                 data: { labels: chartLabels, datasets: datasets
                 },
@@ -1040,10 +1106,9 @@
                     chartTortaInstance.data.labels = labels;
                     chartTortaInstance.data.datasets[0].data = data;
                     chartTortaInstance.data.datasets[0].backgroundColor = colors;
-                    chartTortaInstance.data.datasets[0].borderWidth = 0;
-                    chartTortaInstance.data.datasets[0].offset = seccionesConDatos > 1 ? 12 : 0;
-                    chartTortaInstance.data.datasets[0].spacing = seccionesConDatos > 1 ? 8 : 0;
-                    chartTortaInstance.data.datasets[0].borderRadius = 5;
+                    chartTortaInstance.data.datasets[0].borderWidth = seccionesConDatos > 1 ? 3 : 0;
+                    chartTortaInstance.data.datasets[0].hoverOffset = seccionesConDatos > 1 ? 8 : 0;
+                    chartTortaInstance.data.datasets[0].borderRadius = 4;
 
                     chartTortaInstance.options.plugins.centerTotal = totalSum;
 
@@ -1060,36 +1125,30 @@
                  */
                 var centerTextPlugin = {
                     id: 'centerText',
-
-                    afterDraw: function(chart) {
-
+                    afterDraw: function (chart) {
                         if (chart.config.type !== 'doughnut') return;
-
+                        var arco = chart.getDatasetMeta(0).data[0];
+                        if (!arco) return;
+                        // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+                        var total = chart.options.plugins.centerTotal;
+                        if (typeof total !== 'number') {
+                            total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                                return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                            }, 0);
+                        }
+                        // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+                        var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+                        var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
                         var ctx = chart.ctx;
-
                         ctx.save();
-
-                        ctx.font = "bold 20px sans-serif";
-                        ctx.fillStyle = "#555555";
-                        ctx.textAlign = "center";
-                        ctx.textBaseline = "middle";
-
-                        var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-                        var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-
-                        ctx.fillText("TOTAL", centerX, centerY - 15);
-
-                        ctx.font = "bold 22px sans-serif";
-                        ctx.fillStyle = "#222222";
-
-                        var totalCentro = chart.options.plugins.centerTotal || 0;
-
-                        ctx.fillText(
-                            totalCentro.toLocaleString(),
-                            centerX,
-                            centerY + 20
-                        );
-
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
+                        ctx.fillStyle = '#555555';
+                        ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+                        ctx.font = 'bold ' + tamNumero + 'px sans-serif';
+                        ctx.fillStyle = '#222222';
+                        ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
                         ctx.restore();
                     }
                 };
@@ -1134,7 +1193,7 @@
                  * CREAR DONA
                  * ========================================================
                  */
-                chartTortaInstance = new Chart(elTorta, {
+                chartTortaInstance = crearGrafico(elTorta, 'Sin asistencias por ejercicio para los filtros elegidos', {
 
                     type: 'doughnut',
 
@@ -1145,10 +1204,11 @@
                             data: data,
                             backgroundColor: colors,
                             borderColor: '#ffffff',
-                            borderWidth: 0,
-                            spacing: seccionesConDatos > 1 ? 8 : 0,
-                            offset: seccionesConDatos > 1 ? 12 : 0,
-                            borderRadius: 5
+                            // Separación con borde blanco: con "spacing", Chart.js dibuja las
+                            // porciones muy chicas como un aro completo
+                            borderWidth: seccionesConDatos > 1 ? 3 : 0,
+                            hoverOffset: seccionesConDatos > 1 ? 8 : 0,
+                            borderRadius: 4
                         }]
                     },
                     plugins: [centerTextPlugin, donutSeparatorPlugin],
@@ -1165,45 +1225,66 @@
                             centerTotal: totalSum,
 
                             legend: {
-                                position: 'right',
+                                position: window.matchMedia('(max-width: 600px)').matches ? 'bottom' : 'right',
 
                                 labels: {
-                                    boxWidth: 15,
-                                    padding: 10
+                                    boxWidth: 12,
+                                    padding: 8,
+                                    font: { size: 11 }
                                 }
                             },
 
                             datalabels: {
+                            color: function (ctx) {
+                                // Texto blanco sobre fondos oscuros (azules de los ejercicios), gris sobre los claros
+                                var bg = ctx.dataset.backgroundColor;
+                                bg = Array.isArray(bg) ? bg[ctx.dataIndex] : bg;
+                                var m = /^#([0-9a-f]{6})/i.exec(bg || '');
+                                if (!m) return '#5a5858';
+                                var n = parseInt(m[1], 16);
+                                return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 150 ? '#ffffff' : '#5a5858';
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 13
+                            },
+                            // 1. CONTROL DE VISIBILIDAD NATIVO:
+                            // Oculta completamente el contenedor del datalabel si el valor es 0 o negativo
+                            display: function(context) {
+                                var val = context.dataset.data[context.dataIndex];
+                                return val !== null && Number(val) > 0;
+                            },
+                            anchor: 'center',
+                            align: 'center',
 
-                                color: '#333333',
+                            // 2. CÁLCULO DINÁMICO Y FORMATO SEGURO:
+                            formatter: function(value, context) {
+                                // Obtiene los datos del dataset actual de forma segura
+                                var dataset = context.chart.data.datasets[context.datasetIndex].data;
+                                
+                                // Suma el total dinámicamente en tiempo real
+                                var totalSum = dataset.reduce(function(acc, curr) {
+                                    var num = Number(curr);
+                                    return acc + (isNaN(num) ? 0 : num);
+                                }, 0);
 
-                                display: function(context) {
-                                    return Number(context.dataset.data[context.dataIndex]) > 0;
-                                },
+                                // Si la suma total es 0, no dibuja nada
+                                if (totalSum === 0) return null;
 
-                                font: {
-                                    weight: 'bold',
-                                    size: 13
-                                },
+                                var percentage = (Number(value) / totalSum) * 100;
 
-                                formatter: function(value, context) {
-                                    var currentTotal = context.chart.options.plugins.centerTotal || 0;
+                                // Oculta porcentajes menores o iguales al 2% para evitar que el texto
+                                // se encime en sectores demasiado angostos
+                                if (percentage <= 2) return null;
 
-                                    if (currentTotal === 0 || value === 0) {
-                                        return null;
-                                    }
-
-                                    var percentage = (value / currentTotal) * 100;
-
-                                    return percentage.toLocaleString('es-AR', {
-                                        minimumFractionDigits: 0,
-                                        maximumFractionDigits: 1
-                                    }) + '%';
-                                },
-
-                                anchor: 'center',
-                                align: 'center'
+                                // Formato con localización local (Argentina / Latam)
+                                // Redondea a entero si es exacto, o muestra máximo 1 decimal si es necesario
+                                return percentage.toLocaleString('es-AR', {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 1
+                                }) + '%';
                             }
+                        }
                         }
                     }
                 });

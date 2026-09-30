@@ -9,8 +9,8 @@ use App\Controllers\BaseController;
  *
  * Reglas de período:
  *  - Ambulatorio y capacidad de camas no tienen período: muestran la oferta vigente.
- *  - Guardia, rendimiento y RH materno se filtran por ejercicio y semestre.
- *  - Lista de espera y quirófano son anuales: solo se filtran por ejercicio.
+ *  - Guardia, rendimiento, lista de espera y quirófano se filtran por ejercicio.
+ *  - Ejercicio "Todos" (vacío) suma todos los años cargados.
  */
 class HospitalarioVController extends BaseController
 {
@@ -41,30 +41,22 @@ class HospitalarioVController extends BaseController
         $ejercicios = array_values(array_unique(array_map('intval', array_filter($ejercicios))));
         rsort($ejercicios);
 
-        $semestres = [];
-        foreach (['guardia', 'rendimiento_hospitalario', 'rh_materno'] as $tabla) {
-            $semestres = array_merge($semestres, array_column(
-                $db->table($tabla)->select('semestre')->distinct()->get()->getResultArray(),
-                'semestre'
-            ));
-        }
-        $semestres = array_values(array_unique(array_filter($semestres)));
-        sort($semestres);
-
-        // Por defecto: último año cerrado con datos (el año en curso suele estar incompleto)
+        // Si "ejercicio" no vino en la URL: último año cerrado con datos (el año en curso suele estar incompleto).
+        // Si vino vacío: "Todos" los ejercicios.
         $ejercicioGet = $this->request->getGet('ejercicio');
-        if ($ejercicioGet !== null && $ejercicioGet !== '') {
-            $ejercicio = (int) $ejercicioGet;
-        } else {
+        if ($ejercicioGet === null) {
             $cerrados  = array_filter($ejercicios, function ($a) { return $a < (int) date('Y'); });
             $ejercicio = !empty($cerrados) ? max($cerrados) : (!empty($ejercicios) ? max($ejercicios) : (int) date('Y'));
+        } elseif ($ejercicioGet === '') {
+            $ejercicio = '';
+        } else {
+            $ejercicio = (int) $ejercicioGet;
         }
-        $semestre = $this->request->getGet('semestre') ?? '';
+        $todos = $ejercicio === '';
 
-        // Aplica ejercicio (y semestre si la tabla lo tiene)
-        $periodo = function ($builder, string $tabla, string $campoAnio = 'ejercicio', bool $conSemestre = true) use ($ejercicio, $semestre) {
-            $builder->where("{$tabla}.{$campoAnio}", $ejercicio);
-            if ($conSemestre && $semestre !== '') $builder->where("{$tabla}.semestre", $semestre);
+        // Aplica el ejercicio (si no es "Todos")
+        $periodo = function ($builder, string $tabla, string $campoAnio = 'ejercicio') use ($ejercicio, $todos) {
+            if (!$todos) $builder->where("{$tabla}.{$campoAnio}", $ejercicio);
             return $builder;
         };
 
@@ -98,7 +90,6 @@ class HospitalarioVController extends BaseController
             ->get()->getResultArray();
 
         // ══ GUARDIA ═════════════════════════════════════════════════════
-        // Se filtra por año y semestre (2024/2025 se cargaron por semestre, sin mes)
         $gua = $periodo($db->table('guardia'), 'guardia', 'anio')
             ->select('
                 COALESCE(SUM(guardia.cantidad), 0)  AS total,
@@ -111,11 +102,21 @@ class HospitalarioVController extends BaseController
 
         $guaTopHospitales = $periodo($db->table('guardia'), 'guardia', 'anio')
             ->join('efector', 'efector.efector_id = guardia.efector_id', 'left')
-            ->select('efector.nombre AS etiqueta, SUM(guardia.cantidad) AS valor')
+            ->select('guardia.efector_id, efector.nombre AS etiqueta, SUM(guardia.cantidad) AS valor')
             ->groupBy('guardia.efector_id, efector.nombre')
             ->orderBy('valor', 'DESC')
             ->limit(5)
             ->get()->getResultArray();
+
+        // Con "Todos": desglose por año de los 5 hospitales principales (barras apiladas por ejercicio)
+        $guaTopHospitalesAnio = [];
+        if ($todos && !empty($guaTopHospitales)) {
+            $guaTopHospitalesAnio = $db->table('guardia')
+                ->select('efector_id, anio AS ejercicio, SUM(cantidad) AS valor')
+                ->whereIn('efector_id', array_column($guaTopHospitales, 'efector_id'))
+                ->groupBy('efector_id, anio')
+                ->get()->getResultArray();
+        }
 
         $guaPorServicio = $periodo($db->table('guardia'), 'guardia', 'anio')
             ->join('servicio', 'servicio.servicio_id = guardia.servicio_id', 'left')
@@ -126,23 +127,32 @@ class HospitalarioVController extends BaseController
         $guaPorServicio = $this->agruparOtros($guaPorServicio, 6);
         $gua['servicio_principal'] = $guaPorServicio[0]['etiqueta'] ?? '—';
 
-        // Qué hay cargado en el año (semestres y meses) para no comparar períodos distintos
-        $gua['cobertura']   = $this->coberturaGuardia($db, $ejercicio, $semestre);
-        $coberturaAnterior  = $this->coberturaGuardia($db, $ejercicio - 1, $semestre);
+        // Total por ejercicio (todos los años o solo el ejercicio elegido)
+        $guaPorEjercicio = $periodo($db->table('guardia'), 'guardia', 'anio')
+            ->select('anio AS ejercicio, SUM(cantidad) AS valor')
+            ->groupBy('anio')
+            ->orderBy('anio', 'ASC')
+            ->get()->getResultArray();
 
         // Comparación con el año anterior, solo si ambos tienen la misma carga
         $gua['variacion']     = null;
         $gua['no_comparable'] = false;
-        if ($coberturaAnterior['clave'] !== '') {
-            if ($coberturaAnterior['clave'] === $gua['cobertura']['clave']) {
-                $guaAnterior = (int) ($db->table('guardia')
-                    ->select('COALESCE(SUM(cantidad), 0) AS total', false)
-                    ->where('anio', $ejercicio - 1)
-                    ->when($semestre !== '', function ($b) use ($semestre) { $b->where('semestre', $semestre); })
-                    ->get()->getRow()->total ?? 0);
-                $gua['variacion'] = $guaAnterior > 0 ? round(($gua['total'] - $guaAnterior) * 100 / $guaAnterior, 1) : null;
-            } else {
-                $gua['no_comparable'] = true;
+        if ($todos) {
+            $gua['cobertura'] = ['clave' => '', 'texto' => count($guaPorEjercicio) . ' ejercicio(s) cargado(s)'];
+        } else {
+            $gua['cobertura']  = $this->coberturaGuardia($db, $ejercicio);
+            $coberturaAnterior = $this->coberturaGuardia($db, $ejercicio - 1);
+
+            if ($coberturaAnterior['clave'] !== '') {
+                if ($coberturaAnterior['clave'] === $gua['cobertura']['clave']) {
+                    $guaAnterior = (int) ($db->table('guardia')
+                        ->select('COALESCE(SUM(cantidad), 0) AS total', false)
+                        ->where('anio', $ejercicio - 1)
+                        ->get()->getRow()->total ?? 0);
+                    $gua['variacion'] = $guaAnterior > 0 ? round(($gua['total'] - $guaAnterior) * 100 / $guaAnterior, 1) : null;
+                } else {
+                    $gua['no_comparable'] = true;
+                }
             }
         }
 
@@ -157,18 +167,7 @@ class HospitalarioVController extends BaseController
             ', false)
             ->get()->getRowArray() ?? [];
 
-        // Semestres cargados de rendimiento en el ejercicio
-        $semestresRend = array_column(
-            $db->table('rendimiento_hospitalario')->select('semestre')->distinct()
-               ->where('ejercicio', $ejercicio)
-               ->when($semestre !== '', function ($b) use ($semestre) { $b->where('semestre', $semestre); })
-               ->orderBy("FIELD(semestre, 'PRIMER TRIM.', 'PRIMER', 'SEGUNDO')", '', false)
-               ->get()->getResultArray(),
-            'semestre'
-        );
-
         $int = [
-            'cobertura'  => $semestresRend ? 'Cargado: ' . implode(', ', $semestresRend) : 'Sin datos cargados',
             'egresos'    => (int) ($rend['egresos'] ?? 0),
             'ocupacion'  => ($rend['cama_disponible'] ?? 0) > 0 ? round($rend['paciente_dia'] * 100 / $rend['cama_disponible'], 1) : 0,
             'estada'     => ($rend['egresos'] ?? 0) > 0 ? round($rend['dias_estada'] / $rend['egresos'], 1) : 0,
@@ -185,29 +184,28 @@ class HospitalarioVController extends BaseController
             ->get()->getRowArray();
         $int['camas'] = array_map('intval', $cap ?? []);
 
-        $int['espera'] = (int) ($db->table('lista_espera')
+        $int['espera'] = (int) ($periodo($db->table('lista_espera'), 'lista_espera')
             ->select('COALESCE(SUM(cantidad_pacientes), 0) AS total', false)
-            ->where('ejercicio', $ejercicio)
             ->get()->getRow()->total ?? 0);
 
         $int['salud_mental'] = (int) ($db->table('salud_mental_camas')
             ->select('COALESCE(SUM(COALESCE(cb_adultos, 0) + COALESCE(cb_pediatricos, 0)), 0) AS total', false)
             ->get()->getRow()->total ?? 0);
 
-        // Evolución de egresos y % ocupacional por período (todos los ejercicios)
-        $intEvolucion = $db->table('rendimiento_hospitalario')
-            ->select("
-                CONCAT(ejercicio, ' ', semestre) AS etiqueta,
+        // Evolución anual de egresos y % ocupacional (todos los ejercicios o solo el elegido)
+        $intEvolucion = $periodo($db->table('rendimiento_hospitalario'), 'rendimiento_hospitalario')
+            ->select('
+                ejercicio,
+                ejercicio AS etiqueta,
                 SUM(total_egresos) AS egresos,
                 ROUND(SUM(paciente_dia) * 100 / NULLIF(SUM(cama_disponible), 0), 1) AS ocupacion
-            ", false)
-            ->groupBy('ejercicio, semestre')
+            ', false)
+            ->groupBy('ejercicio')
             ->orderBy('ejercicio', 'ASC')
-            ->orderBy("FIELD(semestre, 'PRIMER TRIM.', 'PRIMER', 'SEGUNDO')", '', false)
             ->get()->getResultArray();
 
         // ══ QUIRÓFANO (anual) ═══════════════════════════════════════════
-        $qui = $db->table('produccion_quirofano_hosp')
+        $qui = $periodo($db->table('produccion_quirofano_hosp'), 'produccion_quirofano_hosp')
             ->select('
                 COALESCE(SUM(sub_total), 0)                  AS total,
                 COALESCE(SUM(cirugias_urgencia), 0)          AS urgencia,
@@ -219,11 +217,10 @@ class HospitalarioVController extends BaseController
                 COALESCE(SUM(cirugias_prog_desconocido), 0)  AS desconocido,
                 COUNT(DISTINCT efector_id)                   AS hospitales
             ', false)
-            ->where('ejercicio', $ejercicio)
             ->get()->getRowArray();
         $qui = array_map('intval', $qui ?? []);
 
-        $quiTopHospitales = $db->table('produccion_quirofano_hosp')
+        $quiTopHospitales = $periodo($db->table('produccion_quirofano_hosp'), 'produccion_quirofano_hosp')
             ->join('efector', 'efector.efector_id = produccion_quirofano_hosp.efector_id', 'left')
             ->select('
                 efector.nombre AS etiqueta,
@@ -231,47 +228,73 @@ class HospitalarioVController extends BaseController
                 SUM(produccion_quirofano_hosp.total_cirugias_programadas) AS programadas,
                 SUM(produccion_quirofano_hosp.sub_total)                  AS valor
             ')
-            ->where('produccion_quirofano_hosp.ejercicio', $ejercicio)
             ->groupBy('produccion_quirofano_hosp.efector_id, efector.nombre')
             ->orderBy('valor', 'DESC')
             ->limit(5)
             ->get()->getResultArray();
+
+        $quiPorEjercicio = $periodo($db->table('produccion_quirofano_hosp'), 'produccion_quirofano_hosp')
+            ->select('ejercicio, SUM(sub_total) AS valor')
+            ->groupBy('ejercicio')
+            ->orderBy('ejercicio', 'ASC')
+            ->get()->getResultArray();
+
+        // Con un ejercicio filtrado: comparativo por tipo de cirugía contra el año anterior
+        $quiComparativo = [];
+        if (!$todos) {
+            $quiComparativo = $db->table('produccion_quirofano_hosp')
+                ->select('
+                    ejercicio,
+                    COALESCE(SUM(cirugias_urgencia), 0)         AS urgencia,
+                    COALESCE(SUM(cirugias_prog_alta), 0)        AS alta,
+                    COALESCE(SUM(cirugias_prog_mediana), 0)     AS mediana,
+                    COALESCE(SUM(cirugias_prog_baja), 0)        AS baja,
+                    COALESCE(SUM(cirugias_prog_desconocido), 0) AS desconocido,
+                    COALESCE(SUM(sub_total), 0)                 AS total,
+                    COUNT(DISTINCT efector_id)                  AS hospitales
+                ', false)
+                ->whereIn('ejercicio', [$ejercicio - 1, $ejercicio])
+                ->groupBy('ejercicio')
+                ->orderBy('ejercicio', 'ASC')
+                ->get()->getResultArray();
+        }
 
         // Pestaña visible
         $tab = in_array($this->request->getGet('tab'), ['amb', 'gua', 'int', 'qui'], true)
             ? $this->request->getGet('tab') : 'amb';
 
         return view('admin/hospitalario_views', [
-            'tab'                => $tab,
-            'ejercicios'         => $ejercicios,
-            'semestres'          => $semestres,
-            'ejercicio'          => $ejercicio,
-            'semestre'           => $semestre,
+            'tab'                  => $tab,
+            'ejercicios'           => $ejercicios,
+            'ejercicio'            => $ejercicio,
 
-            'amb'                => $amb,
-            'ambPorEspecialidad' => $ambPorEspecialidad,
-            'ambPorTipo'         => $ambPorTipo,
+            'amb'                  => $amb,
+            'ambPorEspecialidad'   => $ambPorEspecialidad,
+            'ambPorTipo'           => $ambPorTipo,
 
-            'gua'                => $gua,
-            'guaTopHospitales'   => $guaTopHospitales,
-            'guaPorServicio'     => $guaPorServicio,
+            'gua'                  => $gua,
+            'guaTopHospitales'     => $guaTopHospitales,
+            'guaTopHospitalesAnio' => $guaTopHospitalesAnio,
+            'guaPorServicio'       => $guaPorServicio,
+            'guaPorEjercicio'      => $guaPorEjercicio,
 
-            'int'                => $int,
-            'intEvolucion'       => $intEvolucion,
+            'int'                  => $int,
+            'intEvolucion'         => $intEvolucion,
 
-            'qui'                => $qui,
-            'quiTopHospitales'   => $quiTopHospitales,
+            'qui'                  => $qui,
+            'quiTopHospitales'     => $quiTopHospitales,
+            'quiPorEjercicio'      => $quiPorEjercicio,
+            'quiComparativo'       => $quiComparativo,
         ]);
     }
 
     // Semestres y meses con datos de guardia en un año.
     // 'clave' sirve para saber si dos años son comparables; 'texto' se muestra en pantalla.
-    private function coberturaGuardia($db, int $anio, string $semestre): array
+    private function coberturaGuardia($db, int $anio): array
     {
         $filas = $db->table('guardia')
             ->select('semestre, mes')->distinct()
             ->where('anio', $anio)
-            ->when($semestre !== '', function ($b) use ($semestre) { $b->where('semestre', $semestre); })
             ->get()->getResultArray();
 
         $semestres = [];

@@ -54,7 +54,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .bf-panel-title i { color: var(--teal); font-size: 17px; }
+    .bf-panel-title i { color: #fff; font-size: 17px; }
     .bf-panel-body { padding: 24px; }
 
     /* ── ALERTA / AVISO ── */

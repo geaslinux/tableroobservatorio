@@ -197,7 +197,7 @@
             </thead>
             <tbody>
                 <?php if (empty($registros)): ?>
-                    <tr><td colspan="12" class="has-text-centered">Sin registros</td></tr>
+                    <tr><td colspan="12" class="has-text-centered">Sin pacientes para los filtros elegidos</td></tr>
                 <?php else: ?>
                     <?php foreach ($registros as $r):
                         $esNuevo      = $r->created_at > $ultimaVista;

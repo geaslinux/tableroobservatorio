@@ -94,9 +94,9 @@
         top: 0; left: 0; right: 0; height: 3px;
     }
     .kpi-card.kpi-teal::before   { background: var(--teal); }
-    .kpi-card.kpi-blue::before   { background: var(--kpi-blue); }
-    .kpi-card.kpi-green::before  { background: var(--kpi-green); }
-    .kpi-card.kpi-orange::before { background: var(--kpi-orange); }
+    .kpi-card.kpi-blue::before   { background: #1A5FA8; }
+    .kpi-card.kpi-green::before  { background: #2F80C8; }
+    .kpi-card.kpi-orange::before { background: #4FB3E6; }
 
     .kpi-label {
         font-size: 9.5px; font-weight: 700;
@@ -187,10 +187,10 @@
         width: 34px; text-align: right; flex-shrink: 0;
     }
     .bar-1 { background: var(--teal); }
-    .bar-2 { background: var(--kpi-blue); }
-    .bar-3 { background: var(--kpi-green); }
-    .bar-4 { background: var(--kpi-orange); }
-    .bar-5 { background: var(--kpi-purple); }
+    .bar-2 { background: #1A5FA8; }
+    .bar-3 { background: #2F80C8; }
+    .bar-4 { background: #4FB3E6; }
+    .bar-5 { background: #8FD3F4; }
 
     /* ── BOTTOM ROW ── */
     .bot-row {
@@ -214,8 +214,8 @@
         font-variant-numeric: tabular-nums;
     }
     .mini-stat-val.teal   { color: var(--teal); }
-    .mini-stat-val.blue   { color: var(--kpi-blue); }
-    .mini-stat-val.orange { color: var(--kpi-orange); }
+    .mini-stat-val.blue   { color: #1A5FA8; }
+    .mini-stat-val.orange { color: #2F80C8; }
     .mini-stat-label {
         font-size: 9px; color: var(--text-muted);
         text-transform: uppercase; letter-spacing: 0.5px;
@@ -256,6 +256,68 @@
 
     .no-data { text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 13px; }
     .no-data i { font-size: 28px; display: block; margin-bottom: 8px; opacity: 0.35; }
+
+    /* Evita que el contenido de las grillas las desborde */
+    .kpi-row > *, .mid-row > *, .bot-row > * { min-width: 0; }
+    .coverage-num { width: auto; min-width: 34px; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1200px) {
+        .kpi-row { grid-template-columns: repeat(2, 1fr); }
+        .bot-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 900px) {
+        .mid-row { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 576px) {
+        .filtro-bar { padding: 12px 14px; gap: 10px; }
+        .filtro-group { flex: 1 1 calc(33.333% - 10px); min-width: 90px; }
+        .filtro-select { width: 100%; }
+        .filtro-btn, .filtro-btn-clear { flex: 1 1 auto; justify-content: center; }
+        .filtro-periodo-tag { flex-basis: 100%; text-align: center; }
+
+        .kpi-row { gap: 10px; }
+        .kpi-card { padding: 14px 14px 12px; }
+        .kpi-value { font-size: 28px; }
+        .kpi-badge { white-space: normal; }
+
+        /* Distribución en cuadrados: punto arriba, nombre y valor centrados */
+        .distrib-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .distrib-item {
+            aspect-ratio: 1 / 1;
+            flex-direction: column;
+            justify-content: center;
+            text-align: center;
+            gap: 6px;
+            padding: 8px 6px;
+            border-radius: 10px;
+        }
+        .distrib-info { flex: 0 0 auto; width: 100%; }
+        .distrib-name {
+            white-space: normal;
+            font-size: 9px;
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+        .distrib-val { font-size: 18px; }
+        .panel-header { padding: 12px 14px 8px; }
+        .panel-body, .mini-stat-grid { padding: 12px 14px; }
+        .chart-wrap { padding: 8px 10px 12px; }
+
+        .coverage-name { width: 95px; }
+        .mini-stat-row { gap: 8px; }
+        .mini-stat { padding: 10px 6px; }
+        .mini-stat-val { font-size: 22px; }
+
+        .ql-grid { grid-template-columns: 1fr; gap: 10px; }
+    }
+
+    @media (max-width: 360px) {
+        .kpi-row { grid-template-columns: 1fr; }
+        .distrib-grid { grid-template-columns: repeat(2, 1fr); }
+    }
 </style>
 
 <div class="breadcrumb">
@@ -390,42 +452,42 @@
             <?php if ($total_asistencias > 0): ?>
             <div class="distrib-grid">
                 <div class="distrib-item">
-                    <div class="distrib-dot" style="background:var(--teal)"></div>
+                    <div class="distrib-dot" style="background:#0B2E59"></div>
                     <div class="distrib-info">
                         <div class="distrib-name">Emerg. c/ médico</div>
                         <div class="distrib-val"><?= number_format($emerg_con_medico) ?></div>
                     </div>
                 </div>
                 <div class="distrib-item">
-                    <div class="distrib-dot" style="background:var(--kpi-blue)"></div>
+                    <div class="distrib-dot" style="background:#4FB3E6"></div>
                     <div class="distrib-info">
                         <div class="distrib-name">Emerg. s/ médico</div>
                         <div class="distrib-val"><?= number_format($emerg_sin_medico) ?></div>
                     </div>
                 </div>
                 <div class="distrib-item">
-                    <div class="distrib-dot" style="background:var(--kpi-orange)"></div>
+                    <div class="distrib-dot" style="background:#1A5FA8"></div>
                     <div class="distrib-info">
                         <div class="distrib-name">Urgencias</div>
                         <div class="distrib-val"><?= number_format($urgencias) ?></div>
                     </div>
                 </div>
                 <div class="distrib-item">
-                    <div class="distrib-dot" style="background:var(--kpi-purple)"></div>
+                    <div class="distrib-dot" style="background:#8FD3F4"></div>
                     <div class="distrib-info">
                         <div class="distrib-name">Derivación pública</div>
                         <div class="distrib-val"><?= number_format($derivacion_publica) ?></div>
                     </div>
                 </div>
                 <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#e74c3c"></div>
+                    <div class="distrib-dot" style="background:#2F80C8"></div>
                     <div class="distrib-info">
                         <div class="distrib-name">Derivación privada</div>
                         <div class="distrib-val"><?= number_format($derivacion_privada) ?></div>
                     </div>
                 </div>
                 <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#f39c12"></div>
+                    <div class="distrib-dot" style="background:#6EC6EA"></div>
                     <div class="distrib-info">
                         <div class="distrib-name">Int. domiciliaria</div>
                         <div class="distrib-val"><?= number_format($asist_internacion) ?></div>

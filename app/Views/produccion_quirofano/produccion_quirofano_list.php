@@ -58,7 +58,7 @@
         display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
     }
     .pq-panel-title { font-size: 15px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
-    .pq-panel-title i { color: var(--teal); font-size: 17px; }
+    .pq-panel-title i { color: #fff; font-size: 17px; }
     .pq-panel-body { padding: 18px 20px; }
 
     .pq-tag {
@@ -270,6 +270,9 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($registros)): ?>
+                            <tr><td colspan="9" style="text-align:center; color:#718096; font-style:italic; padding:14px 10px;">Sin producción quirúrgica hospitalaria para los filtros elegidos</td></tr>
+                        <?php endif; ?>
                     <?php foreach ($registros as $r): ?>
                         <tr>
                             <td><?= esc($r->efector_nombre) ?></td>
@@ -323,6 +326,29 @@
 <script>
     var totalPorEjercicio = <?= json_encode($totalPorEjercicio) ?>;
 
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvas, mensaje) {
+        if (typeof canvas === 'string') canvas = document.getElementById(canvas);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+    // Crea el gráfico solo si la configuración trae algún valor mayor a 0
+    function crearGrafico(canvas, mensaje, config) {
+        var valores = [];
+        ((config.data && config.data.datasets) || []).forEach(function (ds) {
+            (ds.data || []).forEach(function (v) { valores.push(v && typeof v === 'object' ? v.y : v); });
+        });
+        if (sinDatos(valores)) { mostrarSinDatos(canvas, mensaje); return null; }
+        return new Chart(canvas, config);
+    }
+
     (function () {
         var statsPanel = document.getElementById('statsPanel');
         var statsBody  = document.getElementById('statsBody');
@@ -332,11 +358,42 @@
         var statsVisible = false;
         var chartsInicializados = false;
 
+        // Plugin: total en el centro de las donas
+        var centerTextPlugin = {
+            id: 'centerText',
+            afterDraw: function (chart) {
+                if (chart.config.type !== 'doughnut') return;
+                var arco = chart.getDatasetMeta(0).data[0];
+                if (!arco) return;
+                // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+                var total = chart.options.plugins.centerTotal;
+                if (typeof total !== 'number') {
+                    total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                        return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                    }, 0);
+                }
+                // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+                var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+                var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
+                var ctx = chart.ctx;
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
+                ctx.fillStyle = '#555555';
+                ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+                ctx.font = 'bold ' + tamNumero + 'px sans-serif';
+                ctx.fillStyle = '#222222';
+                ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
+                ctx.restore();
+            }
+        };
+
         function inicializarCharts() {
             if (chartsInicializados) return;
             chartsInicializados = true;
 
-            new Chart(document.getElementById('chartBarras'), {
+            crearGrafico(document.getElementById('chartBarras'), 'Sin producción de quirófano para los filtros elegidos', {
                 type: 'bar',
                 data: {
                     labels: totalPorEjercicio.map(function (d) { return d.ejercicio; }),
@@ -349,8 +406,9 @@
                 options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
             });
 
-            new Chart(document.getElementById('chartTorta'), {
-                type: 'pie',
+            crearGrafico(document.getElementById('chartTorta'), 'Sin producción de quirófano por ejercicio para los filtros elegidos', {
+                type: 'doughnut',
+                plugins: [centerTextPlugin],
                 data: {
                     labels: totalPorEjercicio.map(function (d) { return d.ejercicio; }),
                     datasets: [{
@@ -358,7 +416,7 @@
                         backgroundColor: ['#1a2b45', '#00b4a0', '#3498db', '#e67e22']
                     }]
                 },
-                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                options: { responsive: true, cutout: '60%', plugins: { legend: { position: 'bottom' } } }
             });
         }
 

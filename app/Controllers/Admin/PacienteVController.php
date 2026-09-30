@@ -149,6 +149,7 @@ class PacienteVController extends BaseController
         $consultas_mes = $consultaModel
             ->select('mes, COUNT(*) as total')
             ->where('ejercicio', $ejercicio_actual)
+            ->whereIn('mes', $mesesEnRango)
             ->groupBy('mes')
             ->asArray()
             ->findAll();
@@ -157,6 +158,7 @@ class PacienteVController extends BaseController
         $chatbot_mes = $chatBotModel
             ->select('mes, SUM(turnos_otorgados) as total')
             ->where('ejercicio', $ejercicio_actual)
+            ->whereIn('mes', $mesesEnRango)
             ->groupBy('mes')
             ->asArray()
             ->findAll();
@@ -165,6 +167,7 @@ class PacienteVController extends BaseController
         $turno_mes = $turnoModel
             ->select('mes, SUM(total_otorgados) as total')
             ->where('ejercicio', $ejercicio_actual)
+            ->whereIn('mes', $mesesEnRango)
             ->groupBy('mes')
             ->asArray()
             ->findAll();
@@ -173,6 +176,7 @@ class PacienteVController extends BaseController
         $callcenter_mes = $callCenterModel
             ->select('mes, SUM(total) as total')
             ->where('ejercicio', $ejercicio_actual)
+            ->whereIn('mes', $mesesEnRango)
             ->groupBy('mes')
             ->asArray()
             ->findAll();

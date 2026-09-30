@@ -82,7 +82,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .ml-panel-title i { color: var(--teal); font-size: 17px; }
+    .ml-panel-title i { color: #fff; font-size: 17px; }
     .ml-panel-body { padding: 18px 20px; }
     .ml-toolbar {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -196,7 +196,7 @@
         background: var(--navy); color: #fff;
         box-shadow: 0 2px 6px rgba(14,42,77,0.18);
     }
-    .ml-tab.is-active i { color: var(--teal); }
+    .ml-tab.is-active i { color: #fff; }
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
@@ -379,7 +379,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($prodFilas)): ?>
-                                    <tr><td colspan="4" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                    <tr><td colspan="4" class="ml-stats-vacio">Sin producción de quirófano para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($prodFilas as $f): ?>
                                 <tr>
@@ -455,7 +455,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($hospFilas)): ?>
-                                    <tr><td colspan="6" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                    <tr><td colspan="6" class="ml-stats-vacio">Sin cirugías registradas para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($hospFilas as $f): ?>
                                 <tr>
@@ -534,6 +534,20 @@
         return Number(n).toLocaleString('es-AR', { maximumFractionDigits: decimales || 0 });
     }
 
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvas, mensaje) {
+        if (typeof canvas === 'string') canvas = document.getElementById(canvas);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+
     // ── Colapsar / expandir paneles de estadísticas ──
     document.querySelectorAll('[data-stats-panel]').forEach(function (panel) {
         var btn   = panel.querySelector('[data-stats-toggle]');
@@ -552,24 +566,34 @@
         id: 'centerText',
         afterDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
+            var arco = chart.getDatasetMeta(0).data[0];
+            if (!arco) return;
+            // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+            var total = chart.options.plugins.centerTotal;
+            if (typeof total !== 'number') {
+                total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                    return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                }, 0);
+            }
+            // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+            var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+            var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
             var ctx = chart.ctx;
-            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-            var total = chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 16px sans-serif';
+            ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
             ctx.fillStyle = '#555555';
-            ctx.fillText('TOTAL', centerX, centerY - 13);
-            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+            ctx.font = 'bold ' + tamNumero + 'px sans-serif';
             ctx.fillStyle = '#222222';
-            ctx.fillText(formatoNumero(total), centerX, centerY + 14);
+            ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
             ctx.restore();
         }
     };
 
-    function crearDona(canvasId, etiquetas, valores, colores) {
+    function crearDona(canvasId, etiquetas, valores, colores, mensajeSinDatos) {
+        if (sinDatos(valores)) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
         var seccionesConDatos = valores.filter(function (v) { return Number(v) > 0; }).length;
 
         new Chart(document.getElementById(canvasId), {
@@ -617,7 +641,10 @@
     }
 
     // Barras horizontales; datasets = [{ label, data, color }]. Con más de uno se apilan.
-    function crearBarrasH(canvasId, etiquetas, datasets) {
+    function crearBarrasH(canvasId, etiquetas, datasets, mensajeSinDatos) {
+        var todos = [];
+        datasets.forEach(function (d) { todos = todos.concat(d.data); });
+        if (sinDatos(todos)) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
         var apiladas = datasets.length > 1;
         new Chart(document.getElementById(canvasId), {
             type: 'bar',
@@ -666,12 +693,15 @@
             crearBarrasH(
                 'chartProdHospital',
                 prodPorHospital.map(function (h) { return h.hospital; }),
-                [{ label: 'Producción', data: prodPorHospital.map(function (h) { return parseInt(h.produccion, 10); }), color: '#90cdf4' }]
+                [{ label: 'Producción', data: prodPorHospital.map(function (h) { return parseInt(h.produccion, 10); }), color: '#90cdf4' }],
+                'Sin producción de quirófano por hospital para los filtros elegidos'
             );
             crearDona(
                 'chartProdRegion',
                 prodPorRegion.map(function (r) { return r.region; }),
-                prodPorRegion.map(function (r) { return parseInt(r.produccion, 10); })
+                prodPorRegion.map(function (r) { return parseInt(r.produccion, 10); }),
+                null,
+                'Sin producción de quirófano por región para los filtros elegidos'
             );
         },
 
@@ -683,7 +713,8 @@
                 [
                     { label: 'Urgencia',    data: hospFilas.map(function (f) { return parseInt(f.urgencia, 10); }),    color: '#feb2b2' },
                     { label: 'Programadas', data: hospFilas.map(function (f) { return parseInt(f.programadas, 10); }), color: '#81e6d9' }
-                ]
+                ],
+                'Sin cirugías registradas para los filtros elegidos'
             );
 
             var etiquetas = ['Alta', 'Mediana', 'Baja'];
@@ -694,7 +725,7 @@
                 valores.push(hospKpi.desconocido);
                 colores.push('#cbd5e0');
             }
-            crearDona('chartHospComplejidad', etiquetas, valores, colores);
+            crearDona('chartHospComplejidad', etiquetas, valores, colores, 'Sin cirugías programadas por complejidad para los filtros elegidos');
         }
     };
 

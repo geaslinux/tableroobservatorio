@@ -231,7 +231,7 @@
             </tr>
         <?php endforeach; ?>
         <?php if (empty($registros)): ?>
-            <tr><td colspan="12" class="has-text-centered">No hay registros cargados.</td></tr>
+            <tr><td colspan="12" class="has-text-centered">Sin registros de gestión de camas para los filtros elegidos</td></tr>
         <?php endif; ?>
         </tbody>
     </table>

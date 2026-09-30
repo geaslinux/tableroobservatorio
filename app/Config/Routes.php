@@ -7,21 +7,21 @@ use CodeIgniter\Router\RouteCollection;
 
  */
 $routes->get('/', '\Myth\Auth\Controllers\AuthController::login');
+$routes->get('home', 'Home::index', ['as' => 'home']);
 
 $routes->group('/admin',['filter' => 'login', 'namespace'=>'App\Controllers\Admin'], function($routes){
 
     $routes->get('inicio', 'IndexController::inicio', ['as'=>'inicio_views']);
 
     $routes->get('basev', 'BaseVController::basev', ['as'=>'base_views']);
-     $routes->get('hospitalariov', 'HospitalarioVController::hospitalariov', ['as'=>'hospitalario_views']);
-      $routes->get('internacionv', 'InternacionVController::internacionv', ['as'=>'internacion_views']);
+    $routes->get('hospitalariov', 'HospitalarioVController::hospitalariov', ['as'=>'hospitalario_views']);
+    $routes->get('internacionv', 'InternacionVController::internacionv', ['as'=>'internacion_views']);
 
-     $routes->get('saludmental', 'SaludMentalController::salud', ['as'=>'saludmental_views']);
+    $routes->get('saludmental', 'SaludMentalController::salud', ['as'=>'saludmental_views']);
     $routes->get('pacientev', 'PacienteVController::pacientev', ['as'=>'paciente_views']);
     $routes->get('guardiav', 'GuardiaVController::guardiav', ['as'=>'guardia_views']);
-    $routes->get('quirofanov', 'QuirofanoVController::quirofanov', ['as'=>'quirofano_views']);
     $routes->get('serviciov', 'ServicioVController::serviciov', ['as'=>'servicio_views']);
-    $routes->get('laboratoriov', 'LaboratorioVController::laboratoriov', ['as'=>'laboratorio_views']);
+    $routes->get('quirofanov', 'QuirofanoVController::quirofanov', ['as'=>'quirofano_views']);
     $routes->get('base', 'BaseCController::index', ['as'=>'base_list', 'filter' => 'permiso: LISTADO PERSONA']);
 $routes->post('base', 'BaseCController::store', ['as'=>'base_store', 'filter' => 'permiso: GUARDAR PERSONA']);
 $routes->get('base-create', 'BaseCController::create', ['as'=>'base_create', 'filter' => 'permiso: GUARDAR PERSONA']);
@@ -212,18 +212,6 @@ $routes->post('rrhh_carta_servicio-import',    'RrhhCartaServicioController::pro
 $routes->get('rrhh_carta_servicio-template',   'RrhhCartaServicioController::template',      ['as' => 'rrhh_carta_servicio_template', 'filter' => 'permiso: LISTADO PERSONA']);
 $routes->get('rrhh_carta_servicio-export',     'RrhhCartaServicioController::export',        ['as' => 'rrhh_carta_servicio_export',  'filter' => 'permiso: LISTADO PERSONA']);
 
-// ── LABORATORIO (Red de laboratorios) ──
-$routes->get('laboratorio',            'LaboratorioController::index',         ['as' => 'laboratorio_list',    'filter' => 'permiso: LISTADO PERSONA']);
-$routes->get('laboratorio-import',     'LaboratorioController::import',        ['as' => 'laboratorio_import',  'filter' => 'permiso: GUARDAR PERSONA']);
-$routes->post('laboratorio-import',    'LaboratorioController::processImport', ['as' => 'laboratorio_process_import', 'filter' => 'permiso: GUARDAR PERSONA']);
-$routes->get('laboratorio-template',   'LaboratorioController::template',      ['as' => 'laboratorio_template', 'filter' => 'permiso: LISTADO PERSONA']);
-$routes->get('laboratorio-export',     'LaboratorioController::export',        ['as' => 'laboratorio_export',  'filter' => 'permiso: LISTADO PERSONA']);
-$routes->get('laboratorio-create',     'LaboratorioController::create',        ['as' => 'laboratorio_create',  'filter' => 'permiso: GUARDAR PERSONA']);
-$routes->post('laboratorio',           'LaboratorioController::store',         ['as' => 'laboratorio_store',   'filter' => 'permiso: GUARDAR PERSONA']);
-$routes->get('laboratorio/(:any)',     'LaboratorioController::show/$1',       ['as' => 'laboratorio_show',    'filter' => 'permiso: LISTADO PERSONA']);
-$routes->put('laboratorio',            'LaboratorioController::update',        ['as' => 'laboratorio_update',  'filter' => 'permiso: EDITAR PERSONA']);
-$routes->delete('laboratorio',         'LaboratorioController::destroy',       ['as' => 'laboratorio_destroy', 'filter' => 'permiso: ELIMINAR PERSONA']);
-
 
 // ── Guardia ────────────────────────────────────────────────────────────────
 $routes->get('guardia',           'GuardiaController::index',       ['as' => 'guardia_list']);
@@ -327,12 +315,6 @@ $routes->delete('capacidad-camas',        'CapacidadCamasController::destroy',  
 $routes->get('capacidad-camas-export',    'CapacidadCamasController::export',      ['as' => 'capacidad_camas_export',  'filter' => 'permiso: LISTADO PERSONA']);
 $routes->get('capacidad-camas-visto',     'CapacidadCamasController::marcarVisto', ['as' => 'capacidad_camas_visto',   'filter' => 'permiso: LISTADO PERSONA']);
 });
-
-
-
-
-
-
 
 
 

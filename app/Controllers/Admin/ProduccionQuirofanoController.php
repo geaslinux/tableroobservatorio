@@ -48,10 +48,15 @@ class ProduccionQuirofanoController extends BaseController
         // ── KPI CARDS ──
         $totalGeneral = (int) ($model->selectSum('produccion')->first()->produccion ?? 0);
 
-        $totalPorEjercicio = $model
-            ->select('ejercicio, SUM(produccion) as total')
-            ->groupBy('ejercicio')
-            ->orderBy('ejercicio', 'DESC')
+        // Datos de los gráficos: respetan los filtros (instancia propia del modelo;
+        // el join con efector es para el filtro de región)
+        $modelGrafico = model('ProduccionQuirofanoModel', false)
+            ->join('efector', 'efector.efector_id = produccion_quirofano.efector_id', 'left');
+        $this->aplicarFiltros($modelGrafico);
+        $totalPorEjercicio = $modelGrafico
+            ->select('produccion_quirofano.ejercicio, SUM(produccion_quirofano.produccion) as total')
+            ->groupBy('produccion_quirofano.ejercicio')
+            ->orderBy('produccion_quirofano.ejercicio', 'DESC')
             ->asArray()
             ->findAll();
 

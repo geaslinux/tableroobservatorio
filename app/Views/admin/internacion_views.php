@@ -61,6 +61,16 @@
     .kpi-red    .ml-kpi-icon { background: #fff5f5; color: #e53e3e; }
     .kpi-navy   .ml-kpi-icon { background: #f7fafc; color: #4a5568; }
 
+    /* Tasa de mortalidad: tono sobrio con lazo negro (en lugar del rojo y el corazón roto) */
+    .kpi-luto { border-left: 6px solid #4a5568; background: linear-gradient(135deg, #ffffff 0%, #f7f8fa 100%); }
+    .kpi-luto .ml-kpi-icon {
+        background: radial-gradient(circle at 50% 40%, #ffffff 0%, #edf0f4 70%);
+        color: #1f2933;
+        box-shadow: inset 0 0 0 1px #e2e6ec;
+    }
+    .kpi-luto .ml-kpi-icon i { font-size: 28px; }
+    .kpi-luto .ml-kpi-value { color: #1f2933; }
+
     .ml-kpi-label { font-size: 14px; font-weight: 700; color: #718096; text-transform: uppercase; text-align: center; }
     .ml-kpi-value { font-size: 25px; font-weight: 700; color: #2d3748; line-height: 1; margin-top: 2px; }
 
@@ -82,7 +92,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .ml-panel-title i { color: var(--teal); font-size: 17px; }
+    .ml-panel-title i { color: #fff; font-size: 17px; }
     .ml-panel-body { padding: 18px 20px; }
     .ml-toolbar {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -196,7 +206,7 @@
         background: var(--navy); color: #fff;
         box-shadow: 0 2px 6px rgba(14,42,77,0.18);
     }
-    .ml-tab.is-active i { color: var(--teal); }
+    .ml-tab.is-active i { color: #fff; }
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
@@ -496,7 +506,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($saludFilas)): ?>
-                                    <tr><td colspan="6" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                    <tr><td colspan="6" class="ml-stats-vacio">Sin camas de salud mental para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($saludFilas as $f): ?>
                                 <tr>
@@ -564,8 +574,8 @@
                         <div class="ml-kpi-value"><?= $dec($k['estada'] ?? 0) ?></div>
                     </div>
                 </div>
-                <div class="ml-kpi-card kpi-red">
-                    <div class="ml-kpi-icon"><i class="fas fa-heart-broken"></i></div>
+                <div class="ml-kpi-card kpi-luto">
+                    <div class="ml-kpi-icon" title="En memoria"><i class="fas fa-ribbon"></i></div>
                     <div class="ml-kpi-content">
                         <div class="ml-kpi-label">Tasa mortalidad</div>
                         <div class="ml-kpi-value"><?= $dec($k['mortalidad'] ?? 0, 2) ?>%</div>
@@ -584,7 +594,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($filasRend)): ?>
-                                    <tr><td colspan="6" class="ml-stats-vacio">Sin datos cargados para los filtros elegidos</td></tr>
+                                    <tr><td colspan="6" class="ml-stats-vacio">Sin datos de rendimiento hospitalario para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($filasRend as $f): ?>
                                 <tr>
@@ -650,8 +660,8 @@
                         <div class="ml-kpi-value"><?= $dec($maternoKpi['ocupacion'] ?? 0) ?>%</div>
                     </div>
                 </div>
-                <div class="ml-kpi-card kpi-red">
-                    <div class="ml-kpi-icon"><i class="fas fa-heart-broken"></i></div>
+                <div class="ml-kpi-card kpi-luto">
+                    <div class="ml-kpi-icon" title="En memoria"><i class="fas fa-ribbon"></i></div>
                     <div class="ml-kpi-content">
                         <div class="ml-kpi-label">Tasa mortalidad</div>
                         <div class="ml-kpi-value"><?= $dec($maternoKpi['mortalidad'] ?? 0, 2) ?>%</div>
@@ -670,7 +680,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($maternoFilas)): ?>
-                                    <tr><td colspan="6" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                    <tr><td colspan="6" class="ml-stats-vacio">Sin datos de RH materno-infantil para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($maternoFilas as $f): ?>
                                 <tr>
@@ -754,7 +764,7 @@
                             </thead>
                             <tbody>
                                 <?php if (empty($capacidadFilas)): ?>
-                                    <tr><td colspan="6" class="ml-stats-vacio">Sin datos para los filtros elegidos</td></tr>
+                                    <tr><td colspan="6" class="ml-stats-vacio">Sin capacidad de camas para los filtros elegidos</td></tr>
                                 <?php endif; ?>
                                 <?php foreach ($capacidadFilas as $f): ?>
                                 <tr>
@@ -839,6 +849,20 @@
         return Number(n).toLocaleString('es-AR', { maximumFractionDigits: decimales || 0 });
     }
 
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvasId, mensaje) {
+        var canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+
     // ── Colapsar / expandir paneles de estadísticas ──
     document.querySelectorAll('[data-stats-panel]').forEach(function (panel) {
         var btn   = panel.querySelector('[data-stats-toggle]');
@@ -857,24 +881,34 @@
         id: 'centerText',
         afterDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
+            var arco = chart.getDatasetMeta(0).data[0];
+            if (!arco) return;
+            // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+            var total = chart.options.plugins.centerTotal;
+            if (typeof total !== 'number') {
+                total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                    return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                }, 0);
+            }
+            // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+            var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+            var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
             var ctx = chart.ctx;
-            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-            var total = chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
             ctx.save();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.font = 'bold 16px sans-serif';
+            ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
             ctx.fillStyle = '#555555';
-            ctx.fillText('TOTAL', centerX, centerY - 13);
-            ctx.font = 'bold 20px sans-serif';
+            ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+            ctx.font = 'bold ' + tamNumero + 'px sans-serif';
             ctx.fillStyle = '#222222';
-            ctx.fillText(formatoNumero(total), centerX, centerY + 14);
+            ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
             ctx.restore();
         }
     };
 
-    function crearDona(canvasId, etiquetas, valores, colores) {
+    function crearDona(canvasId, etiquetas, valores, colores, mensajeSinDatos) {
+        if (sinDatos(valores)) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
         var seccionesConDatos = valores.filter(function (v) { return Number(v) > 0; }).length;
 
         new Chart(document.getElementById(canvasId), {
@@ -922,7 +956,8 @@
     }
 
     // Barras horizontales (una barra por fila)
-    function crearBarrasH(canvasId, etiquetas, valores, colores, sufijo) {
+    function crearBarrasH(canvasId, etiquetas, valores, colores, sufijo, mensajeSinDatos) {
+        if (sinDatos(valores)) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
         sufijo = sufijo || '';
         new Chart(document.getElementById(canvasId), {
             type: 'bar',
@@ -964,8 +999,11 @@
     }
 
     // Barras apiladas: series = { nombreSerie: { etiqueta: valor } }
-    function crearBarrasApiladas(canvasId, etiquetas, series, colores) {
+    function crearBarrasApiladas(canvasId, etiquetas, series, colores, mensajeSinDatos) {
         var nombres = Object.keys(series);
+        var todos = [];
+        nombres.forEach(function (n) { Object.keys(series[n]).forEach(function (k) { todos.push(series[n][k]); }); });
+        if (sinDatos(todos)) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
         new Chart(document.getElementById(canvasId), {
             type: 'bar',
             data: {
@@ -1008,7 +1046,9 @@
                 'chartEsperaHospital',
                 esperaPorHospital.map(function (h) { return h.hospital; }),
                 esperaPorHospital.map(function (h) { return parseInt(h.pacientes, 10); }),
-                '#90cdf4'
+                '#90cdf4',
+                '',
+                'Sin pacientes en lista de espera para los filtros elegidos'
             );
 
             // Los pacientes que no tienen complejidad cargada van como "Sin clasificar"
@@ -1022,7 +1062,7 @@
                 valores.push(sinClasificar);
                 colores.push('#cbd5e0');
             }
-            crearDona('chartEsperaComplejidad', etiquetas, valores, colores);
+            crearDona('chartEsperaComplejidad', etiquetas, valores, colores, 'Sin pacientes en lista de espera para los filtros elegidos');
         },
 
         // 2. Salud mental
@@ -1033,11 +1073,12 @@
                     if (modalidades.indexOf(m) === -1) modalidades.push(m);
                 });
             });
-            crearBarrasApiladas('chartSaludModalidad', modalidades, saludPorModalidad, coloresTipo);
+            crearBarrasApiladas('chartSaludModalidad', modalidades, saludPorModalidad, coloresTipo, 'Sin camas de salud mental para los filtros elegidos');
 
             var tipos = Object.keys(saludPorTipo);
             crearDona('chartSaludTipo', tipos, tipos.map(function (t) { return saludPorTipo[t]; }),
-                tipos.map(function (t, i) { return coloresTipo[t] || paleta[i % paleta.length]; }));
+                tipos.map(function (t, i) { return coloresTipo[t] || paleta[i % paleta.length]; }),
+                'Sin camas de salud mental para los filtros elegidos');
         },
 
         // 5. RH Materno
@@ -1047,11 +1088,13 @@
                 maternoFilas.map(function (f) { return f.sector; }),
                 maternoFilas.map(function (f) { return f.ocupacion; }),
                 maternoFilas.map(function (f) { return coloresEstandar[f.estandar] || '#cbd5e0'; }),
-                '%'
+                '%',
+                'Sin datos de ocupación materno-infantil para los filtros elegidos'
             );
 
             var servicios = Object.keys(maternoPorServicio);
-            crearDona('chartMaternoServicio', servicios, servicios.map(function (s) { return maternoPorServicio[s]; }));
+            crearDona('chartMaternoServicio', servicios, servicios.map(function (s) { return maternoPorServicio[s]; }), null,
+                'Sin datos de servicios materno-infantiles para los filtros elegidos');
         },
 
         // 6. Capacidad de camas
@@ -1063,11 +1106,13 @@
                 series['UTIN'][r]    = capacidadPorRegion[r].utin;
                 series['Básicas'][r] = capacidadPorRegion[r].basicas;
             });
-            crearBarrasApiladas('chartCapacidadRegion', regiones, series, { 'UTI': '#feb2b2', 'UTIN': '#d6bcfa', 'Básicas': '#81e6d9' });
+            crearBarrasApiladas('chartCapacidadRegion', regiones, series, { 'UTI': '#feb2b2', 'UTIN': '#d6bcfa', 'Básicas': '#81e6d9' },
+                'Sin capacidad de camas cargada para los filtros elegidos');
 
             var tipos = Object.keys(capacidadPorTipo);
             crearDona('chartCapacidadTipo', tipos, tipos.map(function (t) { return capacidadPorTipo[t]; }),
-                tipos.map(function (t, i) { return coloresTipo[t] || paleta[i % paleta.length]; }));
+                tipos.map(function (t, i) { return coloresTipo[t] || paleta[i % paleta.length]; }),
+                'Sin capacidad de camas cargada para los filtros elegidos');
         }
     };
 
@@ -1080,13 +1125,15 @@
                 datos.filas.map(function (f) { return f.hospital; }),
                 datos.filas.map(function (f) { return f.ocupacion; }),
                 datos.filas.map(function (f) { return coloresEstandar[f.estandar] || '#cbd5e0'; }),
-                '%'
+                '%',
+                'Sin datos de ocupación hospitalaria para los filtros elegidos'
             );
             crearDona(
                 'chartEstandar_' + clave,
                 datos.estandares.map(function (e) { return e.estandar; }),
                 datos.estandares.map(function (e) { return e.cantidad; }),
-                datos.estandares.map(function (e) { return coloresEstandar[e.estandar]; })
+                datos.estandares.map(function (e) { return coloresEstandar[e.estandar]; }),
+                'Sin datos de rendimiento hospitalario para los filtros elegidos'
             );
         };
     });

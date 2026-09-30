@@ -88,7 +88,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .rh-panel-title i { color: var(--teal); font-size: 17px; }
+    .rh-panel-title i { color: #fff; font-size: 17px; }
     .rh-panel-body { padding: 18px 20px; }
 
     .rh-btn {
@@ -292,6 +292,9 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($registros)): ?>
+                            <tr><td colspan="13" style="text-align:center; color:#718096; font-style:italic; padding:14px 10px;">Sin profesionales de RRHH para los filtros elegidos</td></tr>
+                        <?php endif; ?>
                     <?php foreach ($registros as $r): ?>
                         <tr>
                             <td><?= esc($r->hospital) ?></td>

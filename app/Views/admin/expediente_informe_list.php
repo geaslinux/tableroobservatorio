@@ -140,6 +140,9 @@
                                             </tr>
                                         </thead>
                                         <tbody>
+                                            <?php if (empty($asignaciones)): ?>
+                                                <tr><td colspan="5" style="text-align:center; color:#718096; font-style:italic; padding:14px 10px;">Sin asignaciones de expedientes para mostrar</td></tr>
+                                            <?php endif; ?>
                                             <?php foreach ($asignaciones as $asignacion): ?>
                                                 <tr>
                                                     <td><?= $asignacion->asignacion_id ?></td>
@@ -165,10 +168,48 @@
     </div>
     <!-- Script para los gráficos -->
   <script>document.addEventListener('DOMContentLoaded', function() {
+
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvas, mensaje) {
+        if (typeof canvas === 'string') canvas = document.getElementById(canvas);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+    // Plugin: total en el centro de las donas
+    var centerTextPlugin = {
+        id: 'centerText',
+        afterDraw: function (chart) {
+            if (chart.config.type !== 'doughnut') return;
+            var ctx = chart.ctx;
+            var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
+            var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
+            var total = chart.data.datasets[0].data.reduce(function (a, b) { return a + (Number(b) || 0); }, 0);
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 20px sans-serif';
+            ctx.fillStyle = '#555555';
+            ctx.fillText('TOTAL', centerX, centerY - 15);
+            ctx.font = 'bold 22px sans-serif';
+            ctx.fillStyle = '#222222';
+            ctx.fillText(total.toLocaleString('es-AR'), centerX, centerY + 20);
+            ctx.restore();
+        }
+    };
+
+
     // Gráfico de expedientes por estado
     var ctx1 = document.getElementById('expedientesPorEstadoChart').getContext('2d');
-    var expedientesPorEstadoChart = new Chart(ctx1, {
-        type: 'pie',
+    if (sinDatos(<?= json_encode(array_column($expedientesPorEstado, 'count')) ?>)) mostrarSinDatos('expedientesPorEstadoChart', 'Sin expedientes por estado para mostrar');
+    else var expedientesPorEstadoChart = new Chart(ctx1, {
+        type: 'doughnut',
         data: {
             labels: <?= json_encode(array_column($expedientesPorEstado, 'estado')) ?>,
             datasets: [{
@@ -176,15 +217,18 @@
                 backgroundColor: ['#f39c12', '#00c0ef', '#00a65a', '#f56954']
             }]
         },
+        plugins: [centerTextPlugin],
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            cutout: '60%'
         }
     });
 
     // Gráfico de asignaciones por usuario
     var ctx2 = document.getElementById('asignacionesPorUsuarioChart').getContext('2d');
-    var asignacionesPorUsuarioChart = new Chart(ctx2, {
+    if (sinDatos(<?= json_encode(array_column($asignacionesPorUsuario, 'count')) ?>)) mostrarSinDatos('asignacionesPorUsuarioChart', 'Sin asignaciones por usuario para mostrar');
+    else var asignacionesPorUsuarioChart = new Chart(ctx2, {
         type: 'bar',
         data: {
             labels: <?= json_encode(array_column($asignacionesPorUsuario, 'usuario_asignado_id')) ?>,
@@ -201,7 +245,8 @@
 
     // Gráfico de expedientes por tipo
     var ctx3 = document.getElementById('expedientesPorTipoChart').getContext('2d');
-    var expedientesPorTipoChart = new Chart(ctx3, {
+    if (sinDatos(<?= json_encode(array_column($expedientesPorTipo, 'count')) ?>)) mostrarSinDatos('expedientesPorTipoChart', 'Sin expedientes por tipo para mostrar');
+    else var expedientesPorTipoChart = new Chart(ctx3, {
         type: 'bar',
         data: {
             labels: <?= json_encode(array_column($expedientesPorTipo, 'tipo_expediente')) ?>,
@@ -218,7 +263,8 @@
 
     // Gráfico de expedientes por prioridad
     var ctx4 = document.getElementById('expedientesPorPrioridadChart').getContext('2d');
-    var expedientesPorPrioridadChart = new Chart(ctx4, {
+    if (sinDatos(<?= json_encode(array_column($expedientesPorPrioridad, 'count')) ?>)) mostrarSinDatos('expedientesPorPrioridadChart', 'Sin expedientes por prioridad para mostrar');
+    else var expedientesPorPrioridadChart = new Chart(ctx4, {
         type: 'bar',
         data: {
             labels: <?= json_encode(array_column($expedientesPorPrioridad, 'prioridad')) ?>,

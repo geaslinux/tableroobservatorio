@@ -5,92 +5,181 @@
 <?= $this->section('content') ?>
 
 <style>
-.cc-wrap * { box-sizing: border-box; }
-.cc-wrap {
-    --navy: #1a2b45; --teal: #00b4a0; --gray-bg: #e8eaed;
-    --border: #d0d5de; --text-main: #1a2b45; --text-muted: #5a6a7e;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--gray-bg); padding: 20px; min-height: 100vh;
-}
-.cc-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
-.cc-breadcrumb a { color: var(--text-muted); text-decoration: none; }
-.cc-breadcrumb a:hover { color: var(--teal); }
-.cc-breadcrumb strong { color: var(--text-main); font-weight: 600; }
+    .cc-breadcrumb {
+        font-size: 12px; color: var(--text-muted);
+        margin-bottom: 16px; display: flex; align-items: center; gap: 6px;
+    }
+    .cc-breadcrumb i { color: var(--teal); font-size: 13px; }
+    .cc-breadcrumb a { color: var(--text-muted); text-decoration: none; }
+    .cc-breadcrumb a:hover { color: var(--teal); }
+    .cc-breadcrumb strong { color: var(--text-main); font-weight: 600; }
 
-.cc-kpi-cards { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-.cc-kpi-card {
-    background: #fff; border-radius: 12px; border: 0.5px solid var(--border);
-    padding: 12px 14px 14px; min-width: 150px; text-align: center; flex: 1 1 150px;
-}
-.cc-kpi-card-label {
-    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
-    padding: 4px 12px; border-radius: 14px; margin-bottom: 8px; background: var(--teal); color: #fff;
-}
-.cc-kpi-card.is-navy .cc-kpi-card-label { background: var(--navy); }
-.cc-kpi-card-value { background: #ececec; border-radius: 8px; padding: 9px 0; font-size: 19px; font-weight: 700; color: var(--teal); }
-.cc-kpi-card.is-navy .cc-kpi-card-value { color: var(--navy); }
+    .cc-kpi-cards {
+        display: flex; gap: 16px; flex-wrap: wrap;
+        margin-bottom: 16px;
+        justify-content: center;
+    }
+    .cc-kpi-card {
+        background: #ffffff;
+        border-radius: 15px;
+        padding: 13px;
+        border: 1px solid #d0d7e0;
+        flex: 0 1 300px;
+        max-width: 350px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 13px;
+        height: 90px;
+        box-sizing: border-box;
+    }
+    .cc-kpi-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+        flex: 1;
+        align-items: center;
+    }
+    .kpi-teal { border-left: 6px solid #38b2ac; }
+    .kpi-blue { border-left: 6px solid #4299e1; }
+    .kpi-red  { border-left: 6px solid #f56565; }
+    .kpi-navy { border-left: 6px solid var(--navy); }
 
-.cc-panel { background: #fff; border-radius: 12px; border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 16px; }
-.cc-panel-header { padding: 14px 20px; background: var(--navy); }
-.cc-panel-title { font-size: 15px; font-weight: 700; color: #fff; }
-.cc-panel-title i { color: var(--teal); margin-right: 8px; }
-.cc-panel-body { padding: 18px 20px; }
+    .cc-kpi-icon {
+        width: 60px; height:60px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 30px;
+    }
+    .kpi-teal .cc-kpi-icon { background: #e6fffa; color: #319795; }
+    .kpi-blue .cc-kpi-icon { background: #ebf8ff; color: #3182ce; }
+    .kpi-red  .cc-kpi-icon { background: #fff5f5; color: #e53e3e; }
+    .kpi-navy .cc-kpi-icon { background: #eef3f8; color: var(--navy); }
 
-.cc-toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
-.cc-btn {
-    display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 8px;
-    border: none; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
-}
-.cc-btn.teal  { background: var(--teal);  color: #fff; }
-.cc-btn.green { background: #27ae60; color: #fff; }
-.cc-btn.ghost { background: #f0f2f5; color: var(--text-muted); border: 1px solid var(--border); }
-.cc-btn:hover { filter: brightness(1.1); text-decoration: none; }
+    .cc-kpi-label { font-size: 15px; font-weight: 700; color: #718096; text-transform: uppercase; }
+    .cc-kpi-value { font-size: 25px; font-weight: 700; color: #2d3748; line-height: 1; margin-top: 2px; }
+    .cc-panel {
+        background: var(--white);
+        border-radius: 12px;
+        border: 0.5px solid var(--border);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    .cc-panel-header {
+        padding: 14px 20px;
+        background: var(--navy);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 10px;
+    }
+    .cc-panel-title {
+        font-size: 15px; font-weight: 700; color: #fff;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .cc-panel-title i { color: #fff; font-size: 17px; }
+    .cc-panel-body { padding: 18px 20px; }
+    .cc-toolbar {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        margin-bottom: 14px;
+    }
+    .cc-filtro-bar {
+        background: #f4f6f9;
+        border: 0.5px solid var(--border);
+        border-radius: 10px;
+        padding: 14px 16px;
+        display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+    .cc-filtro-group { display: flex; flex-direction: column; gap: 5px; }
+    .cc-filtro-label {
+        font-size: 9.5px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px;
+        color: var(--text-muted);
+    }
+    .cc-filtro-select {
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        padding: 7px 12px;
+        font-size: 13px;
+        color: var(--text-main);
+        background: var(--white);
+        outline: none;
+        transition: border-color 0.15s;
+        height: 36px;
+    }
+    .cc-filtro-select:focus { border-color: var(--teal); }
 
-.cc-filtro-bar { background: #f4f6f9; border: 0.5px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
-.cc-filtro-group { display: flex; flex-direction: column; gap: 5px; }
-.cc-filtro-label { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
-.cc-filtro-select { border: 1px solid var(--border); border-radius: 7px; padding: 7px 12px; font-size: 13px; height: 36px; background: #fff; }
+    .cc-stats-body {
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 1.1fr 1.3fr 0.9fr;
+        gap: 18px;
+    }
+    .cc-stats-table-wrap { overflow-x: auto; grid-area: table; }
+    .cc-stats-table {
+        width: 100%; border-collapse: collapse; font-size: 12.5px;
+    }
+    .cc-stats-table thead th {
+        background: var(--teal-bg); color: var(--teal);
+        font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+        padding: 8px 10px; text-align: left;
+    }
+    .cc-stats-table tbody td {
+        padding: 7px 10px; border-bottom: 1px solid #eef0f3; color: var(--text-main);
+    }
+    .cc-stats-table tbody tr:hover { background: #f8f9fb; }
+    .cc-chart-box { position: relative; width: 100%; height: 550px; padding: 30px; }
+    .cc-chart-box canvas { height: 100% !important; width: 100% !important; }
+    .cc-chart-title {
+        font-size: 20px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; text-align: center;
+    }
+    .cc-stats-header {
+        padding: 10px 16px;
+        font-size: 12px; font-weight: 700; color: var(--text-muted);
+        display: flex; align-items: center; justify-content: space-between;
+        background: #f4f6f9;
+        border-bottom: 0.5px solid var(--border);
+        border-radius: 12px 12px 0 0;
+    }
+    .cc-stats-header i { color: var(--teal); }
+    .cc-stats-panel { margin-bottom: 16px; box-shadow: none; transition: margin-bottom 0.15s; }
+    .cc-stats-panel.is-collapsed { margin-bottom: 12px; }
+    .cc-stats-panel.is-collapsed .cc-stats-header { border-radius: 12px; border-bottom: none; padding: 10px 16px; }
+    
+    .cc-stats-body.is-hidden { display: none; }
 
-.cc-table-wrap { overflow-x: auto; border-radius: 8px; border: 0.5px solid var(--border); }
-.cc-table { width: 100%; border-collapse: collapse; font-size: 12.5px; color: var(--text-main); }
-.cc-table thead tr { background: var(--navy); }
-.cc-table thead th { padding: 10px 12px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: rgba(255,255,255,0.7); white-space: nowrap; }
-.cc-table tbody tr { border-bottom: 1px solid #eef0f3; }
-.cc-table tbody tr:hover { background: #f5faff; }
-.cc-table tbody td { padding: 9px 12px; text-align: center; white-space: nowrap; }
-.cc-tag { display: inline-flex; font-size: 11.5px; font-weight: 600; padding: 4px 11px; border-radius: 10px; background: rgba(52,152,219,0.13); color: #2980b9; }
-.cc-pager { margin-top: 14px; }
-.cc-pager .pagination { justify-content: flex-end; }
+    @media (min-width: 993px) {
+        .cc-stats-body {
+            grid-template-columns: 1fr 2fr;
+            grid-template-areas:
+                "table bar"
+                "table pie";
+        }
+        .cc-stats-table-wrap { grid-area: table; }
+        #containerBarras { grid-area: bar; }
+        #containerTorta { grid-area: pie; }
+    }
+
+    @media (max-width: 992px) {
+        .cc-stats-body { grid-template-columns: 1fr; }
+    }
 </style>
 
 <div class="cc-wrap">
 
+    <!-- BREADCRUMB -->
     <div class="cc-breadcrumb">
-        <i class="fas fa-home"></i>
+        <a href="<?= base_url(route_to('home')); ?>" class="fas fa-home"></a>
         <a href="<?= base_url(route_to('base_views')); ?>">Inicio</a> ›
-        Hospitalario ›
+        <a href="<?= base_url(route_to('hospitalario_views')); ?>">Hospitalario</a> ›
+        <a href="<?= base_url(route_to('internacion_views')); ?>">Internación</a> ›
         <strong>Capacidad de Camas</strong>
     </div>
 
-    <div class="cc-kpi-cards">
-        <div class="cc-kpi-card">
-            <span class="cc-kpi-card-label">TOTAL UTI</span>
-            <div class="cc-kpi-card-value"><?= number_format($totalUti, 0, ',', '.') ?></div>
-        </div>
-        <div class="cc-kpi-card">
-            <span class="cc-kpi-card-label">TOTAL UTIN</span>
-            <div class="cc-kpi-card-value"><?= number_format($totalUtin, 0, ',', '.') ?></div>
-        </div>
-        <div class="cc-kpi-card">
-            <span class="cc-kpi-card-label">TOTAL BÁSICAS</span>
-            <div class="cc-kpi-card-value"><?= number_format($totalBasicas, 0, ',', '.') ?></div>
-        </div>
-        <div class="cc-kpi-card is-navy">
-            <span class="cc-kpi-card-label">CAMAS DISPONIBLES</span>
-            <div class="cc-kpi-card-value"><?= number_format($totalCamasDisponibles, 0, ',', '.') ?></div>
-        </div>
-    </div>
-
+    <!-- PANEL PRINCIPAL -->
     <div class="cc-panel">
         <div class="cc-panel-header">
             <span class="cc-panel-title"><i class="fas fa-bed"></i> CAPACIDAD DE CAMAS POR EFECTOR</span>
@@ -98,6 +187,7 @@
 
         <div class="cc-panel-body">
 
+            <!-- ── TOOLBAR ── -->
             <div class="cc-toolbar">
                 <a href="<?= base_url(route_to('base_views')); ?>" class="cc-btn ghost"><i class="fas fa-arrow-left"></i> Volver</a>
                 <a href="<?= base_url(route_to('capacidad_camas_create')); ?>" class="cc-btn teal"><i class="fas fa-plus"></i> Nuevo Registro</a>
@@ -108,8 +198,10 @@
                 ]) ?>" class="cc-btn green"><i class="fas fa-file-excel"></i> Descargar Excel</a>
             </div>
 
+            <!-- ── FILTROS ── -->
             <form method="GET" action="<?= base_url(route_to('capacidad_camas_list')); ?>">
                 <div class="cc-filtro-bar">
+                    <!-- EJERCICIO -->
                     <div class="cc-filtro-group">
                         <span class="cc-filtro-label">Efector</span>
                         <select name="efector_id" class="cc-filtro-select">
@@ -137,6 +229,8 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
+
+                    <!-- ACCIONES FILTRO -->
                     <div class="cc-filtro-group">
                         <span class="cc-filtro-label">&nbsp;</span>
                         <button type="submit" class="cc-btn teal" style="height:36px;"><i class="fas fa-filter"></i></button>
@@ -144,6 +238,27 @@
                 </div>
             </form>
 
+            <!-- ── TARJETAS KPI ── -->
+            <div class="cc-kpi-cards">
+                <div class="cc-kpi-card">
+                    <span class="cc-kpi-card-label">TOTAL UTI</span>
+                    <div class="cc-kpi-card-value"><?= number_format($totalUti, 0, ',', '.') ?></div>
+                </div>
+                <div class="cc-kpi-card">
+                    <span class="cc-kpi-card-label">TOTAL UTIN</span>
+                    <div class="cc-kpi-card-value"><?= number_format($totalUtin, 0, ',', '.') ?></div>
+                </div>
+                <div class="cc-kpi-card">
+                    <span class="cc-kpi-card-label">TOTAL BÁSICAS</span>
+                    <div class="cc-kpi-card-value"><?= number_format($totalBasicas, 0, ',', '.') ?></div>
+                </div>
+                <div class="cc-kpi-card is-navy">
+                    <span class="cc-kpi-card-label">CAMAS DISPONIBLES</span>
+                    <div class="cc-kpi-card-value"><?= number_format($totalCamasDisponibles, 0, ',', '.') ?></div>
+                </div>
+            </div>
+
+        <!-- Tabla detalle -->
          <div class="cc-table-wrap">
                 <table class="cc-table">
                     <thead>
@@ -174,6 +289,9 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($registros)): ?>
+                            <tr><td colspan="23" style="text-align:center; color:#718096; font-style:italic; padding:14px 10px;">Sin capacidad de camas para los filtros elegidos</td></tr>
+                        <?php endif; ?>
                     <?php foreach ($registros as $r): ?>
                         <tr>
                             <td><?= esc($r->nombre) ?></td>

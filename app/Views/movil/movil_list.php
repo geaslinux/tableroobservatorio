@@ -26,13 +26,13 @@
         padding: 13px;
         border: 1px solid #d0d7e0;
         flex: 0 1 300px;
-        max-width: 350px;
+        max-width: 270px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         display: flex;
         flex-direction: row;
         align-items: center;
         gap: 13px;
-        height: 90px;
+        height: 80px;
         box-sizing: border-box;
     }
     .ml-kpi-content {
@@ -43,11 +43,13 @@
         flex: 1;
         align-items: center;
     }
-    .kpi-teal { border-left: 6px solid #81e6d9; }
-    .kpi-blue { border-left: 6px solid #90cdf4; }
-    .kpi-red  { border-left: 6px solid #feb2b2; }
-    .kpi-navy { border-left: 6px solid #a0aec0; }
-
+    .kpi-teal   { border-left: 6px solid #81e6d9; } 
+    .kpi-blue   { border-left: 6px solid #90cdf4; } 
+    .kpi-red    { border-left: 6px solid #feb2b2; } 
+    .kpi-amber  { border-left: 6px solid #fbd38d; } 
+    .kpi-purple { border-left: 6px solid #d6bcfa; } 
+    .kpi-navy   { border-left: 6px solid #a0aec0; } 
+    
     .ml-kpi-icon {
         width: 60px; height:60px;
         border-radius: 12px;
@@ -79,7 +81,7 @@
         font-size: 15px; font-weight: 700; color: #fff;
         display: flex; align-items: center; gap: 10px;
     }
-    .ml-panel-title i { color: var(--teal); font-size: 17px; }
+    .ml-panel-title i { color: #fff; font-size: 17px; }
     .ml-panel-body { padding: 18px 20px; }
     .ml-toolbar {
         display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
@@ -156,12 +158,62 @@
     @media (max-width: 992px) {
         .ml-stats-body { grid-template-columns: 1fr; }
     }
+
+    /* ── Formato de los paneles de Hospitalario ── */
+    /* El botón "Ocultar estadísticas" marca #statsBody con is-hidden */
+    #statsBody.is-hidden { display: none; }
+    .ml-kpi-card  { flex: 0 1 260px; max-width: 320px; }
+    .ml-kpi-icon  { flex-shrink: 0; }
+    .ml-kpi-label { font-size: 14px; text-align: center; }
+    .ml-filtro-group { min-width: 0; }
+    .ml-stats-header { gap: 10px; flex-wrap: wrap; }
+    .ml-stats-body {
+        padding: 18px;
+        display: grid;
+        grid-template-columns: 1fr 1.4fr;
+        grid-template-areas: none;
+        gap: 18px;
+        align-items: start;
+    }
+    /* Columna derecha: los dos gráficos uno debajo del otro */
+    .ml-stats-graficos { display: flex; flex-direction: column; gap: 28px; min-width: 0; }
+    .ml-stats-table-wrap { overflow-x: auto; grid-area: auto; }
+    .ml-stats-table thead th { white-space: nowrap; }
+    .ml-stats-table .num { text-align: right; white-space: nowrap; }
+    .ml-stats-table thead th.num { text-align: right; }
+    .ml-stats-table tfoot td {
+        padding: 8px 10px; font-weight: 700; color: var(--text-main);
+        border-top: 2px solid var(--border);
+    }
+    .ml-stats-vacio { padding: 14px 10px; color: var(--text-muted); font-style: italic; text-align: center; }
+    .ml-chart-box {
+        display: flex; flex-direction: column; min-width: 0;
+        position: static; height: auto; padding: 0; grid-area: auto;
+    }
+    .ml-chart-box.is-large { height: auto; }
+    .ml-chart-canvas { position: relative; width: 100%; height: 330px; }
+    .ml-chart-canvas canvas { height: 100% !important; width: 100% !important; }
+    .ml-chart-title {
+        font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px; text-align: center;
+    }
+    @media (max-width: 992px) {
+        .ml-stats-body { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+        .ml-panel-body { padding: 14px 12px; }
+        .ml-stats-body { padding: 12px; }
+        .ml-filtro-group { flex: 1 1 100%; }
+        .ml-filtro-select { width: 100%; }
+        .ml-kpi-card { flex: 1 1 100%; max-width: none; }
+        .ml-chart-canvas { height: 280px; }
+    }
 </style>
 
 <!-- BREADCRUMB -->
 <div class="ml-breadcrumb">
     <a href="<?= base_url(route_to('home')); ?>" class="fas fa-home"></a>
-    <a href="<?= base_url(route_to('base_views')); ?>">Inicio</a> ›
+    <a href="<?= base_url(route_to('inicio_views')); ?>">Inicio</a> ›
     <a href="<?= base_url(route_to('base_views')); ?>">Prehospitalario</a> ›
     <strong>Móviles — Estadísticas</strong>
 </div>
@@ -229,6 +281,10 @@
                         <button type="submit" class="bl-btn teal" style="height:36px; padding:0 16px;">
                             <i class="fas fa-filter"></i>
                         </button>
+                        <a href="<?= base_url(route_to('movil_list')); ?>" class="bl-btn ghost"
+                           style="height:36px; padding:0 14px;" title="Limpiar filtros">
+                            <i class="fas fa-times"></i>
+                        </a>
                         <button type="button" class="bl-btn ghost" id="btnToggle"
                                 style="height:36px; padding:0 14px;"
                                 title="Mostrar/ocultar Estado">
@@ -245,28 +301,28 @@
                 <div class="ml-kpi-icon"><i class="fas fa-truck-moving"></i></div>
                 <div class="ml-kpi-content">
                     <div class="ml-kpi-label">OPERATIVOS</div>
-                    <div class="ml-kpi-value"><?= $totalOperativos ?></div>
+                    <div class="ml-kpi-value"><?= number_format((int) $totalOperativos, 0, ',', '.') ?></div>
                 </div>
             </div>
             <div class="ml-kpi-card kpi-blue">
                 <div class="ml-kpi-icon"><i class="fas fa-boxes"></i></div>
                 <div class="ml-kpi-content">
                     <div class="ml-kpi-label">LOGÍSTICA</div>
-                    <div class="ml-kpi-value"><?= $totalLogistica ?></div>
+                    <div class="ml-kpi-value"><?= number_format((int) $totalLogistica, 0, ',', '.') ?></div>
                 </div>
             </div>
             <div class="ml-kpi-card kpi-red">
                 <div class="ml-kpi-icon"><i class="fas fa-times-circle"></i></div>
                 <div class="ml-kpi-content">
                     <div class="ml-kpi-label">FUERA DE SERVICIO</div>
-                    <div class="ml-kpi-value"><?= $totalFueraServicio ?></div>
+                    <div class="ml-kpi-value"><?= number_format((int) $totalFueraServicio, 0, ',', '.') ?></div>
                 </div>
             </div>
             <div class="ml-kpi-card kpi-navy">
                 <div class="ml-kpi-icon"><i class="fas fa-truck"></i></div>
                 <div class="ml-kpi-content">
                     <div class="ml-kpi-label">TOTAL</div>
-                    <div class="ml-kpi-value"><?= $totalGeneralCantidad ?></div>
+                    <div class="ml-kpi-value"><?= number_format((int) $totalGeneralCantidad, 0, ',', '.') ?></div>
                 </div>
             </div>
         </div>
@@ -274,7 +330,7 @@
         <!-- ── PANEL ESTADÍSTICAS (abierto por defecto) ── -->
         <div class="ml-panel ml-stats-panel" id="statsPanel">
             <div class="ml-stats-header">
-                <span><i class="fas fa-chart-pie"></i> ESTADÍSTICAS DE ATENCIONES</span>
+                <span><i class="fas fa-chart-pie"></i> ESTADÍSTICAS DE MÓVILES</span>
                 <button type="button" class="bl-btn ghost sm" id="btnToggleStats" title="Mostrar/ocultar estadísticas">
                     <i class="fas fa-eye-slash" id="iconoToggleStats"></i> <span id="textoToggleStats">Ocultar estadísticas</span>
                 </button>
@@ -287,30 +343,41 @@
                 <div class="ml-chart-title" style="text-align:left;">Vehículos por tipo / ejercicio</div>
                 <table class="ml-stats-table">
                     <thead>
-                        <tr><th>Tipo</th><th>Ejercicio</th><th>Cantidad</th></tr>
+                        <tr><th>Tipo</th><th>Ejercicio</th><th class="num">Cantidad</th></tr>
                     </thead>
                     <tbody>
+                        <?php if (empty($statsFilas)): ?>
+                            <tr><td colspan="3" class="ml-stats-vacio">Sin servicios de móviles para los filtros elegidos</td></tr>
+                        <?php endif; ?>
                         <?php foreach ($statsFilas as $f): ?>
                         <tr>
                             <td><?= esc($f['tipo']) ?></td>
                             <td><?= esc($f['ejercicio']) ?></td>
-                            <td><?= esc($f['cantidad']) ?></td>
+                            <td class="num"><?= number_format((int) $f['cantidad'], 0, ',', '.') ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
+                    <?php if (!empty($statsFilas)): ?>
+                    <tfoot>
+                        <tr><td colspan="2">Total</td><td class="num"><?= number_format((int) array_sum(array_map('intval', array_column($statsFilas, 'cantidad'))), 0, ',', '.') ?></td></tr>
+                    </tfoot>
+                    <?php endif; ?>
                 </table>
             </div>
 
-            <!-- Barras comparativas -->
-            <div class="ml-chart-box">
-                <div class="ml-chart-title">Comparativo por tipo (últimos ejercicios)</div>
-                <canvas id="chartBarras"></canvas>
-            </div>
+            <!-- Gráficos apilados: barras arriba, dona abajo -->
+            <div class="ml-stats-graficos">
+                <!-- Barras comparativas -->
+                <div class="ml-chart-box">
+                    <div class="ml-chart-title">Comparativo por tipo (últimos ejercicios)</div>
+                    <div class="ml-chart-canvas"><canvas id="chartBarras"></canvas></div>
+                </div>
 
-            <!-- Torta distribución -->
-            <div class="ml-chart-box">
-                <div class="ml-chart-title">Distribución por ejercicio</div>
-                <canvas id="chartTorta"></canvas>
+                <!-- Torta distribución -->
+                <div class="ml-chart-box">
+                    <div class="ml-chart-title">Distribución por ejercicio</div>
+                    <div class="ml-chart-canvas"><canvas id="chartTorta"></canvas></div>
+                </div>
             </div>
         </div>
     </div>
@@ -324,6 +391,29 @@
 
     if (typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
+    }
+
+    // ── Gráficos sin datos: en lugar del gráfico se muestra un aviso ──
+    function sinDatos(valores) {
+        return !(valores || []).some(function (v) { return Number(v) > 0; });
+    }
+    function mostrarSinDatos(canvas, mensaje) {
+        if (typeof canvas === 'string') canvas = document.getElementById(canvas);
+        if (!canvas) return;
+        var aviso = document.createElement('div');
+        aviso.style.cssText = 'height:100%;min-height:220px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#718096;font-size:13px;font-style:italic;text-align:center;border:1px dashed #d8dee6;border-radius:10px;padding:16px;box-sizing:border-box;';
+        aviso.innerHTML = '<i class="fas fa-chart-bar" style="font-size:28px;opacity:.4;font-style:normal;"></i>';
+        aviso.appendChild(document.createTextNode(mensaje));
+        canvas.replaceWith(aviso);
+    }
+    // Crea el gráfico solo si la configuración trae algún valor mayor a 0
+    function crearGrafico(canvas, mensaje, config) {
+        var valores = [];
+        ((config.data && config.data.datasets) || []).forEach(function (ds) {
+            (ds.data || []).forEach(function (v) { valores.push(v && typeof v === 'object' ? v.y : v); });
+        });
+        if (sinDatos(valores)) { mostrarSinDatos(canvas, mensaje); return null; }
+        return new Chart(canvas, config);
     }
 
     // ── MOVIL_LIST CHART SCRIPTS ──
@@ -408,9 +498,15 @@
             .sort(function (a, b) { return a - b; });
 
         // 4. Crear mapa fijo permanente (Año -> Color)
+        // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
+        var paletaEjercicios = [
+            '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
+            '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
+        ];
+
         var ejercicioColorMap = {};
         ejerciciosOrdenados.forEach(function (ejercicio, index) {
-            ejercicioColorMap[String(ejercicio)] = paleta[index % paleta.length];
+            ejercicioColorMap[String(ejercicio)] = paletaEjercicios[index % paletaEjercicios.length];
         });
 
         function colorParaEjercicio(ejercicio) {
@@ -439,7 +535,7 @@
             };
         });
 
-        new Chart(document.getElementById('chartBarras'), {
+        crearGrafico(document.getElementById('chartBarras'), 'Sin servicios de móviles por tipo para los filtros elegidos', {
             type: 'bar',
             data: {
                 labels: tipos,
@@ -497,21 +593,30 @@
         // Plugins para la dona
         var centerTextPlugin = {
             id: 'centerText',
-            afterDraw: function(chart) {
+            afterDraw: function (chart) {
                 if (chart.config.type !== 'doughnut') return;
+                var arco = chart.getDatasetMeta(0).data[0];
+                if (!arco) return;
+                // Total fijado por la vista (p. ej. dona paginada) o suma de las secciones visibles en la leyenda
+                var total = chart.options.plugins.centerTotal;
+                if (typeof total !== 'number') {
+                    total = chart.data.datasets[0].data.reduce(function (a, v, i) {
+                        return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+                    }, 0);
+                }
+                // Letra proporcional al hueco: se ve igual en donas grandes y chicas
+                var tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
+                var tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
                 var ctx = chart.ctx;
                 ctx.save();
-                ctx.font = "bold 20px sans-serif";
-                ctx.fillStyle = "#555555";
-                ctx.textAlign = "center";
-                ctx.textBaseline = "middle";
-                var centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-                var centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-                ctx.fillText("TOTAL", centerX, centerY - 15);
-                ctx.font = "bold 22px sans-serif";
-                ctx.fillStyle = "#222222";
-                var total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                ctx.fillText(total.toLocaleString(), centerX, centerY + 20);
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold ' + tamTitulo + 'px sans-serif';
+                ctx.fillStyle = '#555555';
+                ctx.fillText('TOTAL', arco.x, arco.y - tamNumero * 0.55);
+                ctx.font = 'bold ' + tamNumero + 'px sans-serif';
+                ctx.fillStyle = '#222222';
+                ctx.fillText(total.toLocaleString('es-AR'), arco.x, arco.y + tamTitulo * 0.65);
                 ctx.restore();
             }
         };
@@ -558,7 +663,7 @@
             }).length;
 
             // 3. Pasar las variables al gráfico
-            new Chart(elTorta, {
+            crearGrafico(elTorta, 'Sin servicios de móviles por ejercicio para los filtros elegidos', {
                 type: 'doughnut',
                 data: {
                     labels: filtroEjercicio ? tipos : datosTorta.map(function(d) { return d.ejercicio; }),
@@ -568,38 +673,74 @@
                             ? tipos.map(function(tipo) { return coloresTipo[tipo] || '#9b59b6'; })
                             : datosTorta.map(function(d) { return colorParaEjercicio(d.ejercicio); }),
                         borderColor: '#ffffff',
-                        borderWidth: 0,
-                        // Si hay más de 1 dato, se aplican spacing y offset; si es 1 solo dato, quedan en 0
-                        spacing: seccionesConDatos > 1 ? 8 : 0,
-                        offset: seccionesConDatos > 1 ? 12 : 0,
-                        borderRadius: 5
+                        // Separación con borde blanco: con "spacing", Chart.js dibuja las
+                        // porciones muy chicas como un aro completo
+                        borderWidth: seccionesConDatos > 1 ? 3 : 0,
+                        hoverOffset: seccionesConDatos > 1 ? 8 : 0,
+                        borderRadius: 4
                     }]
                 },
                 plugins: [centerTextPlugin, donutSeparatorPlugin],
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                cutout: '60%',
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: { boxWidth: 15, padding: 10 }
-                    },
-                    datalabels: {
-                        color: '#333333',
-                        font: { weight: 'bold', size: 15 },
-                        formatter: function(value, ctx) {
-                            // Obtener la suma total directamente de los datos del dataset
-                            var dataset = ctx.chart.data.datasets[0].data;
-                            var totalSum = dataset.reduce(function(a, b) { return a + b; }, 0);
-
-                            if (totalSum === 0) return '0%';
-                            var percentage = ((value / totalSum) * 100).toFixed(0);
-                            return percentage > 3 ? percentage + '%' : '';
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            position: window.matchMedia('(max-width: 600px)').matches ? 'bottom' : 'right',
+                            labels: { boxWidth: 12, padding: 8, font: { size: 11 } }
                         },
-                        anchor: 'center',
-                        align: 'center'
-                    }
+                        datalabels: {
+                            color: function (ctx) {
+                                // Texto blanco sobre fondos oscuros (azules de los ejercicios), gris sobre los claros
+                                var bg = ctx.dataset.backgroundColor;
+                                bg = Array.isArray(bg) ? bg[ctx.dataIndex] : bg;
+                                var m = /^#([0-9a-f]{6})/i.exec(bg || '');
+                                if (!m) return '#5a5858';
+                                var n = parseInt(m[1], 16);
+                                return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) < 150 ? '#ffffff' : '#5a5858';
+                            },
+                            font: {
+                                weight: 'bold',
+                                size: 13
+                            },
+                            // 1. CONTROL DE VISIBILIDAD NATIVO:
+                            // Oculta completamente el contenedor del datalabel si el valor es 0 o negativo
+                            display: function(context) {
+                                var val = context.dataset.data[context.dataIndex];
+                                return val !== null && Number(val) > 0;
+                            },
+                            anchor: 'center',
+                            align: 'center',
+
+                            // 2. CÁLCULO DINÁMICO Y FORMATO SEGURO:
+                            formatter: function(value, context) {
+                                // Obtiene los datos del dataset actual de forma segura
+                                var dataset = context.chart.data.datasets[context.datasetIndex].data;
+                                
+                                // Suma el total dinámicamente en tiempo real
+                                var totalSum = dataset.reduce(function(acc, curr) {
+                                    var num = Number(curr);
+                                    return acc + (isNaN(num) ? 0 : num);
+                                }, 0);
+
+                                // Si la suma total es 0, no dibuja nada
+                                if (totalSum === 0) return null;
+
+                                var percentage = (Number(value) / totalSum) * 100;
+
+                                // Oculta porcentajes menores o iguales al 2% para evitar que el texto
+                                // se encime en sectores demasiado angostos
+                                if (percentage <= 2) return null;
+
+                                // Formato con localización local (Argentina / Latam)
+                                // Redondea a entero si es exacto, o muestra máximo 1 decimal si es necesario
+                                return percentage.toLocaleString('es-AR', {
+                                    minimumFractionDigits: 0,
+                                    maximumFractionDigits: 1
+                                }) + '%';
+                            }
+                        }
                 }
             }
         });

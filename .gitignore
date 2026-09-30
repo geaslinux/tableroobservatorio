@@ -84,7 +84,7 @@ phpunit
 #-------------------------
 # Composer
 #-------------------------
-vendor/
+#vendor/ /*se comenta*/
 
 #-------------------------
 # IDE / Development Files
@@ -127,12 +127,13 @@ nb-configuration.xml
 /.phpunit.*.cache
 
 
-# Entorno
+/vendor/
+/node_modules/
+*.log 
+/public/archivos/*
+!/public/archivos/.gitkeep
 .env
 
-# Credenciales
-app/Config/google-credentials.json
+.claude/
 
-# Docker: volcados de base de datos (contienen datos reales)
-docker/mysql/init/*.sql
-!docker/mysql/init/00-crear-bases.sql
+app/Config/google-credentials.json

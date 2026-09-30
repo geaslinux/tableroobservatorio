@@ -158,10 +158,11 @@ class ServicioVController extends BaseController
             ->orderBy('total', 'DESC')
             ->get()->getResultArray();
 
-        // Evolución anual (todos los años, respetando hospital/región)
+        // Evolución anual (todos los años o el ejercicio elegido, respetando hospital/región)
         $trPorAnio = $db->table('transfusion')
             ->join('efector', 'efector.efector_id = transfusion.efector_id', 'left')
             ->whereIn('transfusion.estado', ['activo', 'desactivado'])
+            ->when($ej !== '', function ($b) use ($ej) { $b->where('transfusion.ejercicio', $ej); })
             ->when($filtros['filtro_efector'] !== '', function ($b) use ($filtros) { $b->where('transfusion.efector_id', $filtros['filtro_efector']); })
             ->when($filtros['filtro_region'] !== '', function ($b) use ($filtros) { $b->where('efector.region', $filtros['filtro_region']); })
             ->select('transfusion.ejercicio, SUM(transfusion.total) AS total, COUNT(DISTINCT transfusion.efector_id) AS hospitales')
