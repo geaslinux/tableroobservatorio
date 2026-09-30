@@ -1,4 +1,5 @@
 <?= $this->extend('layout/main'); ?> //3333
+<?= $this->extend('layout/main'); ?> //cambios
 <?= $this->section('title') ?> Bases · Ministerio de Salud <?= $this->endSection() ?>
 <?= $this->section('menu') ?> <?= $this->include('admin/menu'); ?> <?= $this->endSection() ?>
 
