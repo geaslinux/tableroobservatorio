@@ -61,6 +61,16 @@
     .kpi-red    .ml-kpi-icon { background: #fff5f5; color: #e53e3e; }
     .kpi-navy   .ml-kpi-icon { background: #f7fafc; color: #4a5568; }
 
+    /* Tasa de mortalidad: tono sobrio con lazo negro (en lugar del rojo y el corazón roto) */
+    .kpi-luto { border-left: 6px solid #4a5568; background: linear-gradient(135deg, #ffffff 0%, #f7f8fa 100%); }
+    .kpi-luto .ml-kpi-icon {
+        background: radial-gradient(circle at 50% 40%, #ffffff 0%, #edf0f4 70%);
+        color: #1f2933;
+        box-shadow: inset 0 0 0 1px #e2e6ec;
+    }
+    .kpi-luto .ml-kpi-icon i { font-size: 28px; }
+    .kpi-luto .ml-kpi-value { color: #1f2933; }
+
     .ml-kpi-label { font-size: 14px; font-weight: 700; color: #718096; text-transform: uppercase; text-align: center; }
     .ml-kpi-value { font-size: 25px; font-weight: 700; color: #2d3748; line-height: 1; margin-top: 2px; }
 
@@ -564,8 +574,8 @@
                         <div class="ml-kpi-value"><?= $dec($k['estada'] ?? 0) ?></div>
                     </div>
                 </div>
-                <div class="ml-kpi-card kpi-red">
-                    <div class="ml-kpi-icon"><i class="fas fa-heart-broken"></i></div>
+                <div class="ml-kpi-card kpi-luto">
+                    <div class="ml-kpi-icon" title="En memoria"><i class="fas fa-ribbon"></i></div>
                     <div class="ml-kpi-content">
                         <div class="ml-kpi-label">Tasa mortalidad</div>
                         <div class="ml-kpi-value"><?= $dec($k['mortalidad'] ?? 0, 2) ?>%</div>
@@ -650,8 +660,8 @@
                         <div class="ml-kpi-value"><?= $dec($maternoKpi['ocupacion'] ?? 0) ?>%</div>
                     </div>
                 </div>
-                <div class="ml-kpi-card kpi-red">
-                    <div class="ml-kpi-icon"><i class="fas fa-heart-broken"></i></div>
+                <div class="ml-kpi-card kpi-luto">
+                    <div class="ml-kpi-icon" title="En memoria"><i class="fas fa-ribbon"></i></div>
                     <div class="ml-kpi-content">
                         <div class="ml-kpi-label">Tasa mortalidad</div>
                         <div class="ml-kpi-value"><?= $dec($maternoKpi['mortalidad'] ?? 0, 2) ?>%</div>

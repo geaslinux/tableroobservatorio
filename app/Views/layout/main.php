@@ -20,7 +20,7 @@
     --sidebar-w:           210px;
     --sidebar-collapsed-w: 84px;
     --sidebar-tab:         42px;
-    --topbar-h:            60px;
+    --topbar-h:            70px;
     --radius:              22px;
 
     /* ── Colores Principales / Marca ── */
@@ -75,18 +75,23 @@
         }
 
         /* ── ESTRUCTURA LAYOUT GRID ── */
-        .layout { 
-            display: grid; 
-            grid-template-columns: calc(var(--sidebar-w) + var(--sidebar-tab)) 1fr; 
-            margin-top: var(--topbar-h); 
-            min-height: calc(100vh - var(--topbar-h)); 
-            transition: grid-template-columns 0.22s ease;
+        /* El sidebar es fixed (no se mueve al hacer scroll); el contenido y el footer
+           dejan a la izquierda el espacio que ocupa. */
+        .layout {
+            display: block;
+            padding-left: calc(var(--sidebar-w) + var(--sidebar-tab));
+            margin-top: var(--topbar-h);
+            min-height: calc(100vh - var(--topbar-h));
+            transition: padding-left 0.22s ease;
+        }
+        .layout ~ .footer {
+            margin-left: calc(var(--sidebar-w) + var(--sidebar-tab));
+            transition: margin-left 0.22s ease;
         }
 
-        /* Ajuste de grid al colapsar sidebar */
-        body.sidebar-collapsed .layout {
-            grid-template-columns: var(--sidebar-collapsed-w) 1fr;
-        }
+        /* Ajuste al colapsar sidebar */
+        body.sidebar-collapsed .layout { padding-left: var(--sidebar-collapsed-w); }
+        body.sidebar-collapsed .layout ~ .footer { margin-left: var(--sidebar-collapsed-w); }
 
         /* ── MAIN CONTENT (Contenido Principal Adaptable) ── */
         .main-content {
@@ -102,6 +107,13 @@
             width: 100%;
             height: 4rem;
             top: calc(100vh - 4rem);
+        }
+
+        /* Mapas (Leaflet): sin el recuadro negro de foco al hacer clic en un departamento o marcador */
+        .leaflet-container path.leaflet-interactive:focus,
+        .leaflet-container .leaflet-interactive:focus,
+        .leaflet-container .leaflet-marker-icon:focus {
+            outline: none;
         }
 
         .is-vhcenter {
@@ -145,9 +157,10 @@
 
         /* ── RESPONSIVE / ADAPTACIÓN MÓVIL ── */
         @media (max-width: 768px) {
-            .layout {
-                grid-template-columns: 1fr;
-            }
+            .layout,
+            body.sidebar-collapsed .layout { padding-left: 0; }
+            .layout ~ .footer,
+            body.sidebar-collapsed .layout ~ .footer { margin-left: 0; }
             .main-content { 
                 margin-left: 0 !important; 
                 padding: 14px; 

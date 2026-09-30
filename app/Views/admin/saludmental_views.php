@@ -233,6 +233,18 @@
     .sm-legend-item  { display: flex; align-items: center; gap: 6px; font-size: 11px; }
     .sm-legend-color { width: 12px; height: 12px; border-radius: 3px; }
 
+    /* Leyenda de riesgo como filtro */
+    .sm-legend-btn {
+        font: inherit; font-size: 11px; font-weight: 600; color: var(--text-main);
+        background: transparent; border: 1px solid transparent; border-radius: 999px;
+        padding: 3px 9px; cursor: pointer;
+        transition: background .15s, border-color .15s, opacity .15s;
+    }
+    .sm-legend-btn:hover { background: #f0f5f9; border-color: #d0d7e0; }
+    .sm-legend-btn.is-active { background: #eefaf8; border-color: var(--teal); }
+    .sm-legend-group.has-filter .sm-legend-btn:not(.is-active) { opacity: .45; }
+    .sm-legend-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
     /* Lista de pacientes */
     .sm-list-container {
         display: flex; flex-direction: column; gap: 10px;
@@ -438,7 +450,8 @@
             <div class="ml-panel ml-stats-panel" data-stats-panel>
                 <?= $headerStats('ESTADÍSTICAS DE PACIENTES') ?>
                 <div class="ml-stats-body">
-                    <div class="ml-stats-table-wrap">
+                    <!-- padding-right: separa la tabla de los gráficos -->
+                    <div class="ml-stats-table-wrap" style="padding-right:24px;">
                         <div class="ml-chart-title" style="text-align:left;">Pacientes por diagnóstico</div>
                         <table class="ml-stats-table">
                             <thead>
@@ -475,13 +488,15 @@
                     <div class="ml-chart-box">
                         <div class="ml-chart-title">Principales diagnósticos</div>
                         <div class="ml-chart-canvas" style="height:<?= $alto(min(10, count($porDiagnostico))) ?>px;"><canvas id="chartDiagnostico"></canvas></div>
+
+                        <!-- Debajo de Principales diagnósticos: columna más ancha, junto a la tabla -->
+                        <div class="ml-chart-title" style="margin-top:22px;">Riesgo según tipo de paciente</div>
+                        <div class="ml-chart-canvas" style="height:240px;"><canvas id="chartRiesgoTipo"></canvas></div>
                     </div>
 
                     <div class="ml-chart-box">
                         <div class="ml-chart-title">Factor de riesgo</div>
                         <div class="ml-chart-canvas"><canvas id="chartRiesgo"></canvas></div>
-                        <div class="ml-chart-title" style="margin-top:16px;">Riesgo según tipo de paciente</div>
-                        <div class="ml-chart-canvas" style="height:200px;"><canvas id="chartRiesgoTipo"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -528,21 +543,26 @@
 
                             <!-- COLUMNA IZQUIERDA: LISTA DE PACIENTES -->
                             <div>
-                                <!-- Leyenda de riesgo (sobre la lista) -->
-                                <div class="sm-legend-group">
+                                <!-- Leyenda de riesgo (sobre la lista): cada botón filtra lista y mapa; otro clic lo quita -->
+                                <div class="sm-legend-group" id="filtroRiesgo">
                                     <?php foreach ($coloresRiesgo as $r => $c): ?>
-                                        <div class="sm-legend-item">
-                                            <div class="sm-legend-color" style="background:<?= $c ?>;"></div>
+                                        <button type="button" class="sm-legend-item sm-legend-btn" data-riesgo="<?= esc($r, 'attr') ?>"
+                                                aria-pressed="false" title="Mostrar solo riesgo <?= esc($r, 'attr') ?>">
+                                            <span class="sm-legend-color" style="background:<?= $c ?>;"></span>
                                             <?= esc($r) ?>
-                                        </div>
+                                        </button>
                                     <?php endforeach; ?>
                                 </div>
 
                                 <div class="sm-list-container" id="listaPacientes">
                                     <?php if (!empty($puntos)): ?>
                                         <?php foreach ($puntos as $i => $p): ?>
-                                            <?php $colorR = $coloresRiesgo[strtoupper($p['riesgo'] ?? '')] ?? $coloresRiesgo['S/D']; ?>
-                                            <div class="sm-paciente-item" data-punto="<?= $i ?>" title="Ver en el mapa">
+                                            <?php
+                                                $riesgoKey = strtoupper($p['riesgo'] ?? '');
+                                                $riesgoKey = isset($coloresRiesgo[$riesgoKey]) ? $riesgoKey : 'S/D';
+                                                $colorR    = $coloresRiesgo[$riesgoKey];
+                                            ?>
+                                            <div class="sm-paciente-item" data-punto="<?= $i ?>" data-riesgo="<?= esc($riesgoKey, 'attr') ?>" title="Ver en el mapa">
                                                 <div class="sm-paciente-nombre"><?= esc($p['paciente']) ?></div>
                                                 <div class="sm-paciente-info">
                                                     <i class="fas fa-map-marker-alt"></i> <?= esc($p['localidad'] ?: '—') ?> |
@@ -561,6 +581,7 @@
                                     <?php else: ?>
                                         <div class="sm-list-vacia">Sin pacientes con coordenadas para los filtros elegidos</div>
                                     <?php endif; ?>
+                                    <div class="sm-list-vacia" id="listaSinRiesgo" style="display:none;">Sin pacientes con este nivel de riesgo</div>
                                 </div>
                             </div>
 
@@ -823,6 +844,11 @@
         if (sinDatos(valoresRiesgoTipo)) {
             mostrarSinDatos('chartRiesgoTipo', 'Sin pacientes de salud mental por riesgo y tipo para los filtros elegidos');
         } else
+        // Total de pacientes por tipo (para porcentajes y para ocultar etiquetas en segmentos muy finos)
+        var totalPorTipo = tipos.map(function (t) {
+            return riesgos.reduce(function (s, r) { return s + (riesgoPorTipo[r][t] || 0); }, 0);
+        });
+
         new Chart(document.getElementById('chartRiesgoTipo'), {
             type: 'bar',
             data: {
@@ -831,8 +857,14 @@
                     return {
                         label: r,
                         backgroundColor: coloresRiesgo[r],
+                        borderColor: '#ffffff',
+                        borderWidth: { right: 2 },
+                        borderSkipped: false,
+                        borderRadius: 6,
                         data: tipos.map(function (t) { return riesgoPorTipo[r][t] || 0; }),
-                        maxBarThickness: 30
+                        barPercentage: 0.85,
+                        categoryPercentage: 0.8,
+                        maxBarThickness: 42
                     };
                 })
             },
@@ -840,17 +872,45 @@
                 indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { right: 6 } },
                 plugins: {
-                    legend: { position: 'top', labels: { boxWidth: 12 } },
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14, font: { size: 11, weight: 'bold' } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var total = totalPorTipo[ctx.dataIndex] || 0;
+                                var p = total ? (ctx.parsed.x * 100 / total).toFixed(1).replace('.', ',') : 0;
+                                return ' ' + ctx.dataset.label + ': ' + ctx.parsed.x + ' (' + p + '%)';
+                            }
+                        }
+                    },
                     datalabels: {
                         color: '#ffffff',
-                        font: { weight: 'bold', size: 10 },
-                        formatter: function (v) { return v > 3 ? v : ''; }
+                        font: { weight: 'bold', size: 11 },
+                        // Solo se muestra el número si el segmento tiene lugar (≥ 8% de su barra)
+                        display: function (ctx) {
+                            var v = ctx.dataset.data[ctx.dataIndex];
+                            var total = totalPorTipo[ctx.dataIndex] || 0;
+                            return v > 0 && total > 0 && v / total >= 0.08;
+                        }
                     }
                 },
                 scales: {
-                    x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
-                    y: { stacked: true }
+                    x: {
+                        stacked: true, beginAtZero: true,
+                        grid: { color: '#eef0f3' },
+                        border: { display: false },
+                        ticks: { precision: 0, maxTicksLimit: 5, color: '#8a94a6', font: { size: 10 } }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: { color: '#2d3748', font: { size: 12, weight: 'bold' } }
+                    }
                 }
             }
         });
@@ -891,6 +951,10 @@
         'Yavi': 'PUNA', 'Cochinoca': 'PUNA', 'Rinconada': 'PUNA', 'Santa Catalina': 'PUNA'
     };
 
+    var deptoSeleccionado = null;
+    var estiloNormal      = { fillOpacity: 0.5, weight: 2 };
+    var estiloSeleccion   = { fillOpacity: 0.25, weight: 4 };
+
     function cargarDepartamentos() {
         fetch('<?= base_url('geojson/jujuy_departamentos.json') ?>')
             .then(function (r) { return r.json(); })
@@ -910,8 +974,22 @@
                         var nombre = feature.properties.nam || feature.properties.fna || 'Departamento';
                         layer.bindTooltip('<b>' + escapar(nombre) + '</b>', { sticky: true });
                         layer.on({
-                            mouseover: function (e) { e.target.setStyle({ fillOpacity: 0.2, weight: 1 }); },
-                            mouseout:  function (e) { e.target.setStyle({ fillOpacity: 0.5, weight: 2 }); }
+                            mouseover: function (e) {
+                                if (e.target !== deptoSeleccionado) e.target.setStyle({ fillOpacity: 0.2, weight: 1 });
+                            },
+                            mouseout: function (e) {
+                                if (e.target !== deptoSeleccionado) e.target.setStyle(estiloNormal);
+                            },
+                            // Clic: acerca el mapa al departamento y lo resalta con un borde grueso de su color
+                            // (el recuadro negro de foco del navegador se quita por CSS en layout/main.php)
+                            click: function (e) {
+                                if (deptoSeleccionado && deptoSeleccionado !== e.target) {
+                                    deptoSeleccionado.setStyle(estiloNormal);
+                                }
+                                deptoSeleccionado = e.target;
+                                deptoSeleccionado.setStyle(estiloSeleccion);
+                                mapa.flyToBounds(e.target.getBounds(), { padding: [30, 30], duration: 0.6 });
+                            }
                         });
                     }
                 }).addTo(mapa);
@@ -921,6 +999,56 @@
     }
 
     var marcadores = [];
+    var grupoPacientes = null;   // capa con los pines de pacientes (se crea en graficosMapa)
+    var filtroRiesgoActivo = null;
+
+    function riesgoDe(p) {
+        var r = (p.riesgo || '').toUpperCase();
+        return coloresRiesgo[r] ? r : 'S/D';
+    }
+
+    // Filtra lista y pines por nivel de riesgo (null = todos)
+    function aplicarFiltroRiesgo(riesgo) {
+        filtroRiesgoActivo = riesgo;
+
+        var visibles = 0;
+        document.querySelectorAll('#listaPacientes .sm-paciente-item').forEach(function (item) {
+            var mostrar = !riesgo || item.dataset.riesgo === riesgo;
+            item.style.display = mostrar ? '' : 'none';
+            if (mostrar) visibles++;
+            if (!mostrar) item.classList.remove('is-active');
+        });
+        var vacio = document.getElementById('listaSinRiesgo');
+        if (vacio) vacio.style.display = (riesgo && visibles === 0) ? '' : 'none';
+
+        if (grupoPacientes) {
+            puntos.forEach(function (p, i) {
+                var m = marcadores[i];
+                if (!m) return;
+                var mostrar = !riesgo || riesgoDe(p) === riesgo;
+                if (mostrar && !grupoPacientes.hasLayer(m)) grupoPacientes.addLayer(m);
+                if (!mostrar && grupoPacientes.hasLayer(m)) grupoPacientes.removeLayer(m);
+            });
+        }
+
+        var grupoBtns = document.getElementById('filtroRiesgo');
+        if (grupoBtns) {
+            grupoBtns.classList.toggle('has-filter', !!riesgo);
+            grupoBtns.querySelectorAll('.sm-legend-btn').forEach(function (b) {
+                var activo = b.dataset.riesgo === riesgo;
+                b.classList.toggle('is-active', activo);
+                b.setAttribute('aria-pressed', activo ? 'true' : 'false');
+                b.title = activo ? 'Quitar filtro (mostrar todos)' : 'Mostrar solo riesgo ' + b.dataset.riesgo;
+            });
+        }
+    }
+
+    document.querySelectorAll('#filtroRiesgo .sm-legend-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            // Segundo clic sobre el mismo nivel: se quita el filtro y vuelve la lista completa
+            aplicarFiltroRiesgo(filtroRiesgoActivo === btn.dataset.riesgo ? null : btn.dataset.riesgo);
+        });
+    });
 
     function graficosMapa() {
         var mapaWrap = document.getElementById('mapaWrap');
@@ -950,6 +1078,8 @@
                 .addTo(grupo);
         });
         grupo.addTo(mapa);
+        grupoPacientes = grupo;
+        if (filtroRiesgoActivo) aplicarFiltroRiesgo(filtroRiesgoActivo);   // si se filtró antes de abrir el mapa
 
         if (puntos.length > 0) mapa.fitBounds(grupo.getBounds(), { padding: [30, 30] });
         else mapa.setView([-23.3128, -65.3097], 7);   // Centro de Jujuy (igual que el mapa de Bases)

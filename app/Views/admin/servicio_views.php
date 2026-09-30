@@ -200,8 +200,17 @@
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
+    /* Tabla a la izquierda; a la derecha el gráfico de barras y debajo la dona */
+    .ml-stats-body.graf-apilados { grid-template-columns: 1fr 1.4fr; align-items: start; }
+    .graf-apilados > .ml-stats-table-wrap { grid-column: 1; grid-row: 1 / span 2; padding-right: 12px; }
+    .graf-apilados > .ml-chart-box { grid-column: 2; }
+    .graf-apilados > .ml-chart-box + .ml-chart-box { padding-top: 16px; border-top: 1px solid #eef0f3; }
+
     @media (max-width: 992px) {
         .ml-stats-body { grid-template-columns: 1fr; }
+        .ml-stats-body.graf-apilados { grid-template-columns: 1fr; }
+        .graf-apilados > .ml-stats-table-wrap,
+        .graf-apilados > .ml-chart-box { grid-column: 1; grid-row: auto; padding-right: 0; }
     }
     @media (max-width: 600px) {
         .ml-panel-body { padding: 14px 12px; }
@@ -395,7 +404,7 @@
 
             <div class="ml-panel ml-stats-panel" data-stats-panel>
                 <?= $headerStats('ESTADÍSTICAS DE OPERATIVOS') ?>
-                <div class="ml-stats-body">
+                <div class="ml-stats-body graf-apilados">
                     <div class="ml-stats-table-wrap">
                         <div class="ml-chart-title" style="text-align:left;">Cantidad por operativo</div>
                         <table class="ml-stats-table">
@@ -490,7 +499,7 @@
             <div class="ml-panel ml-stats-panel" data-stats-panel>
                 <?= $headerStats('ESTADÍSTICAS DE TRANSFUSIÓN') ?>
                 <div class="ml-stats-content">
-                    <div class="ml-stats-body">
+                    <div class="ml-stats-body graf-apilados">
                         <div class="ml-stats-table-wrap">
                             <div class="ml-chart-title" style="text-align:left;">Transfusiones por hospital</div>
                             <table class="ml-stats-table">

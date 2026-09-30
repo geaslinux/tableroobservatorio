@@ -48,7 +48,6 @@
         --sidebar-w:  210px;
         --sidebar-collapsed-w: 84px;
         --sidebar-tab: 42px;
-        --topbar-h:   70px;
    
         position: fixed; top: 0; left: 0; right: 0;
         height: var(--topbar-h);
@@ -239,6 +238,46 @@
         .topbar .dropdown-menu .dropdown-item { padding: 5px 10px; font-size: 12px; gap: 8px; border-radius: 6px; }
         .topbar .dropdown-item i { font-size: 12px; }
     }
+
+    /* Zoom alto / ventanas bajas: el header se achica para no ocupar media pantalla.
+       --topbar-h se redefine en :root para que contenido y sidebar se desplacen igual. */
+    @media (max-height: 700px) {
+        :root { --topbar-h: 58px; }
+    }
+    @media (max-height: 520px), (max-width: 480px) {
+        :root { --topbar-h: 50px; }
+        .topbar-center, .topbar-center.is-stacked { gap: 0; }
+        .topbar-secretary-label, .topbar-center.is-stacked .topbar-secretary-label { font-size: 11px; line-height: 1.2; }
+        .topbar-title, .topbar-center.is-stacked .topbar-title { font-size: 11px; line-height: 1.2; }
+    }
+    @media (max-height: 360px) {
+        :root { --topbar-h: 40px; }
+        .topbar-brand { width: 70px; padding: 0 6px; }
+    }
+    /* Zoom extremo (400% o más): solo logo, nombre del módulo y avatar */
+    @media (max-height: 260px) {
+        :root { --topbar-h: 32px; }
+        .topbar-secretary-label,
+        .topbar-center.is-stacked .topbar-secretary-label,
+        .topbar-icon-btn { display: none; }
+        .topbar-brand { width: 56px; border-right: none; }
+        .topbar-title, .topbar-center.is-stacked .topbar-title { font-size: 11px; }
+        .topbar-right { padding: 0 6px 0 0; }
+    }
+    /* Logo, campana y avatar nunca más altos que el header */
+    .topbar-brand img { max-height: calc(var(--topbar-h) - 14px); }
+    .avatar-btn {
+        max-width: calc(var(--topbar-h) - 8px);
+        max-height: calc(var(--topbar-h) - 8px);
+        overflow: hidden;
+    }
+    /* Las iniciales y la campana escalan con el header para no desbordar el círculo */
+    .avatar-initials { font-size: min(clamp(13px, 1.25vw, 20px), calc(var(--topbar-h) * 0.36)); }
+    .topbar-icon-btn {
+        max-height: calc(var(--topbar-h) - 8px);
+        font-size: min(clamp(16px, 1.3vw, 20px), calc(var(--topbar-h) * 0.42));
+    }
+    .topbar-right { min-width: 0; }
 
     /* Pantallas muy angostas: priorizar título de la vista */
     @media (max-width: 360px) {

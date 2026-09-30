@@ -28,8 +28,10 @@ $userAvatarColor = generateColorFromString($userName);
     .sidebar {
         width: calc(var(--sidebar-w) + var(--sidebar-tab));
         background: linear-gradient(180deg, var(--navy-2) 0%, var(--navy-3) 100%);
-        position: sticky;
+        /* fixed: queda siempre visible al hacer scroll en el contenido, incluso al llegar al footer */
+        position: fixed;
         top: var(--topbar-h);
+        left: 0;
         height: calc(100vh - var(--topbar-h));
         display: flex;
         flex-direction: column;
@@ -238,7 +240,7 @@ $userAvatarColor = generateColorFromString($userName);
     .sidebar-nav {
         flex: 1;
         min-height: 0;
-        padding: 6px 0 16px;
+        padding: 12px 0 16px; /* deja espacio bajo el botón que contrae el sidebar */
         overflow-y: auto;
         overflow-x: hidden;
         overscroll-behavior: contain;
@@ -380,32 +382,6 @@ $userAvatarColor = generateColorFromString($userName);
         display: grid;
         place-items: center;
         flex-shrink: 0;
-    }
-
-    .avatar-btn {
-        width: 48px;
-        height: 48px;
-        border: none;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        position: relative;
-        padding: 0;
-        outline: none;
-    }
-
-    .avatar-btn:hover {
-        filter: brightness(90%);
-    }
-
-    .avatar-initials {
-        color: #fff;
-        font-size: 20px;
-        font-weight: bold;
-        font-family: sans-serif;
-        line-height: 1;
     }
 
     .user-name {
@@ -589,6 +565,7 @@ $userAvatarColor = generateColorFromString($userName);
         }
 
         .sidebar-toggle-wrap { display: none; }
+        .sidebar-nav { padding-top: 6px; }
 
         /* Menú compacto en el panel móvil (también se activa con zoom alto) */
         .sidebar .nav-section-label { font-size: 8.5px; padding: 10px 12px 4px; }
@@ -688,22 +665,18 @@ $userAvatarColor = generateColorFromString($userName);
             <a href="<?= base_url(route_to('call_center_list')); ?>" class="nav-sub"><i class="fas fa-phone"></i> 0800 Call center</a>
         </div>
 
-        <a href="#" class="nav-item" id="nav-sub-salud" onclick="toggleSub(event,'sub-salud')">
-            <i class="fas fa-brain"></i> Salud mental
-            <i class="fas fa-chevron-down nav-chevron"></i>
-        </a>
-        <div class="nav-sub-group" id="sub-salud">
-            <a href="<?= base_url(route_to('electrodependiente_list')); ?>" class="nav-sub"><i class="fas fa-bolt"></i> Electrodependientes</a>
-        </div>
+        <?php $rutaPath = static fn (string $ruta) => rtrim(parse_url(base_url(route_to($ruta)), PHP_URL_PATH), '/'); ?>
 
-        <a href="#" class="nav-item" id="nav-sub-servicios" onclick="toggleSub(event,'sub-servicios')">
-            <i class="fas fa-project-diagram"></i> <span>Servicios transversales</span>
-            <i class="fas fa-chevron-down nav-chevron"></i>
+        <!-- Enlaces directos al panel. data-rutas: páginas del módulo que también marcan el ítem como activo -->
+        <a href="<?= base_url(route_to('saludmental_views')); ?>" class="nav-item"
+           data-rutas="<?= esc($rutaPath('electrodependiente_list'), 'attr') ?>">
+            <i class="fas fa-brain"></i> Salud mental
         </a>
-        <div class="nav-sub-group" id="sub-servicios">
-            <a href="<?= base_url(route_to('cantidad_operativo_list')); ?>" class="nav-sub"><i class="fas fa-clipboard-list"></i> Cantidad de operativos</a>
-            <a href="<?= base_url(route_to('transfusion_list')); ?>" class="nav-sub"><i class="fas fa-tint"></i> Transfusión mensual</a>
-        </div>
+
+        <a href="<?= base_url(route_to('servicio_views')); ?>" class="nav-item"
+           data-rutas="<?= esc($rutaPath('cantidad_operativo_list') . ',' . $rutaPath('transfusion_list'), 'attr') ?>">
+            <i class="fas fa-project-diagram"></i> <span>Servicios transversales</span>
+        </a>
 
         <div class="nav-section-label">Administración</div>
         <a href="<?= base_url(route_to('list_users')); ?>" class="nav-item"><i class="fas fa-user-cog"></i> Usuarios</a>
@@ -870,11 +843,21 @@ $userAvatarColor = generateColorFromString($userName);
         } catch(e) {}
     });
 
+    // Ítems directos (sin submenú) que también se marcan en las páginas de su módulo,
+    // ej. Servicios transversales en /admin/transfusion, /admin/transfusion-resumen, /admin/transfusion/editar/3
+    if (!bestLink) {
+        document.querySelectorAll('.sidebar [data-rutas]').forEach(el => {
+            el.dataset.rutas.split(',').filter(Boolean).forEach(ruta => {
+                if (currentPath === ruta || currentPath.startsWith(ruta + '/') || currentPath.startsWith(ruta + '-')) {
+                    bestLink = el;
+                }
+            });
+        });
+    }
+
     const summaryGroups = [
         { suffix: '/basev', group: 'prehosp' },
         { suffix: '/pacientev', group: 'paciente' },
-        { suffix: '/saludmental', group: 'salud' },
-        { suffix: '/serviciov', group: 'servicios' },
         { suffix: '/hospitalariov', group: 'hospitalario' },
     ];
     const summary = summaryGroups.find(item => currentPath.endsWith(item.suffix));
