@@ -298,8 +298,8 @@
         <div><div class="ql-title">Quirófano</div><div class="ql-desc">Producción quirúrgica</div></div>
     </a>
     <a href="<?= base_url(route_to('inicio_views')); ?>" class="ql-card">
-        <div class="ql-icon"><i class="fas fa-th-large"></i></div>
-        <div><div class="ql-title">Panel inicio</div><div class="ql-desc">Volver al inicio</div></div>
+        <div class="ql-icon"><i class="fas fa-reply"></i></div>
+        <div><div class="ql-title">Volver</div><div class="ql-desc">Panel principal</div></div>
     </a>
 </div>
 

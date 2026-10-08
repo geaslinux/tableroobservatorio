@@ -184,7 +184,12 @@ class PacienteVController extends BaseController
 
         ksort($datos_mensuales);
 
+        // Pestaña activa del panel (actividad / consultas y reclamos / turnos y llamadas)
+        $tab = in_array($this->request->getGet('tab'), ['act', 'cons', 'turnos'], true)
+            ? $this->request->getGet('tab') : 'act';
+
         return view('admin/paciente_views', [
+            'tab'              => $tab,
             'ejercicio_actual' => $ejercicio_actual,
             'mes_desde'        => $mes_desde,
             'mes_hasta'        => $mes_hasta,
