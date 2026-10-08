@@ -127,7 +127,7 @@ nb-configuration.xml
 /.phpunit.*.cache
 
 
-/vendor/
+# /vendor/  -> vendor/ se versiona (lo usa Docker); no volver a ignorarlo
 /node_modules/
 *.log 
 /public/archivos/*
