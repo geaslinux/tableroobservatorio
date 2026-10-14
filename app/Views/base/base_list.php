@@ -329,6 +329,140 @@
     /* Filtro mapa B&W */
     .leaflet-tile-pane { filter: grayscale(100%); }
     .bl-legend-color { width: 12px; height: 12px; border-radius: 3px; }
+
+    /* ── TARJETAS KPI RESPONSIVAS ──
+       Grilla en lugar de flex: siempre filas completas (6 → 3 → 2 por fila) y alto
+       flexible para que el texto no se salga de la tarjeta con zoom. */
+    .bl-kpi-cards {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .bl-kpi-cards--compact {
+        grid-template-columns: repeat(3, minmax(0, 340px));
+        justify-content: center;
+        gap: 16px !important;
+    }
+    .bl-kpi-card,
+    .bl-kpi-cards--compact .bl-kpi-card {
+        max-width: none;
+        height: auto;
+        min-height: 90px;
+        padding: 12px;
+        gap: 12px;
+        min-width: 0;
+    }
+    .bl-kpi-icon { width: 56px; height: 56px; font-size: 24px; flex-shrink: 0; }
+    .bl-kpi-label { white-space: normal; line-height: 1.2; }
+    .bl-kpi-value { font-size: clamp(20px, 1.8vw, 25px); }
+    .bl-kpi-badge { line-height: 1.25; max-width: 100%; }
+
+    /* Pantallas medianas o zoom 125–175 %: 3 por fila */
+    @media (max-width: 1500px) {
+        .bl-kpi-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .bl-kpi-cards--compact { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+
+    /* Tablets o zoom 200–300 %: siguen 3 por fila, horizontales y más compactas */
+    @media (max-width: 1000px) {
+        .bl-kpi-cards, .bl-kpi-cards--compact { gap: 10px !important; }
+        .bl-kpi-card,
+        .bl-kpi-cards--compact .bl-kpi-card { min-height: 0; padding: 10px; gap: 10px; }
+        .bl-kpi-icon { width: 40px; height: 40px; font-size: 18px; border-radius: 10px; }
+        .bl-kpi-label { font-size: 9.5px; letter-spacing: .3px; }
+        .bl-kpi-value { font-size: 20px; }
+        .bl-kpi-badge { font-size: 9.5px; padding: 3px 6px; }
+    }
+
+    /* Pantallas angostas: 2 por fila, todavía horizontales */
+    @media (max-width: 600px) {
+        .bl-kpi-cards,
+        .bl-kpi-cards--compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        /* Con 3 tarjetas en 2 columnas, la última ocupa todo el ancho para no quedar sola */
+        .bl-kpi-cards--compact .bl-kpi-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+    }
+
+    /* Celulares: 2 por fila, ícono chico a la izquierda y texto al lado (aprovecha el ancho) */
+    @media (max-width: 480px) {
+        .bl-kpi-cards,
+        .bl-kpi-cards--compact { gap: 8px !important; }
+        .bl-kpi-card,
+        .bl-kpi-cards--compact .bl-kpi-card {
+            flex-direction: row; align-items: center;
+            padding: 8px; gap: 8px; border-radius: 12px;
+            border-left-width: 4px;
+        }
+        .bl-kpi-icon { width: 30px; height: 30px; font-size: 14px; border-radius: 8px; }
+        .bl-kpi-label { font-size: 8.5px; letter-spacing: .2px; }
+        .bl-kpi-value { font-size: 18px; margin: 1px 0 3px; }
+        .bl-kpi-badge { font-size: 8.5px; padding: 2px 5px; gap: 3px; }
+        .bl-kpi-badge i { font-size: 8px; }
+    }
+
+    /* Zoom 300 % o más (ventana baja): 3 por fila, ícono chico al costado y todo más pequeño */
+    @media (max-height: 500px) {
+        .bl-kpi-cards,
+        .bl-kpi-cards--compact { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px !important; }
+        .bl-kpi-cards--compact .bl-kpi-card:last-child:nth-child(odd) { grid-column: auto; }
+        .bl-kpi-card,
+        .bl-kpi-cards--compact .bl-kpi-card {
+            flex-direction: row; align-items: center;
+            padding: 5px 8px; gap: 7px; border-radius: 10px;
+            border-left-width: 4px;
+        }
+        .bl-kpi-icon { display: flex; width: 24px; height: 24px; font-size: 12px; border-radius: 7px; }
+        .bl-kpi-label { font-size: 8px; letter-spacing: 0; }
+        .bl-kpi-value { font-size: 14px; margin: 1px 0; }
+        .bl-kpi-badge { font-size: 8px; padding: 1px 4px; gap: 3px; border-radius: 4px; }
+        .bl-kpi-badge i { font-size: 7px; }
+    }
+
+    /* Zoom 400–500 % (ventana muy baja): un paso más chico */
+    @media (max-height: 300px) {
+        .bl-kpi-card,
+        .bl-kpi-cards--compact .bl-kpi-card { padding: 4px 6px; gap: 5px; }
+        .bl-kpi-icon { width: 20px; height: 20px; font-size: 10px; border-radius: 6px; }
+        .bl-kpi-label { font-size: 7px; }
+        .bl-kpi-value { font-size: 12px; }
+        .bl-kpi-badge { font-size: 7px; }
+    }
+
+    /* ── LISTA + MAPA RESPONSIVO (igual que Territorio y mapa de Salud mental) ── */
+    .bl-view-grid > * { min-width: 0; }   /* evita que la lista o el mapa desborden la grilla */
+
+    @media (max-width: 1200px) {
+        .bl-view-grid { grid-template-columns: 300px 1fr; }
+        .bl-map-wrap { height: 640px; }
+        .bl-list-container { max-height: 640px; }
+    }
+
+    /* Tablets y celulares: lista arriba (con su propio scroll) y mapa debajo, a todo el ancho */
+    @media (max-width: 992px) {
+        .bl-view-grid { grid-template-columns: 1fr; gap: 12px; }
+        .bl-list-container { max-height: 320px; }
+        .bl-map-wrap { height: 520px; }
+    }
+
+    @media (max-width: 768px) {
+        /* Con el menú móvil abierto, los controles del mapa (+/−) quedan detrás del fondo oscuro */
+        .leaflet-control-container,
+        .leaflet-top, .leaflet-bottom { z-index: 800 !important; }
+    }
+
+    @media (max-width: 600px) {
+        .bl-map-wrap { height: 420px; }
+        .bl-map-header { padding: 8px 12px; font-size: 11px; flex-wrap: wrap; gap: 6px; }
+        .bl-legend-group { gap: 6px 10px; }
+        .bl-legend-item { font-size: 10.5px; }
+        .bl-base-item { padding: 10px; }
+        .bl-base-name { font-size: 13px; }
+        .bl-base-info { font-size: 11.5px; }
+    }
+
+    /* Zoom alto / ventanas bajas: el mapa no ocupa más que la pantalla */
+    @media (max-height: 700px) {
+        .bl-map-wrap { height: min(520px, 70vh); }
+    }
 </style>
 
 <!-- BREADCRUMB -->

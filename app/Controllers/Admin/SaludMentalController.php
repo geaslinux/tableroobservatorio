@@ -132,6 +132,8 @@ class SaludMentalController extends BaseController
             ->select("
                 electrodependiente.electrodependiente_id AS id,
                 electrodependiente.paciente, electrodependiente.edad, electrodependiente.tipo,
+                electrodependiente.paciente, electrodependiente.dni,
+                electrodependiente.edad, electrodependiente.tipo,
                 electrodependiente.coordenadas, electrodependiente.factor_riesgo AS riesgo,
                 l.nombre AS localidad, e.nombre AS efector, d.nombre AS diagnostico
             ", false)

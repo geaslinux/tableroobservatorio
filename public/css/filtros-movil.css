@@ -1,0 +1,153 @@
+/* =============================================================================
+   Botón "Filtros" (ocultar / mostrar filtros) — solo en celular.
+   Lo agrega public/js/filtros-movil.js antes de cada barra *-filtro-bar.
+   ============================================================================= */
+
+/* En escritorio el botón no existe para el usuario y los filtros siempre se ven */
+.filtros-toggle { display: none; }
+
+@media (max-width: 768px) {
+    .filtros-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin: 0 0 8px;
+        padding: 10px 14px;
+        border: 1px solid #d0d7e0;
+        border-radius: 12px;
+        background: #f4f6f9;
+        color: #1a2b45;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background .15s, border-color .15s;
+    }
+    .filtros-toggle:hover { background: #eef2f6; }
+    .filtros-toggle:focus-visible { outline: 2px solid #2ab7a6; outline-offset: 2px; }
+    .filtros-toggle i { color: #2ab7a6; }
+
+    .filtros-toggle-badge {
+        display: inline-grid;
+        place-items: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        margin-left: 4px;
+        border-radius: 999px;
+        background: #2ab7a6;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .filtros-toggle-accion {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #5a6a7e;
+    }
+    .filtros-toggle-accion i { color: #5a6a7e; transition: transform .2s ease; transform: rotate(180deg); }
+    .filtros-toggle.is-cerrado .filtros-toggle-accion i { transform: rotate(0deg); }
+
+    /* Filtros ocultos: !important para ganarle al display propio de cada barra */
+    .filtros-ocultos { display: none !important; }
+}
+/* =============================================================================
+   Botones "Ocultar tabla" / "Ocultar gráfico de …" — solo en celular.
+   Los agrega public/js/secciones-movil.js antes de cada tabla y cada gráfico.
+   ============================================================================= */
+.seccion-toggle { display: none; }
+
+@media (max-width: 768px) {
+    .seccion-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 8px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7e0;
+        border-radius: 999px;
+        background: #fff;
+        color: #5a6a7e;
+        font: inherit;
+        font-size: 11.5px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .15s, color .15s, border-color .15s;
+    }
+    .seccion-toggle:hover { background: #f4f6f9; color: #1a2b45; }
+    .seccion-toggle:focus-visible { outline: 2px solid #2ab7a6; outline-offset: 2px; }
+    .seccion-toggle i { font-size: 11px; }
+    .seccion-toggle.is-cerrado { background: #eefaf8; border-color: #2ab7a6; color: #1a2b45; }
+    .seccion-toggle.is-cerrado i { color: #2ab7a6; }
+
+    /* Tabla o gráfico oculto: !important para ganarle al display propio de cada vista */
+    .seccion-oculta { display: none !important; }
+}
+
+/* =============================================================================
+   Botones "Filtrar" y "Limpiar" (public/js/filtros-botones.js) — todas las pantallas.
+   ============================================================================= */
+.filtro-btn-filtrar,
+.filtro-btn-limpiar { white-space: nowrap; }
+.filtro-btn-texto { font-weight: 600; }
+
+/* "Limpiar" creado por el script en las barras que no lo tenían */
+.filtro-limpiar-nuevo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 0 14px;
+    border: 1px solid #d0d7e0;
+    border-radius: 8px;
+    background: #f0f2f5;
+    color: #5a6a7e;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+.filtro-limpiar-nuevo:hover { background: #e4e7ed; color: #1a2b45; text-decoration: none; }
+.filtro-limpiar-nuevo i { font-size: 12px; }
+
+/* Celular: "Filtrar" y "Limpiar" lado a lado, mitad del ancho cada uno y 34px de alto
+   (mismo tamaño en todos los módulos; !important porque muchos traen height en línea) */
+@media (max-width: 768px) {
+    .filtro-btn-filtrar,
+    .filtro-btn-limpiar {
+        flex: 1 1 0 !important;
+        min-width: 0;
+        height: 34px !important;
+        padding: 0 12px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border-radius: 8px !important;
+        font-size: 13px !important;
+    }
+    .filtro-btn-filtrar i,
+    .filtro-btn-limpiar i { font-size: 13px; }
+
+    /* El contenedor de los botones ocupa todo el ancho para que se repartan mitad y mitad */
+    :is(div, span, p):has(> .filtro-btn-filtrar):has(> .filtro-btn-limpiar) {
+        display: flex !important;
+        flex: 1 1 100% !important;
+        width: 100%;
+        gap: 8px !important;
+        align-items: stretch;
+    }
+    /* Y el grupo de filtro que los contiene también ocupa toda la fila */
+    [class*="filtro-group"]:has(.filtro-btn-filtrar) {
+        flex: 1 1 100% !important;
+        width: 100%;
+        max-width: none !important;
+    }
+}

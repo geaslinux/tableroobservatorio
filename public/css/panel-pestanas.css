@@ -1,0 +1,176 @@
+/* =============================================================================
+   Paneles Prehospitalario (admin/base_views) y Gestión paciente (admin/paciente_views):
+   pestañas como el panel Hospitalario e íconos en las tarjetas KPI.
+   ============================================================================= */
+
+/* ── Pestañas (mismo diseño que hospitalario_views) ── */
+.ml-tabs {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 14px;
+    padding: 6px;
+    background: var(--white, #fff);
+    border: 0.5px solid var(--border, #d0d5de);
+    border-radius: 12px;
+}
+.ml-tab {
+    flex: 1 1 160px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 14px;
+    border: none; border-radius: 9px;
+    background: transparent;
+    font-size: 13px; font-weight: 700; letter-spacing: 0.3px;
+    text-transform: uppercase;
+    color: var(--text-muted, #5a6a7e);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.ml-tab:hover { background: #e9edf2; color: var(--text-main, #1a2b45); }
+.ml-tab.is-active {
+    background: var(--navy, #0e2a4d); color: #fff;
+    box-shadow: 0 2px 6px rgba(14, 42, 77, 0.18);
+}
+.ml-tab.is-active i { color: #fff; }
+.ml-tab-pane { display: none; }
+.ml-tab-pane.is-active { display: block; }
+
+/* Contenido de cada pestaña: dos paneles lado a lado */
+.tab-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 14px;
+    align-items: start;
+}
+.tab-grid > * { min-width: 0; }
+
+/* Alto fijo para los gráficos de línea dentro de las pestañas */
+.chart-alto { position: relative; height: 260px; }
+
+/* Subtítulo de cada grupo de mini indicadores */
+.mini-stat-titulo {
+    font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--text-muted, #5a6a7e);
+    display: flex; align-items: center; gap: 6px;
+}
+.mini-stat-titulo i { color: #2F80C8; }
+
+/* Barra de proporción (adultos / pediátricos, resueltas / pendientes, etc.) */
+.proporcion-barra {
+    display: flex; height: 18px; border-radius: 999px; overflow: hidden;
+    background: #eef0f3;
+}
+.proporcion-seg { height: 100%; transition: width .6s ease; }
+.proporcion-seg.adultos     { background: #1A5FA8; }
+.proporcion-seg.pediatricos { background: #8FD3F4; }
+.proporcion-leyenda {
+    display: flex; flex-wrap: wrap; gap: 8px 18px;
+    margin-top: 10px; font-size: 12px; color: var(--text-muted, #5a6a7e);
+}
+.proporcion-leyenda strong { color: var(--text-main, #1a2b45); }
+.proporcion-punto { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
+.proporcion-punto.adultos     { background: #1A5FA8; }
+.proporcion-punto.pediatricos { background: #8FD3F4; }
+
+/* Enlace al módulo dentro de una pestaña */
+.tab-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 14px; font-size: 12px; font-weight: 700;
+    color: #2F80C8; text-decoration: none;
+}
+.tab-link:hover { text-decoration: underline; }
+
+/* ── Encabezado de cada pestaña: mismo bloque que el panel Hospitalario (hv-modulo) ── */
+.hv-modulo {
+    background: var(--white, #fff);
+    border-radius: 12px;
+    border: 0.5px solid var(--border, #d0d5de);
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+.hv-modulo-header {
+    padding: 12px 18px;
+    background: var(--navy, #0e2a4d);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+}
+.hv-modulo-titulo {
+    font-size: 15px; font-weight: 700; color: #fff;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.hv-modulo-titulo i { color: #fff; font-size: 17px; }
+.hv-periodo {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 3px 10px; border-radius: 10px;
+    background: rgba(255, 255, 255, 0.12); color: rgba(255, 255, 255, 0.85);
+    text-transform: uppercase;
+}
+.hv-ver {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12.5px; font-weight: 700;
+    padding: 7px 14px; border-radius: 8px;
+    background: var(--teal, #2ab7a6); color: #fff; text-decoration: none;
+    transition: filter 0.15s;
+}
+.hv-ver:hover { filter: brightness(1.1); color: #fff; text-decoration: none; }
+.hv-modulo-body { padding: 16px 18px 18px; }
+/* Dentro del bloque, la última fila no deja margen de más */
+.hv-modulo-body > :last-child { margin-bottom: 0; }
+/* ── Tarjetas KPI: mismo modelo que el panel Hospitalario (ícono a la izquierda) ── */
+.ml-kpi-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+.ml-kpi-card {
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 12px;
+    border: 1px solid #d0d7e0;
+    display: flex; align-items: center; gap: 12px;
+    min-height: 88px;
+    box-sizing: border-box;
+    min-width: 0;
+}
+.ml-kpi-content { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.ml-kpi-card.kpi-teal   { border-left: 6px solid #81e6d9; }
+.ml-kpi-card.kpi-blue   { border-left: 6px solid #90cdf4; }
+.ml-kpi-card.kpi-green  { border-left: 6px solid #9ae6b4; }
+.ml-kpi-card.kpi-orange { border-left: 6px solid #fbd38d; }
+.ml-kpi-icon {
+    width: 50px; height: 50px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; flex-shrink: 0;
+}
+.ml-kpi-card.kpi-teal   .ml-kpi-icon { background: #e6fffa; color: #319795; }
+.ml-kpi-card.kpi-blue   .ml-kpi-icon { background: #ebf8ff; color: #3182ce; }
+.ml-kpi-card.kpi-green  .ml-kpi-icon { background: #f0fff4; color: #38a169; }
+.ml-kpi-card.kpi-orange .ml-kpi-icon { background: #fffaf0; color: #dd6b20; }
+.ml-kpi-label { font-size: 11.5px; font-weight: 700; color: #718096; text-transform: uppercase; letter-spacing: 0.3px; }
+.ml-kpi-value { font-size: 23px; font-weight: 700; color: #2d3748; line-height: 1.05; }
+.ml-kpi-sub {
+    font-size: 11px; color: var(--text-muted, #5a6a7e);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Segunda línea destacada (lo que antes era el "badge") */
+.ml-kpi-sub.destacado { font-weight: 700; }
+.ml-kpi-sub.destacado i { font-size: 10px; }
+.ml-kpi-sub.destacado.green  { color: #2f855a; }
+.ml-kpi-sub.destacado.blue   { color: #2b6cb0; }
+.ml-kpi-sub.destacado.orange { color: #c05621; }
+
+/* ── Responsivo ── */
+@media (max-width: 1100px) {
+    .tab-grid { grid-template-columns: 1fr; }
+    .ml-kpi-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .hv-modulo-body { padding: 12px; }
+    .hv-modulo-header { padding: 10px 12px; }
+    .ml-tab { flex: 1 1 45%; font-size: 11.5px; padding: 10px 8px; }
+    .chart-alto { height: 220px; }
+}
+/* Zoom alto: pestañas y gráfico más bajos (las tarjetas las ajusta kpi-responsive.css) */
+@media (max-height: 500px) {
+    .ml-tab { padding: 6px 8px; font-size: 10.5px; }
+    .chart-alto { height: 180px; }
+}

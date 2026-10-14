@@ -148,7 +148,12 @@ class BaseVController extends BaseController
         // ── GENERAL ────────────────────────────────────────────
         $total_departamentos = $departamentoModel->countAll();
 
+        // Pestaña activa del panel (asistencias / bases y móviles / internación domiciliaria)
+        $tab = in_array($this->request->getGet('tab'), ['asis', 'flota', 'intdom'], true)
+            ? $this->request->getGet('tab') : 'asis';
+
         return view('admin/base_views', compact(
+            'tab',
             'bases_total', 'bases_activas', 'pct_bases',
             'moviles_total', 'moviles_op', 'pct_moviles',
             'moviles_mantenimiento', 'moviles_baja',

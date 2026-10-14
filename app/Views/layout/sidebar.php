@@ -539,8 +539,8 @@ $userAvatarColor = generateColorFromString($userName);
         .nav-section-label { padding-top: 10px; }
     }
 
-    /* Móviles y tablets chicas: el sidebar pasa a ser un panel deslizable */
-    @media (max-width: 768px) {
+    /* Celulares y tablets (pantallas táctiles de hasta 1100px): el sidebar pasa a ser un panel deslizable */
+    @media (max-width: 768px), (max-width: 1100px) and (pointer: coarse) {
         .sidebar,
         body .sidebar:hover {
             position: fixed;
@@ -595,6 +595,7 @@ $userAvatarColor = generateColorFromString($userName);
 
         body.sidebar-mobile-open { overflow: hidden; }
 
+        /* Botón ☰ fijo en la esquina superior izquierda, dentro de la barra del header */
         .sidebar-mobile-btn {
             display: flex;
             align-items: center;
@@ -607,12 +608,39 @@ $userAvatarColor = generateColorFromString($userName);
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.6);
             background: #294062;
+            left: 8px;
+            top: calc((var(--topbar-h) - 36px) / 2);
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.08);
             color: #fff;
             font-size: 16px;
             cursor: pointer;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
             z-index: 1001;
+            box-shadow: none;
+            z-index: 10001;   /* por encima del header (z-index 10000) */
+            transition: background .15s;
         }
+        .sidebar-mobile-btn:hover,
+        body.sidebar-mobile-open .sidebar-mobile-btn { background: rgba(255, 255, 255, 0.18); }
+
+        /* El logo del header se corre para dejar lugar al botón */
+        .topbar .topbar-brand { margin-left: 48px; }
+    }
+
+    /* Header muy bajo (zoom alto): botón más chico para que entre en la barra */
+    @media (max-width: 768px) and (max-height: 360px), (max-width: 1100px) and (pointer: coarse) and (max-height: 360px) {
+        .sidebar-mobile-btn {
+            width: 28px;
+            height: 28px;
+            top: calc((var(--topbar-h) - 28px) / 2);
+            font-size: 13px;
+            border-radius: 8px;
+        }
+        .topbar .topbar-brand { margin-left: 40px; }
     }
 </style>
 
@@ -753,7 +781,7 @@ $userAvatarColor = generateColorFromString($userName);
         const sidebar = document.getElementById('sidebar');
         if (!mobileBtn || !backdrop || !sidebar) return;
 
-        const mq = window.matchMedia('(max-width: 768px)');
+        const mq = window.matchMedia('(max-width: 768px), (max-width: 1100px) and (pointer: coarse)');   // celulares y tablets táctiles
 
         const setOpen = (open) => {
             document.body.classList.toggle('sidebar-mobile-open', open);

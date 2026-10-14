@@ -245,6 +245,38 @@
     .sm-legend-group.has-filter .sm-legend-btn:not(.is-active) { opacity: .45; }
     .sm-legend-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 
+    /* Búsqueda de pacientes por nombre y por DNI */
+    .sm-busquedas { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; margin-bottom: 6px; }
+    @media (max-width: 480px) { .sm-busquedas { grid-template-columns: 1fr; } }
+    .sm-busqueda {
+        position: relative; display: flex; align-items: center; min-width: 0;
+    }
+    .sm-busqueda > .fa-search,
+    .sm-busqueda > .fa-id-card {
+        position: absolute; left: 12px; color: var(--text-muted); font-size: 13px; pointer-events: none;
+    }
+    .sm-busqueda input {
+        width: 100%; height: 38px;
+        padding: 0 36px 0 34px;
+        border: 1px solid #d0d7e0; border-radius: 10px;
+        font-size: 13px; color: var(--text-main); background: #fff;
+        outline: none; transition: border-color .15s, box-shadow .15s;
+    }
+    .sm-busqueda input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(42, 183, 166, 0.15); }
+    .sm-busqueda input::-webkit-search-cancel-button { display: none; }
+    .sm-busqueda button {
+        position: absolute; right: 6px;
+        width: 26px; height: 26px; border: 0; border-radius: 50%;
+        background: #eef0f3; color: var(--text-muted); cursor: pointer;
+        display: grid; place-items: center; font-size: 11px;
+    }
+    .sm-busqueda button:hover { background: #e2e6ec; color: var(--text-main); }
+    .sm-busqueda-info { font-size: 11px; color: var(--text-muted); margin: 0 2px 8px; min-height: 14px; }
+    .sm-paciente-nombre mark,
+    .sm-paciente-dni mark { background: #fff3bf; color: inherit; padding: 0 1px; border-radius: 2px; }
+    .sm-paciente-dni { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+    .sm-paciente-dni i { font-size: 11px; margin-right: 2px; }
+
     /* Lista de pacientes */
     .sm-list-container {
         display: flex; flex-direction: column; gap: 10px;
@@ -554,6 +586,27 @@
                                     <?php endforeach; ?>
                                 </div>
 
+                                <!-- Búsqueda por nombre y por DNI: filtran la lista y el mapa mientras se escribe -->
+                                <div class="sm-busquedas">
+                                    <div class="sm-busqueda">
+                                        <i class="fas fa-search"></i>
+                                        <input type="search" id="buscarPaciente" placeholder="Buscar por nombre…"
+                                               autocomplete="off" aria-label="Buscar paciente por nombre">
+                                        <button type="button" id="limpiarBusqueda" title="Limpiar búsqueda" aria-label="Limpiar búsqueda por nombre" hidden>
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                    <div class="sm-busqueda">
+                                        <i class="fas fa-id-card"></i>
+                                        <input type="search" id="buscarDni" placeholder="Buscar por DNI…" inputmode="numeric"
+                                               autocomplete="off" aria-label="Buscar paciente por DNI">
+                                        <button type="button" id="limpiarDni" title="Limpiar búsqueda" aria-label="Limpiar búsqueda por DNI" hidden>
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="sm-busqueda-info" id="busquedaInfo" aria-live="polite"></div>
+
                                 <div class="sm-list-container" id="listaPacientes">
                                     <?php if (!empty($puntos)): ?>
                                         <?php foreach ($puntos as $i => $p): ?>
@@ -564,6 +617,9 @@
                                             ?>
                                             <div class="sm-paciente-item" data-punto="<?= $i ?>" data-riesgo="<?= esc($riesgoKey, 'attr') ?>" title="Ver en el mapa">
                                                 <div class="sm-paciente-nombre"><?= esc($p['paciente']) ?></div>
+                                                <?php if (!empty($p['dni'])): ?>
+                                                    <div class="sm-paciente-dni"><i class="fas fa-id-card"></i> DNI <span><?= esc($p['dni']) ?></span></div>
+                                                <?php endif; ?>
                                                 <div class="sm-paciente-info">
                                                     <i class="fas fa-map-marker-alt"></i> <?= esc($p['localidad'] ?: '—') ?> |
                                                     <i class="fas fa-hospital"></i> <?= esc($p['efector'] ?: '—') ?>
@@ -1001,35 +1057,149 @@
     var marcadores = [];
     var grupoPacientes = null;   // capa con los pines de pacientes (se crea en graficosMapa)
     var filtroRiesgoActivo = null;
+    var textoBusqueda      = '';
+    var textoDni           = '';
 
     function riesgoDe(p) {
         var r = (p.riesgo || '').toUpperCase();
         return coloresRiesgo[r] ? r : 'S/D';
     }
 
-    // Filtra lista y pines por nivel de riesgo (null = todos)
-    function aplicarFiltroRiesgo(riesgo) {
-        filtroRiesgoActivo = riesgo;
+    // Minúsculas y sin acentos: "Pérez" encuentra "PEREZ" y viceversa
+    function normalizar(t) {
+        return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    // Todas las palabras buscadas deben aparecer en el nombre, en cualquier orden ("maria perez" = "PEREZ MARIA")
+    function coincideNombre(nombre, busqueda) {
+        if (!busqueda) return true;
+        var n = normalizar(nombre);
+        return busqueda.split(/\s+/).every(function (palabra) { return n.indexOf(palabra) !== -1; });
+    }
+
+    // Resalta en amarillo las palabras buscadas dentro del nombre
+    function resaltar(nombre, busqueda) {
+        var seguro = escapar(nombre);
+        if (!busqueda) return seguro;
+        var n = normalizar(nombre);
+        var marcas = new Array(nombre.length).fill(false);
+        busqueda.split(/\s+/).forEach(function (palabra) {
+            var desde = 0, pos;
+            while (palabra && (pos = n.indexOf(palabra, desde)) !== -1) {
+                for (var k = pos; k < pos + palabra.length; k++) marcas[k] = true;
+                desde = pos + palabra.length;
+            }
+        });
+        // Solo se resalta si el nombre no cambió de largo al normalizar (caso normal en mayúsculas)
+        if (n.length !== nombre.length) return seguro;
+        var html = '', abierto = false;
+        for (var i = 0; i < nombre.length; i++) {
+            if (marcas[i] && !abierto) { html += '<mark>'; abierto = true; }
+            if (!marcas[i] && abierto) { html += '</mark>'; abierto = false; }
+            html += escapar(nombre[i]);
+        }
+        return html + (abierto ? '</mark>' : '');
+    }
+
+    // DNI: solo los dígitos ("12.345.678" = "12345678"); la búsqueda es parcial ("3456" encuentra "12345678")
+    function soloDigitos(t) {
+        return String(t || '').replace(/\D/g, '');
+    }
+
+    function coincideDni(dni, busquedaDni) {
+        if (!busquedaDni) return true;
+        return soloDigitos(dni).indexOf(busquedaDni) !== -1;
+    }
+
+    // Resalta los dígitos buscados dentro del DNI tal como está cargado (con o sin puntos)
+    function resaltarDni(dni, busquedaDni) {
+        var texto = String(dni || '');
+        if (!busquedaDni) return escapar(texto);
+        var digitos = soloDigitos(texto);
+        var pos = digitos.indexOf(busquedaDni);
+        if (pos === -1) return escapar(texto);
+
+        var html = '', d = 0, abierto = false;
+        for (var i = 0; i < texto.length; i++) {
+            var esDigito = /\d/.test(texto[i]);
+            var marcar = esDigito && d >= pos && d < pos + busquedaDni.length;
+            if (marcar && !abierto) { html += '<mark>'; abierto = true; }
+            if (!marcar && abierto && esDigito) { html += '</mark>'; abierto = false; }
+            html += escapar(texto[i]);
+            if (esDigito) d++;
+        }
+        return html + (abierto ? '</mark>' : '');
+    }
+
+    // Filtra lista y pines por nivel de riesgo, nombre y DNI (se combinan)
+    function aplicarFiltros() {
+        var riesgo      = filtroRiesgoActivo;
+        var busqueda    = normalizar(textoBusqueda);
+        var busquedaDni = soloDigitos(textoDni);
+
+        function coincide(p, riesgoPaciente) {
+            return (!riesgo || riesgoPaciente === riesgo)
+                && coincideNombre(p.paciente, busqueda)
+                && coincideDni(p.dni, busquedaDni);
+        }
 
         var visibles = 0;
         document.querySelectorAll('#listaPacientes .sm-paciente-item').forEach(function (item) {
-            var mostrar = !riesgo || item.dataset.riesgo === riesgo;
+            var p = puntos[parseInt(item.dataset.punto, 10)] || {};
+            var mostrar = coincide(p, item.dataset.riesgo);
             item.style.display = mostrar ? '' : 'none';
             if (mostrar) visibles++;
             if (!mostrar) item.classList.remove('is-active');
+
+            var nombreEl = item.querySelector('.sm-paciente-nombre');
+            if (nombreEl && p.paciente) nombreEl.innerHTML = resaltar(p.paciente, mostrar ? busqueda : '');
+            var dniEl = item.querySelector('.sm-paciente-dni span');
+            if (dniEl && p.dni) dniEl.innerHTML = resaltarDni(p.dni, mostrar ? busquedaDni : '');
         });
+
+        var hayBusqueda = !!busqueda || !!busquedaDni;
+        var hayFiltro   = !!riesgo || hayBusqueda;
         var vacio = document.getElementById('listaSinRiesgo');
-        if (vacio) vacio.style.display = (riesgo && visibles === 0) ? '' : 'none';
+        if (vacio) {
+            var criterios = [];
+            if (busqueda)    criterios.push('nombre "' + textoBusqueda.trim() + '"');
+            if (busquedaDni) criterios.push('DNI "' + textoDni.trim() + '"');
+            vacio.style.display = (hayFiltro && visibles === 0) ? '' : 'none';
+            vacio.textContent = hayBusqueda
+                ? 'Ningún paciente coincide con ' + criterios.join(' y ') + (riesgo ? ' con riesgo ' + riesgo : '')
+                : 'Sin pacientes con este nivel de riesgo';
+        }
+        var info = document.getElementById('busquedaInfo');
+        if (info) info.textContent = hayFiltro && visibles > 0 ? visibles + ' de ' + puntos.length + ' pacientes' : '';
 
         if (grupoPacientes) {
+            var visiblesMapa = [];
             puntos.forEach(function (p, i) {
                 var m = marcadores[i];
                 if (!m) return;
-                var mostrar = !riesgo || riesgoDe(p) === riesgo;
+                var mostrar = coincide(p, riesgoDe(p));
                 if (mostrar && !grupoPacientes.hasLayer(m)) grupoPacientes.addLayer(m);
                 if (!mostrar && grupoPacientes.hasLayer(m)) grupoPacientes.removeLayer(m);
+                if (mostrar) visiblesMapa.push(m);
             });
+
+            // Con búsqueda: si queda un solo paciente se centra y abre su ficha; si son pocos, se encuadran
+            if (hayBusqueda && visiblesMapa.length === 1) {
+                mapa.setView(visiblesMapa[0].getLatLng(), Math.max(mapa.getZoom(), 13));
+                visiblesMapa[0].openPopup();
+            } else if (hayBusqueda && visiblesMapa.length > 1 && visiblesMapa.length <= 30) {
+                mapa.closePopup();
+                mapa.fitBounds(L.featureGroup(visiblesMapa).getBounds(), { padding: [30, 30], maxZoom: 14 });
+            } else {
+                mapa.closePopup();
+            }
         }
+    }
+
+    // Botones de riesgo: se mantiene el nombre de la función usada en el resto del archivo
+    function aplicarFiltroRiesgo(riesgo) {
+        filtroRiesgoActivo = riesgo;
+        aplicarFiltros();
 
         var grupoBtns = document.getElementById('filtroRiesgo');
         if (grupoBtns) {
@@ -1050,6 +1220,47 @@
         });
     });
 
+    // Búsquedas dinámicas por nombre y por DNI (se combinan entre sí y con el filtro de riesgo)
+    function conectarBusqueda(idInput, idLimpiar, guardar) {
+        var input   = document.getElementById(idInput);
+        var limpiar = document.getElementById(idLimpiar);
+        if (!input || !limpiar) return;
+
+        var espera = null;
+        input.addEventListener('input', function () {
+            limpiar.hidden = input.value === '';
+            clearTimeout(espera);
+            espera = setTimeout(function () {
+                guardar(input.value);
+                aplicarFiltros();
+            }, 150);
+        });
+
+        // Enter: abre en el mapa el primer paciente que coincide · Esc: limpia
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var primero = Array.prototype.find.call(
+                    document.querySelectorAll('#listaPacientes .sm-paciente-item'),
+                    function (item) { return item.style.display !== 'none'; }
+                );
+                if (primero) primero.click();
+            }
+            if (e.key === 'Escape') limpiar.click();
+        });
+
+        limpiar.addEventListener('click', function () {
+            input.value = '';
+            limpiar.hidden = true;
+            guardar('');
+            aplicarFiltros();
+            input.focus();
+        });
+    }
+
+    conectarBusqueda('buscarPaciente', 'limpiarBusqueda', function (v) { textoBusqueda = v; });
+    conectarBusqueda('buscarDni', 'limpiarDni', function (v) { textoDni = v; });
+
     function graficosMapa() {
         var mapaWrap = document.getElementById('mapaWrap');
         var btnMapa  = document.getElementById('btnToggleMapa');
@@ -1067,6 +1278,7 @@
             marcadores[i] = L.marker([p.lat, p.lng], { icon: crearIcono(p.riesgo) })
                 .bindPopup(
                     '<strong>' + escapar(p.paciente) + '</strong><table>' +
+                    (p.dni ? '<tr><td>DNI:</td><td>' + escapar(p.dni) + '</td></tr>' : '') +
                     '<tr><td>Edad:</td><td>' + escapar(p.edad || '—') + ' (' + escapar(p.tipo || '—') + ')</td></tr>' +
                     '<tr><td>Localidad:</td><td>' + escapar(p.localidad || '—') + '</td></tr>' +
                     '<tr><td>Hospital:</td><td>' + escapar(p.efector || '—') + '</td></tr>' +
@@ -1079,7 +1291,7 @@
         });
         grupo.addTo(mapa);
         grupoPacientes = grupo;
-        if (filtroRiesgoActivo) aplicarFiltroRiesgo(filtroRiesgoActivo);   // si se filtró antes de abrir el mapa
+        if (filtroRiesgoActivo || textoBusqueda || textoDni) aplicarFiltros();   // si se filtró antes de abrir el mapa
 
         if (puntos.length > 0) mapa.fitBounds(grupo.getBounds(), { padding: [30, 30] });
         else mapa.setView([-23.3128, -65.3097], 7);   // Centro de Jujuy (igual que el mapa de Bases)

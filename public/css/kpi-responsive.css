@@ -1,0 +1,330 @@
+/* =============================================================================
+   Tarjetas KPI responsivas para todos los módulos (mismo criterio que Bases).
+   Se carga desde app/Views/layout/main.php.
+
+   Familias con ícono:  ml-, at-, cc-, cb-, gd-   (ícono + etiqueta + valor)
+   Familias solo texto: rh-, le-, smc-, gq-, cs-, pq-  (etiqueta + valor centrados)
+   Bases (bl-) tiene sus propias reglas en base/base_list.php.
+
+   Los selectores van con ".main-content" adelante para tener más prioridad que
+   los estilos propios de cada vista (que se cargan después, dentro del contenido).
+   En escritorio al 100 % no se cambia nada: cada vista mantiene su diseño.
+   ============================================================================= */
+
+/* ── Base común: el texto nunca se sale de la tarjeta ── */
+.main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card,
+                  .rh-kpi-card, .le-kpi-card, .smc-kpi-card, .gq-kpi-card, .cs-kpi-card, .pq-kpi-card) {
+    min-width: 0;
+    box-sizing: border-box;
+}
+.main-content :is(.ml-kpi-content, .at-kpi-content, .cc-kpi-content, .cb-kpi-content, .gd-kpi-content) {
+    min-width: 0;
+}
+/* Etiqueta, valor y subtítulo nunca más anchos que la tarjeta */
+.main-content :is(.ml-kpi-content, .at-kpi-content, .cc-kpi-content, .cb-kpi-content, .gd-kpi-content) > * {
+    max-width: 100%;
+    min-width: 0;
+}
+
+/* Pantallas chicas: el subtítulo baja de línea en vez de cortarse con "…" */
+@media (max-width: 1000px), (max-height: 500px) {
+    .main-content :is(.ml-kpi-sub, .cc-kpi-sub, .cb-kpi-sub) {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        overflow-wrap: anywhere;
+        line-height: 1.25;
+    }
+}
+
+/* ── Tablets o zoom 200–300 %: grilla de 3 por fila, tarjetas compactas ── */
+@media (max-width: 1000px) {
+    .main-content :is(.ml-kpi-cards, .at-kpi-cards, .cc-kpi-cards, .cb-kpi-cards, .gd-kpi-cards,
+                      .rh-kpi-cards, .le-kpi-cards, .smc-kpi-cards, .gq-kpi-cards, .cs-kpi-cards, .pq-kpi-cards) {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+    }
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card,
+                      .rh-kpi-card, .le-kpi-card, .smc-kpi-card, .gq-kpi-card, .cs-kpi-card, .pq-kpi-card) {
+        flex: none;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        height: auto;
+        min-height: 0;
+    }
+
+    /* Con ícono: ícono al costado y texto al lado */
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card) {
+        flex-direction: row;
+        align-items: center;
+        padding: 10px;
+        gap: 10px;
+    }
+    .main-content :is(.ml-kpi-icon, .at-kpi-icon, .cc-kpi-icon, .cb-kpi-icon, .gd-kpi-icon) {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        border-radius: 10px;
+        flex-shrink: 0;
+    }
+    .main-content :is(.ml-kpi-content, .at-kpi-content, .cc-kpi-content, .cb-kpi-content, .gd-kpi-content) {
+        align-items: stretch;   /* el texto ocupa el ancho de la tarjeta y no se desborda */
+        text-align: left;
+    }
+    .main-content :is(.ml-kpi-label, .at-kpi-label, .cc-kpi-label, .cb-kpi-label, .gd-kpi-label) {
+        font-size: 10px;
+        letter-spacing: .3px;
+        line-height: 1.2;
+        text-align: left;
+        white-space: normal;
+    }
+    .main-content :is(.ml-kpi-value, .at-kpi-value, .cc-kpi-value, .cb-kpi-value, .gd-kpi-value) {
+        font-size: 20px;
+    }
+    .main-content :is(.cc-kpi-sub, .cb-kpi-sub) {
+        font-size: 10px;
+        white-space: normal;
+    }
+
+    /* Solo texto: centradas y compactas */
+    .main-content :is(.rh-kpi-card, .le-kpi-card, .smc-kpi-card, .gq-kpi-card, .cs-kpi-card, .pq-kpi-card) {
+        padding: 10px 8px;
+    }
+    .main-content :is(.rh-kpi-card-label, .le-kpi-card-label, .smc-kpi-card-label,
+                      .gq-kpi-card-label, .cs-kpi-card-label, .pq-kpi-card-label) {
+        font-size: 9.5px;
+        line-height: 1.2;
+        white-space: normal;
+    }
+    .main-content :is(.rh-kpi-card-value, .le-kpi-card-value, .smc-kpi-card-value,
+                      .gq-kpi-card-value, .cs-kpi-card-value, .pq-kpi-card-value) {
+        font-size: 20px;
+    }
+}
+
+/* ── Pantallas angostas: 2 por fila ── */
+@media (max-width: 600px) {
+    .main-content :is(.ml-kpi-cards, .at-kpi-cards, .cc-kpi-cards, .cb-kpi-cards, .gd-kpi-cards,
+                      .rh-kpi-cards, .le-kpi-cards, .smc-kpi-cards, .gq-kpi-cards, .cs-kpi-cards, .pq-kpi-cards) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    /* Si la cantidad es impar, la última tarjeta ocupa todo el ancho para no quedar sola */
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card,
+                      .rh-kpi-card, .le-kpi-card, .smc-kpi-card, .gq-kpi-card, .cs-kpi-card,
+                      .pq-kpi-card):last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ── Celulares: 2 por fila, ícono chico a la izquierda ── */
+@media (max-width: 480px) {
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card) {
+        padding: 8px;
+        gap: 8px;
+        border-radius: 12px;
+        border-left-width: 4px;
+    }
+    .main-content :is(.ml-kpi-icon, .at-kpi-icon, .cc-kpi-icon, .cb-kpi-icon, .gd-kpi-icon) {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+        border-radius: 8px;
+    }
+    .main-content :is(.ml-kpi-label, .at-kpi-label, .cc-kpi-label, .cb-kpi-label, .gd-kpi-label) {
+        font-size: 8.5px;
+        letter-spacing: .2px;
+    }
+    .main-content :is(.ml-kpi-value, .at-kpi-value, .cc-kpi-value, .cb-kpi-value, .gd-kpi-value,
+                      .rh-kpi-card-value, .le-kpi-card-value, .smc-kpi-card-value,
+                      .gq-kpi-card-value, .cs-kpi-card-value, .pq-kpi-card-value) {
+        font-size: 18px;
+    }
+    .main-content :is(.rh-kpi-card-label, .le-kpi-card-label, .smc-kpi-card-label,
+                      .gq-kpi-card-label, .cs-kpi-card-label, .pq-kpi-card-label) {
+        font-size: 8.5px;
+    }
+    .main-content :is(.cc-kpi-sub, .cb-kpi-sub) {
+        font-size: 9px;
+    }
+}
+
+/* ── Zoom 300 % o más (ventana baja): 3 por fila, ícono chico al costado y todo más pequeño ── */
+@media (max-height: 500px) {
+    .main-content :is(.ml-kpi-cards, .at-kpi-cards, .cc-kpi-cards, .cb-kpi-cards, .gd-kpi-cards,
+                      .rh-kpi-cards, .le-kpi-cards, .smc-kpi-cards, .gq-kpi-cards, .cs-kpi-cards, .pq-kpi-cards) {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+    }
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card,
+                      .rh-kpi-card, .le-kpi-card, .smc-kpi-card, .gq-kpi-card, .cs-kpi-card, .pq-kpi-card) {
+        flex: none;
+        width: auto;
+        max-width: none;
+        min-width: 0;
+        height: auto;
+        min-height: 0;
+        padding: 5px 8px;
+        border-radius: 10px;
+    }
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card,
+                      .rh-kpi-card, .le-kpi-card, .smc-kpi-card, .gq-kpi-card, .cs-kpi-card,
+                      .pq-kpi-card):last-child:nth-child(odd) {
+        grid-column: auto;
+    }
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card) {
+        flex-direction: row;
+        align-items: center;
+        gap: 7px;
+        border-left-width: 4px;
+    }
+    .main-content :is(.ml-kpi-icon, .at-kpi-icon, .cc-kpi-icon, .cb-kpi-icon, .gd-kpi-icon) {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        border-radius: 7px;
+        flex-shrink: 0;
+    }
+    .main-content :is(.ml-kpi-content, .at-kpi-content, .cc-kpi-content, .cb-kpi-content, .gd-kpi-content) {
+        align-items: stretch;   /* el texto ocupa el ancho de la tarjeta y no se desborda */
+        text-align: left;
+    }
+    .main-content :is(.ml-kpi-label, .at-kpi-label, .cc-kpi-label, .cb-kpi-label, .gd-kpi-label,
+                      .rh-kpi-card-label, .le-kpi-card-label, .smc-kpi-card-label,
+                      .gq-kpi-card-label, .cs-kpi-card-label, .pq-kpi-card-label) {
+        font-size: 8px;
+        letter-spacing: 0;
+        line-height: 1.2;
+        white-space: normal;
+    }
+    .main-content :is(.ml-kpi-label, .at-kpi-label, .cc-kpi-label, .cb-kpi-label, .gd-kpi-label) {
+        text-align: left;
+    }
+    .main-content :is(.ml-kpi-value, .at-kpi-value, .cc-kpi-value, .cb-kpi-value, .gd-kpi-value,
+                      .rh-kpi-card-value, .le-kpi-card-value, .smc-kpi-card-value,
+                      .gq-kpi-card-value, .cs-kpi-card-value, .pq-kpi-card-value) {
+        font-size: 14px;
+        margin: 1px 0;
+    }
+    .main-content :is(.cc-kpi-sub, .cb-kpi-sub) {
+        font-size: 8px;
+    }
+}
+
+/* ── Zoom 400–500 % (ventana muy baja): un paso más chico ── */
+@media (max-height: 300px) {
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card,
+                      .rh-kpi-card, .le-kpi-card, .smc-kpi-card, .gq-kpi-card, .cs-kpi-card, .pq-kpi-card) {
+        padding: 4px 6px;
+    }
+    .main-content :is(.ml-kpi-card, .at-kpi-card, .cc-kpi-card, .cb-kpi-card, .gd-kpi-card) {
+        gap: 5px;
+    }
+    .main-content :is(.ml-kpi-icon, .at-kpi-icon, .cc-kpi-icon, .cb-kpi-icon, .gd-kpi-icon) {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+        border-radius: 6px;
+    }
+    .main-content :is(.ml-kpi-label, .at-kpi-label, .cc-kpi-label, .cb-kpi-label, .gd-kpi-label,
+                      .rh-kpi-card-label, .le-kpi-card-label, .smc-kpi-card-label,
+                      .gq-kpi-card-label, .cs-kpi-card-label, .pq-kpi-card-label) {
+        font-size: 7px;
+    }
+    .main-content :is(.ml-kpi-value, .at-kpi-value, .cc-kpi-value, .cb-kpi-value, .gd-kpi-value,
+                      .rh-kpi-card-value, .le-kpi-card-value, .smc-kpi-card-value,
+                      .gq-kpi-card-value, .cs-kpi-card-value, .pq-kpi-card-value) {
+        font-size: 12px;
+    }
+}
+
+/* =============================================================================
+   Paneles Prehospitalario (basev) y Gestión paciente (pacientev): .kpi-row / .kpi-card
+   (4 tarjetas con etiqueta, valor, subtítulo e indicador)
+   ============================================================================= */
+.main-content .kpi-row > .kpi-card { min-width: 0; }
+
+@media (max-width: 1000px) {
+    .main-content .kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .main-content .kpi-row > .kpi-card { padding: 12px 14px 10px; }
+    .main-content .kpi-row .kpi-label { font-size: 9.5px; line-height: 1.2; }
+    .main-content .kpi-row .kpi-value { font-size: 26px; }
+    .main-content .kpi-row .kpi-sub   { font-size: 10.5px; margin-bottom: 6px; }
+    .main-content .kpi-row .kpi-badge { font-size: 9.5px; padding: 2px 7px; white-space: normal; }
+}
+
+@media (max-width: 480px) {
+    .main-content .kpi-row { gap: 8px; }
+    .main-content .kpi-row > .kpi-card { padding: 10px 10px 8px; border-radius: 12px; }
+    .main-content .kpi-row .kpi-label { font-size: 8.5px; letter-spacing: .3px; }
+    .main-content .kpi-row .kpi-value { font-size: 22px; }
+    .main-content .kpi-row .kpi-sub   { font-size: 9.5px; }
+    .main-content .kpi-row .kpi-badge { font-size: 8.5px; }
+}
+
+/* Zoom 300 % o más: las 4 en una fila, compactas */
+@media (max-height: 500px) {
+    .main-content .kpi-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+    .main-content .kpi-row > .kpi-card { padding: 6px 8px; border-radius: 10px; }
+    .main-content .kpi-row .kpi-label { font-size: 8px; letter-spacing: 0; margin-bottom: 2px; }
+    .main-content .kpi-row .kpi-value { font-size: 16px; margin-bottom: 1px; }
+    .main-content .kpi-row .kpi-sub   { font-size: 8px; margin-bottom: 3px; }
+    .main-content .kpi-row .kpi-badge { font-size: 7.5px; padding: 1px 4px; }
+}
+@media (max-height: 300px) {
+    .main-content .kpi-row .kpi-value { font-size: 13px; }
+    .main-content .kpi-row .kpi-label,
+    .main-content .kpi-row .kpi-sub,
+    .main-content .kpi-row .kpi-badge { font-size: 7px; }
+}
+
+
+/* =============================================================================
+   Consultas y reclamos (.cr-tipo-card) y Gestión de especialidades (.th-card):
+   tarjetas con la etiqueta en píldora
+   La píldora sobresale 14px por arriba, por eso la separación vertical es mayor.
+   ============================================================================= */
+@media (max-width: 1000px) {
+    .main-content :is(.cr-tipos-banda, .th-banda) {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 26px 12px;
+        padding: 26px 12px 14px;
+    }
+    .main-content :is(.cr-tipo-card, .th-card) {
+        flex: none;
+        min-width: 0;
+        min-height: 0;
+        padding: 20px 8px 10px;
+    }
+    .main-content :is(.cr-tipo-pill, .th-pill) { font-size: 11.5px; padding: 3px 12px; top: -12px; max-width: calc(100% - 8px); overflow: hidden; text-overflow: ellipsis; }
+    .main-content :is(.cr-tipo-valor, .th-valor) { font-size: 26px; }
+    .main-content :is(.cr-tipo-sub, .th-sub) { font-size: 10.5px; line-height: 1.25; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 600px) {
+    .main-content :is(.cr-tipos-banda, .th-banda) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 10px; padding: 24px 10px 12px; }
+    /* El TOTAL (o la última si quedan impares) ocupa todo el ancho al final */
+    .main-content :is(.cr-tipo-card, .th-card):last-child:nth-child(odd) { grid-column: 1 / -1; }
+    .main-content :is(.cr-tipo-pill, .th-pill) { font-size: 10.5px; padding: 3px 10px; letter-spacing: .2px; }
+    .main-content :is(.cr-tipo-valor, .th-valor) { font-size: 22px; }
+    .main-content :is(.cr-tipo-sub, .th-sub) { font-size: 10px; }
+}
+
+/* Zoom 300 % o más: todas en una fila si entran, compactas */
+@media (max-height: 500px) {
+    .main-content :is(.cr-tipos-banda, .th-banda) {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 18px 6px;
+        padding: 18px 8px 8px;
+    }
+    .main-content :is(.cr-tipo-card, .th-card) { flex: none; min-width: 0; min-height: 0; padding: 12px 4px 6px; border-radius: 10px; }
+    .main-content :is(.cr-tipo-card, .th-card):last-child:nth-child(odd) { grid-column: auto; }
+    .main-content :is(.cr-tipo-pill, .th-pill) { font-size: 8px; padding: 2px 6px; top: -9px; }
+    .main-content :is(.cr-tipo-valor, .th-valor) { font-size: 15px; }
+    .main-content :is(.cr-tipo-sub, .th-sub) { font-size: 7.5px; margin-top: 2px; }
+}

@@ -12,6 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.17/dist/sweetalert2.all.min.js"></script>
     <link rel="icon" href="/imag/logoobse.png">
     <link rel="stylesheet" href="/css/style.css">
+    <!-- Tarjetas KPI responsivas de todos los módulos (celular y zoom alto) -->
+    <link rel="stylesheet" href="/css/kpi-responsive.css">
+    <!-- Botón para ocultar / mostrar los filtros en celular -->
+    <link rel="stylesheet" href="/css/filtros-movil.css">
 
     <style> 
 
@@ -156,7 +160,7 @@
 
 
         /* ── RESPONSIVE / ADAPTACIÓN MÓVIL ── */
-        @media (max-width: 768px) {
+        @media (max-width: 768px), (max-width: 1100px) and (pointer: coarse) {   /* celulares y tablets */
             .layout,
             body.sidebar-collapsed .layout { padding-left: 0; }
             .layout ~ .footer,
@@ -204,6 +208,11 @@
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
     <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
     <script src="/js/modal.js"></script>
+    <script src="/js/filtros-movil.js"></script>
+    <!-- Botones "Filtrar" y "Limpiar" iguales en todos los filtros -->
+    <script src="/js/filtros-botones.js"></script>
     <?= $this->renderSection('js');?>
+    <!-- Botones para ocultar tablas y gráficos en celular (después de que las vistas crean sus gráficos) -->
+    <script src="/js/secciones-movil.js"></script>
 </body>
 </html>

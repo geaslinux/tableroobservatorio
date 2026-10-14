@@ -3,6 +3,8 @@
 <?= $this->section('menu') ?> <?= $this->include('admin/menu'); ?> <?= $this->endSection() ?>
 
 <?= $this->section('content') ?>
+<!-- Pestañas e íconos de tarjetas (compartido con el otro panel) -->
+<link rel="stylesheet" href="/css/panel-pestanas.css">
 <style>
     /* CSS maintained from original base_views.php */
     .breadcrumb {
@@ -227,20 +229,20 @@
     .ql-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-        gap: 14px;
-        margin-bottom: 20px;
+        gap: 12px;
+        margin-bottom: 16px;
     }
     .ql-card {
-        background: var(--white); border-radius: 14px; padding: 18px 20px;
+        background: var(--white); border-radius: 12px; padding: 12px 16px;
         display: flex; align-items: center; gap: 12px;
         text-decoration: none; color: var(--text-main);
-        border: 1px solid var(--border); min-height: 82px;
+        border: 1px solid var(--border); min-height: 64px;
         transition: transform 0.18s ease, box-shadow 0.2s, background 0.15s, border-color 0.15s;
     }
     .ql-card:hover { box-shadow: 0 8px 18px rgba(0,0,0,0.08); transform: translateY(-2px); text-decoration: none; color: var(--text-main); }
-    .ql-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--teal); flex-shrink: 0; }
+    .ql-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; color: var(--teal); flex-shrink: 0; }
     .ql-title { font-size: 13.5px; font-weight: 800; color: var(--text-main); line-height: 1.15; }
-    .ql-desc  { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .ql-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
     .ql-card:nth-child(1) { background: linear-gradient(135deg, #f7fbff 0%, #eef7ff 100%); border-color: #bcd4f4; }
     .ql-card:nth-child(1) .ql-icon { background: #dbeafe; color: #3b82f6; }
     .ql-card:nth-child(2) { background: linear-gradient(135deg, #f7fff9 0%, #e9fbef 100%); border-color: #bafbda; }
@@ -311,7 +313,7 @@
         .mini-stat { padding: 10px 6px; }
         .mini-stat-val { font-size: 22px; }
 
-        .ql-grid { grid-template-columns: 1fr; gap: 10px; }
+        .ql-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
     }
 
     @media (max-width: 360px) {
@@ -391,7 +393,9 @@
     <button type="submit" class="filtro-btn">
         <i class="fas fa-filter"></i> Filtrar
     </button>
-    <a href="?ejercicio=2025&mes_desde=1&mes_hasta=12" class="filtro-btn-clear">
+    <!-- Pestaña activa: se conserva al filtrar -->
+    <input type="hidden" name="tab" id="inputTab" value="<?= esc($tab, 'attr') ?>">
+    <a href="?ejercicio=<?= date('Y') ?>&mes_desde=1&mes_hasta=12&tab=<?= esc($tab, 'url') ?>" class="filtro-btn-clear" id="btnLimpiar">
         <i class="fas fa-undo"></i> Limpiar
     </a>
     <span class="filtro-periodo-tag">
@@ -400,276 +404,357 @@
     </span>
 </form>
 
-<!-- ── KPI ROW ── -->
-<div class="kpi-row">
-    <div class="kpi-card kpi-teal">
-        <div class="kpi-label">Bases activas</div>
-        <div class="kpi-value"><?= $bases_activas ?></div>
-        <div class="kpi-sub">de <?= $bases_total ?> registradas</div>
-        <span class="kpi-badge green">
-            <i class="fas fa-arrow-up"></i> <?= $pct_bases ?>% operativas
-        </span>
-    </div>
-
-    <div class="kpi-card kpi-blue">
-        <div class="kpi-label">Móviles en servicio</div>
-        <div class="kpi-value"><?= $moviles_op ?></div>
-        <div class="kpi-sub">total flota: <?= $moviles_total ?></div>
-        <span class="kpi-badge blue">
-            <i class="fas fa-arrow-up"></i> <?= $pct_moviles ?>% disponibles
-        </span>
-    </div>
-
-    <div class="kpi-card kpi-green">
-        <div class="kpi-label">Total asistencias</div>
-        <div class="kpi-value"><?= number_format($total_asistencias) ?></div>
-        <div class="kpi-sub">
-            <?= $meses_nombres[$mes_desde] ?> – <?= $meses_nombres[$mes_hasta] ?> · <?= $ejercicio_actual ?>
-        </div>
-        <span class="kpi-badge green">
-            <i class="fas fa-calendar-check"></i> Ejercicio <?= $ejercicio_actual ?>
-        </span>
-    </div>
-
-    <div class="kpi-card kpi-orange">
-        <div class="kpi-label">Internación domiciliaria</div>
-        <div class="kpi-value"><?= number_format($internacion_total) ?></div>
-        <div class="kpi-sub">pacientes registrados</div>
-        <span class="kpi-badge orange">
-            <i class="fas fa-minus"></i>
-            <?= $pct_adultos ?>% adultos / <?= $pct_pediatrico ?>% pediátrico
-        </span>
-    </div>
+<?php
+    // Tarjeta KPI con el mismo modelo que el panel Hospitalario (ícono a la izquierda).
+    // $badge se muestra como segunda línea destacada (verde, azul o naranja según $claseBadge).
+    $kpi = function ($color, $icono, $label, $valor, $sub = '', $badge = '', $claseBadge = 'green', $iconoBadge = 'fa-info-circle') {
+        return '<div class="ml-kpi-card kpi-' . $color . '">
+                    <div class="ml-kpi-icon"><i class="fas ' . $icono . '"></i></div>
+                    <div class="ml-kpi-content">
+                        <div class="ml-kpi-label">' . esc($label) . '</div>
+                        <div class="ml-kpi-value">' . $valor . '</div>'
+                        . ($sub !== '' ? '<div class="ml-kpi-sub" title="' . esc(strip_tags($sub)) . '">' . $sub . '</div>' : '')
+                        . ($badge !== '' ? '<div class="ml-kpi-sub destacado ' . $claseBadge . '"><i class="fas ' . $iconoBadge . '"></i> ' . $badge . '</div>' : '') .
+                    '</div>
+                </div>';
+    };
+?>
+<!-- ── PESTAÑAS ── -->
+<div class="ml-tabs" role="tablist">
+    <?php foreach (['asis'   => ['fa-hands-helping', 'Asistencias'],
+                    'flota'  => ['fa-ambulance', 'Bases y móviles'],
+                    'intdom' => ['fa-house-user', 'Internación domiciliaria']] as $clave => [$icono, $titulo]): ?>
+        <button type="button" class="ml-tab <?= $tab === $clave ? 'is-active' : '' ?>" data-tab="<?= $clave ?>" role="tab">
+            <i class="fas <?= $icono ?>"></i> <?= $titulo ?>
+        </button>
+    <?php endforeach; ?>
 </div>
 
-<!-- ── MID ROW ── -->
-<div class="mid-row">
-    <div class="panel-card">
-        <div class="panel-header">
-            <span class="panel-title">Distribución de asistencias</span>
-        </div>
-        <div class="panel-body">
-            <?php if ($total_asistencias > 0): ?>
-            <div class="distrib-grid">
-                <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#0B2E59"></div>
-                    <div class="distrib-info">
-                        <div class="distrib-name">Emerg. c/ médico</div>
-                        <div class="distrib-val"><?= number_format($emerg_con_medico) ?></div>
-                    </div>
-                </div>
-                <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#4FB3E6"></div>
-                    <div class="distrib-info">
-                        <div class="distrib-name">Emerg. s/ médico</div>
-                        <div class="distrib-val"><?= number_format($emerg_sin_medico) ?></div>
-                    </div>
-                </div>
-                <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#1A5FA8"></div>
-                    <div class="distrib-info">
-                        <div class="distrib-name">Urgencias</div>
-                        <div class="distrib-val"><?= number_format($urgencias) ?></div>
-                    </div>
-                </div>
-                <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#8FD3F4"></div>
-                    <div class="distrib-info">
-                        <div class="distrib-name">Derivación pública</div>
-                        <div class="distrib-val"><?= number_format($derivacion_publica) ?></div>
-                    </div>
-                </div>
-                <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#2F80C8"></div>
-                    <div class="distrib-info">
-                        <div class="distrib-name">Derivación privada</div>
-                        <div class="distrib-val"><?= number_format($derivacion_privada) ?></div>
-                    </div>
-                </div>
-                <div class="distrib-item">
-                    <div class="distrib-dot" style="background:#6EC6EA"></div>
-                    <div class="distrib-info">
-                        <div class="distrib-name">Int. domiciliaria</div>
-                        <div class="distrib-val"><?= number_format($asist_internacion) ?></div>
-                    </div>
-                </div>
-            </div>
-            <?php else: ?>
-            <div class="no-data"><i class="fas fa-inbox"></i> Sin datos de asistencias</div>
-            <?php endif; ?>
-        </div>
+<!-- ══════════════ ASISTENCIAS ══════════════ -->
+<div class="ml-tab-pane <?= $tab === 'asis' ? 'is-active' : '' ?>" data-pane="asis">
+<div class="hv-modulo">
+    <div class="hv-modulo-header">
+        <span class="hv-modulo-titulo">
+            <i class="fas fa-hands-helping"></i> ASISTENCIAS
+            <span class="hv-periodo"><?= $meses_nombres[$mes_desde] ?> – <?= $meses_nombres[$mes_hasta] ?> <?= $ejercicio_actual ?></span>
+        </span>
+        <a href="<?= base_url(route_to('asistencia_list')); ?>" class="hv-ver">Ver asistencias <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="hv-modulo-body">
+    <div class="ml-kpi-cards">
+        <?= $kpi('green', 'fa-hands-helping', 'Total asistencias', number_format($total_asistencias),
+                 $meses_nombres[$mes_desde] . ' – ' . $meses_nombres[$mes_hasta] . ' · ' . $ejercicio_actual,
+                 'Ejercicio ' . $ejercicio_actual, 'green', 'fa-calendar-check') ?>
+        <?= $kpi('teal', 'fa-heartbeat', 'Emergencias', number_format($emerg_con_medico + $emerg_sin_medico),
+                 number_format($emerg_con_medico) . ' con médico · ' . number_format($emerg_sin_medico) . ' sin médico') ?>
+        <?= $kpi('blue', 'fa-first-aid', 'Urgencias', number_format($urgencias),
+                 $total_asistencias > 0 ? round($urgencias * 100 / $total_asistencias, 1) . '% del total' : 'sin asistencias') ?>
+        <?= $kpi('orange', 'fa-exchange-alt', 'Derivaciones', number_format($derivacion_publica + $derivacion_privada),
+                 number_format($derivacion_publica) . ' públicas · ' . number_format($derivacion_privada) . ' privadas') ?>
     </div>
 
-    <div class="panel-card">
-        <div class="panel-header">
-            <span class="panel-title">Cobertura por base — Top 5</span>
-        </div>
-        <div class="panel-body">
-            <?php
-                $bar_classes    = ['bar-1','bar-2','bar-3','bar-4','bar-5'];
-                $top_bases_data = (!empty($top_bases)) ? $top_bases : [];
-            ?>
-            <?php if (!empty($top_bases_data)): ?>
-                <?php $max_total = max(array_column(
-                    array_map(fn($r) => ['total' => $r->total], $top_bases_data), 'total'
-                )); ?>
-                <div class="coverage-list">
-                    <?php foreach ($top_bases_data as $i => $b): ?>
-                    <div class="coverage-row">
-                        <div class="coverage-name" title="<?= esc($b->nombre) ?>"><?= esc($b->nombre) ?></div>
-                        <div class="coverage-bar-wrap">
-                            <div class="coverage-bar <?= $bar_classes[$i % count($bar_classes)] ?>"
-                                 style="width:<?= $max_total > 0 ? round(($b->total / $max_total) * 100) : 0 ?>%"></div>
+    <div class="tab-grid">
+        <div class="panel-card">
+            <div class="panel-header">
+                <span class="panel-title">Distribución de asistencias</span>
+            </div>
+            <div class="panel-body">
+                <?php if ($total_asistencias > 0): ?>
+                <div class="distrib-grid">
+                    <?php foreach ([
+                        ['Emerg. c/ médico',   $emerg_con_medico,   '#0B2E59'],
+                        ['Emerg. s/ médico',   $emerg_sin_medico,   '#4FB3E6'],
+                        ['Urgencias',          $urgencias,          '#1A5FA8'],
+                        ['Derivación pública', $derivacion_publica, '#8FD3F4'],
+                        ['Derivación privada', $derivacion_privada, '#2F80C8'],
+                        ['Int. domiciliaria',  $asist_internacion,  '#6EC6EA'],
+                    ] as [$nombre, $valor, $color]): ?>
+                    <div class="distrib-item">
+                        <div class="distrib-dot" style="background:<?= $color ?>"></div>
+                        <div class="distrib-info">
+                            <div class="distrib-name"><?= $nombre ?></div>
+                            <div class="distrib-val"><?= number_format($valor) ?></div>
                         </div>
-                        <div class="coverage-num"><?= number_format($b->total) ?></div>
                     </div>
                     <?php endforeach; ?>
                 </div>
-            <?php else: ?>
-                <div class="no-data"><i class="fas fa-chart-bar"></i> Sin datos por base.</div>
-            <?php endif; ?>
+                <?php else: ?>
+                <div class="no-data"><i class="fas fa-inbox"></i> Sin datos de asistencias</div>
+                <?php endif; ?>
+            </div>
         </div>
+
+        <div class="panel-card">
+            <div class="panel-header">
+                <span class="panel-title">
+                    Asistencias mensuales —
+                    <?= $meses_nombres[$mes_desde] ?> a <?= $meses_nombres[$mes_hasta] ?> <?= $ejercicio_actual ?>
+                </span>
+            </div>
+            <div class="chart-wrap">
+                <?php if (array_sum($datos_mensuales) > 0): ?>
+                    <div class="chart-alto"><canvas id="chartMensual"></canvas></div>
+                <?php else: ?>
+                    <div class="no-data" style="padding:40px 0;">
+                        <i class="fas fa-chart-line"></i>
+                        Sin datos mensuales para el período seleccionado
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
     </div>
 </div>
-
-<!-- ── BOTTOM ROW ── -->
-<div class="bot-row">
-    <div class="panel-card">
-        <div class="panel-header">
-            <span class="panel-title">
-                Asistencias mensuales —
-                <?= $meses_nombres[$mes_desde] ?> a <?= $meses_nombres[$mes_hasta] ?> <?= $ejercicio_actual ?>
-            </span>
-        </div>
-        <div class="chart-wrap">
-            <?php if (array_sum($datos_mensuales) > 0): ?>
-                <canvas id="chartMensual" height="130"></canvas>
-            <?php else: ?>
-                <div class="no-data" style="padding:40px 0;">
-                    <i class="fas fa-chart-line"></i>
-                    Sin datos mensuales para el período seleccionado
-                </div>
-            <?php endif; ?>
-        </div>
-    </div>
-
-    <div class="panel-card">
-        <div class="panel-header">
-            <span class="panel-title">Resumen operativo</span>
-        </div>
-        <div class="mini-stat-grid">
-            <div class="mini-stat-row">
-                <div class="mini-stat">
-                    <div class="mini-stat-val teal"><?= $moviles_op ?></div>
-                    <div class="mini-stat-label">Móviles<br>operativos</div>
-                </div>
-                <div class="mini-stat">
-                    <div class="mini-stat-val blue"><?= $moviles_mantenimiento ?></div>
-                    <div class="mini-stat-label">En<br>mantenimiento</div>
-                </div>
-                <div class="mini-stat">
-                    <div class="mini-stat-val orange"><?= $moviles_baja ?></div>
-                    <div class="mini-stat-label">Fuera de<br>servicio</div>
-                </div>
-            </div>
-            <hr class="mini-sep">
-            <div class="mini-stat-row">
-                <div class="mini-stat">
-                    <div class="mini-stat-val teal"><?= $bases_activas ?></div>
-                    <div class="mini-stat-label">Bases<br>activas</div>
-                </div>
-                <div class="mini-stat">
-                    <div class="mini-stat-val blue"><?= $bases_total ?></div>
-                    <div class="mini-stat-label">Bases<br>registradas</div>
-                </div>
-                <div class="mini-stat">
-                    <div class="mini-stat-val orange"><?= $bases_total - $bases_activas ?></div>
-                    <div class="mini-stat-label">Bases<br>inactivas</div>
-                </div>
-            </div>
-            <hr class="mini-sep">
-            <div class="mini-stat-row">
-                <div class="mini-stat">
-                    <div class="mini-stat-val teal"><?= $internacion_adulto ?></div>
-                    <div class="mini-stat-label">Int. dom.<br>adultos</div>
-                </div>
-                <div class="mini-stat">
-                    <div class="mini-stat-val blue"><?= $internacion_pediatrico ?></div>
-                    <div class="mini-stat-label">Int. dom.<br>pediátrico</div>
-                </div>
-                <div class="mini-stat">
-                    <div class="mini-stat-val orange"><?= $internacion_total ?></div>
-                    <div class="mini-stat-label">Total<br>registrados</div>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
-<?php
-    // Metrics calculations maintained from original base_views.php
-    $basesTotal = (int) ($bases_total ?? 0);
-    $basesActivas = (int) ($bases_activas ?? 0);
-    $movilesTotal = (int) ($moviles_total ?? 0);
-    $movilesOperativos = (int) ($moviles_op ?? 0);
-    $totalAsistencias = (int) ($total_asistencias ?? 0);
-    $internacionTotal = (int) ($internacion_total ?? 0);
-?>
+<!-- ══════════════ BASES Y MÓVILES ══════════════ -->
+<div class="ml-tab-pane <?= $tab === 'flota' ? 'is-active' : '' ?>" data-pane="flota">
+<div class="hv-modulo">
+    <div class="hv-modulo-header">
+        <span class="hv-modulo-titulo">
+            <i class="fas fa-ambulance"></i> BASES Y MÓVILES
+            <span class="hv-periodo">Estado actual</span>
+            <span class="hv-periodo"><?= $bases_total ?> bases · <?= $moviles_total ?> móviles</span>
+        </span>
+        <a href="<?= base_url(route_to('base_list')); ?>" class="hv-ver">Ver bases <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="hv-modulo-body">
+    <div class="ml-kpi-cards">
+        <?= $kpi('teal', 'fa-hospital', 'Bases activas', $bases_activas, 'de ' . $bases_total . ' registradas',
+                 $pct_bases . '% operativas', 'green', 'fa-arrow-up') ?>
+        <?= $kpi('blue', 'fa-ambulance', 'Móviles en servicio', $moviles_op, 'total flota: ' . $moviles_total,
+                 $pct_moviles . '% disponibles', 'blue', 'fa-arrow-up') ?>
+        <?= $kpi('green', 'fa-tools', 'En mantenimiento', $moviles_mantenimiento, 'móviles en taller') ?>
+        <?= $kpi('orange', 'fa-ban', 'Fuera de servicio', $moviles_baja, 'móviles dados de baja') ?>
+    </div>
+
+    <div class="tab-grid">
+        <div class="panel-card">
+            <div class="panel-header">
+                <span class="panel-title">Cobertura por base — Top 5</span>
+            </div>
+            <div class="panel-body">
+                <?php
+                    $bar_classes    = ['bar-1','bar-2','bar-3','bar-4','bar-5'];
+                    $top_bases_data = (!empty($top_bases)) ? $top_bases : [];
+                ?>
+                <?php if (!empty($top_bases_data)): ?>
+                    <?php $max_total = max(array_column(
+                        array_map(fn($r) => ['total' => $r->total], $top_bases_data), 'total'
+                    )); ?>
+                    <div class="coverage-list">
+                        <?php foreach ($top_bases_data as $i => $b): ?>
+                        <div class="coverage-row">
+                            <div class="coverage-name" title="<?= esc($b->nombre) ?>"><?= esc($b->nombre) ?></div>
+                            <div class="coverage-bar-wrap">
+                                <div class="coverage-bar <?= $bar_classes[$i % count($bar_classes)] ?>"
+                                     style="width:<?= $max_total > 0 ? round(($b->total / $max_total) * 100) : 0 ?>%"></div>
+                            </div>
+                            <div class="coverage-num"><?= number_format($b->total) ?></div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="no-data"><i class="fas fa-chart-bar"></i> Sin datos por base.</div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-header">
+                <span class="panel-title">Estado de la flota y las bases</span>
+            </div>
+            <div class="mini-stat-grid">
+                <div class="mini-stat-titulo"><i class="fas fa-ambulance"></i> Móviles</div>
+                <div class="mini-stat-row">
+                    <div class="mini-stat">
+                        <div class="mini-stat-val teal"><?= $moviles_op ?></div>
+                        <div class="mini-stat-label">Móviles<br>operativos</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-val blue"><?= $moviles_mantenimiento ?></div>
+                        <div class="mini-stat-label">En<br>mantenimiento</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-val orange"><?= $moviles_baja ?></div>
+                        <div class="mini-stat-label">Fuera de<br>servicio</div>
+                    </div>
+                </div>
+                <hr class="mini-sep">
+                <div class="mini-stat-titulo"><i class="fas fa-hospital"></i> Bases</div>
+                <div class="mini-stat-row">
+                    <div class="mini-stat">
+                        <div class="mini-stat-val teal"><?= $bases_activas ?></div>
+                        <div class="mini-stat-label">Bases<br>activas</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-val blue"><?= $bases_total ?></div>
+                        <div class="mini-stat-label">Bases<br>registradas</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-val orange"><?= $bases_total - $bases_activas ?></div>
+                        <div class="mini-stat-label">Bases<br>inactivas</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+</div>
+
+<!-- ══════════════ INTERNACIÓN DOMICILIARIA ══════════════ -->
+<div class="ml-tab-pane <?= $tab === 'intdom' ? 'is-active' : '' ?>" data-pane="intdom">
+<div class="hv-modulo">
+    <div class="hv-modulo-header">
+        <span class="hv-modulo-titulo">
+            <i class="fas fa-house-user"></i> INTERNACIÓN DOMICILIARIA
+            <span class="hv-periodo">Pacientes registrados</span>
+        </span>
+        <a href="<?= base_url(route_to('identificacion_list')); ?>" class="hv-ver">Ver pacientes <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="hv-modulo-body">
+    <div class="ml-kpi-cards">
+        <?= $kpi('orange', 'fa-house-user', 'Internación domiciliaria', number_format($internacion_total), 'pacientes registrados',
+                 $pct_adultos . '% adultos / ' . $pct_pediatrico . '% pediátrico', 'orange', 'fa-user-friends') ?>
+        <?= $kpi('teal', 'fa-user', 'Adultos', number_format($internacion_adulto), $pct_adultos . '% del total') ?>
+        <?= $kpi('blue', 'fa-child', 'Pediátricos', number_format($internacion_pediatrico), $pct_pediatrico . '% del total') ?>
+        <?= $kpi('green', 'fa-hands-helping', 'Asistencias de int. dom.', number_format($asist_internacion),
+                 $meses_nombres[$mes_desde] . ' – ' . $meses_nombres[$mes_hasta] . ' · ' . $ejercicio_actual) ?>
+    </div>
+
+    <div class="tab-grid">
+        <div class="panel-card">
+            <div class="panel-header">
+                <span class="panel-title">Pacientes en internación domiciliaria</span>
+            </div>
+            <div class="mini-stat-grid">
+                <div class="mini-stat-row">
+                    <div class="mini-stat">
+                        <div class="mini-stat-val teal"><?= $internacion_adulto ?></div>
+                        <div class="mini-stat-label">Int. dom.<br>adultos</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-val blue"><?= $internacion_pediatrico ?></div>
+                        <div class="mini-stat-label">Int. dom.<br>pediátrico</div>
+                    </div>
+                    <div class="mini-stat">
+                        <div class="mini-stat-val orange"><?= $internacion_total ?></div>
+                        <div class="mini-stat-label">Total<br>registrados</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <div class="panel-header">
+                <span class="panel-title">Adultos y pediátricos</span>
+            </div>
+            <div class="panel-body">
+                <?php if ($internacion_total > 0): ?>
+                    <div class="proporcion-barra" role="img"
+                         aria-label="<?= $pct_adultos ?>% adultos, <?= $pct_pediatrico ?>% pediátricos">
+                        <div class="proporcion-seg adultos" style="width:<?= $pct_adultos ?>%"></div>
+                        <div class="proporcion-seg pediatricos" style="width:<?= $pct_pediatrico ?>%"></div>
+                    </div>
+                    <div class="proporcion-leyenda">
+                        <span><i class="proporcion-punto adultos"></i> Adultos <strong><?= $pct_adultos ?>%</strong></span>
+                        <span><i class="proporcion-punto pediatricos"></i> Pediátricos <strong><?= $pct_pediatrico ?>%</strong></span>
+                    </div>
+                <?php else: ?>
+                    <div class="no-data"><i class="fas fa-house-user"></i> Sin pacientes registrados</div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+</div>
 <?= $this->endSection() ?>
 
 <?= $this->section('js') ?>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-    /* Gráfico mensual */
-    <?php if (array_sum($datos_mensuales) > 0): ?>
-    (function() {
-        const labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-        const datos  = <?= json_encode(array_values($datos_mensuales)) ?>;
+    // Gráficos por pestaña: se dibujan la primera vez que se muestra su pestaña
+    // (Chart.js no puede medir un canvas oculto).
+    var graficos = {
+        asis: function () {
+            <?php if (array_sum($datos_mensuales) > 0): ?>
+            const labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+            const datos  = <?= json_encode(array_values($datos_mensuales)) ?>;
 
-        const ctx = document.getElementById('chartMensual').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Asistencias',
-                    data: datos,
-                    borderColor: '#00b4a0',
-                    backgroundColor: 'rgba(0,180,160,0.10)',
-                    borderWidth: 2.5,
-                    pointBackgroundColor: '#00b4a0',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    tension: 0.35,
-                    fill: true,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#1a2b45',
-                        titleFont: { size: 11 },
-                        bodyFont: { size: 12, weight: '700' },
-                        padding: 10,
-                        cornerRadius: 6,
-                    }
+            new Chart(document.getElementById('chartMensual'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Asistencias',
+                        data: datos,
+                        borderColor: '#2F80C8',
+                        backgroundColor: 'rgba(47,128,200,0.10)',
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#2F80C8',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.35,
+                        fill: true,
+                    }]
                 },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { size: 10 }, color: '#5a6a7e' }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#1a2b45',
+                            titleFont: { size: 11 },
+                            bodyFont: { size: 12, weight: '700' },
+                            padding: 10,
+                            cornerRadius: 6,
+                        }
                     },
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(0,0,0,0.05)' },
-                        ticks: { font: { size: 10 }, color: '#5a6a7e' }
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: '#5a6a7e' } },
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { font: { size: 10 }, color: '#5a6a7e', precision: 0 } }
                     }
                 }
+            });
+            <?php endif; ?>
+        }
+    };
+
+    // ══ Pestañas (igual que el panel Hospitalario) ══
+    (function () {
+        var dibujados  = {};
+        var inputTab   = document.getElementById('inputTab');
+        var btnLimpiar = document.getElementById('btnLimpiar');
+
+        function mostrar(tab) {
+            document.querySelectorAll('.ml-tab').forEach(function (b) {
+                b.classList.toggle('is-active', b.dataset.tab === tab);
+            });
+            document.querySelectorAll('.ml-tab-pane').forEach(function (p) {
+                p.classList.toggle('is-active', p.dataset.pane === tab);
+            });
+
+            // Mantener la pestaña al filtrar, limpiar o recargar
+            if (inputTab) inputTab.value = tab;
+            if (btnLimpiar) btnLimpiar.href = btnLimpiar.href.replace(/([?&])tab=[^&]*/, '$1tab=' + tab);
+            var params = new URLSearchParams(window.location.search);
+            params.set('tab', tab);
+            history.replaceState(null, '', window.location.pathname + '?' + params.toString());
+
+            if (!dibujados[tab] && graficos[tab]) {
+                graficos[tab]();
+                dibujados[tab] = true;
             }
+        }
+
+        document.querySelectorAll('.ml-tab').forEach(function (b) {
+            b.addEventListener('click', function () { mostrar(b.dataset.tab); });
         });
+
+        mostrar((inputTab && inputTab.value) || 'asis');
     })();
-    <?php endif; ?>
 </script>
 <?= $this->endSection() ?>
