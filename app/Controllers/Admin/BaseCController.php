@@ -2,284 +2,198 @@
 namespace App\Controllers\Admin;
 
 use App\Controllers\BaseController;
-use App\Entities\Base;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class BaseCController extends BaseController
 {
+    private const MODULO           = 'bases';
+    private const REGIONES         = ['PUNA', 'QUEBRADA', 'CENTRO', 'VALLE', 'RAMAL I', 'RAMAL II'];
+    private const PROVINCIAS       = ['JUJUY'];
+    private const ESTADOS_VISIBLES = ['activo', 'desactivado']; // la baja lógica deja 'eliminado'
+    private const PRIMERA_VISITA   = '2000-01-01 00:00:00';
+
     // ─── Filtros reutilizables ───────────────────────────────────────────
-private function aplicarFiltros($model)
-{
-    $search           = strtoupper($this->request->getGet('search') ?? '');
-    $filtro_tipo      = $this->request->getGet('tipo') ?? '';
-    $filtro_region    = $this->request->getGet('region') ?? '';
-    $filtro_provincia = $this->request->getGet('provincia') ?? '';
-    $filtro_estado    = $this->request->getGet('estado') ?? '';
-    $estado_modo      = $this->request->getGet('estado_modo') ?? 'ninguno';
+    private function aplicarFiltros($model): array
+    {
+        $search           = strtoupper($this->request->getGet('search') ?? '');
+        $filtro_tipo      = $this->request->getGet('tipo')      ?? '';
+        $filtro_region    = $this->request->getGet('region')    ?? '';
+        $filtro_provincia = $this->request->getGet('provincia') ?? '';
+        $filtro_estado    = $this->request->getGet('estado')    ?? '';
 
-    // ── Búsqueda ───────────────────────────────────────────────
-    if ($search != '') {
-        $model->groupStart()
-              ->like('UPPER(nombre)', $search)
-              ->orLike('UPPER(ubicacion)', $search)
-              ->orLike('UPPER(region)', $search)
-              ->orLike('UPPER(nro)', $search)
-              ->groupEnd();
-    }
+        // ── Búsqueda ───────────────────────────────────────────────
+        if ($search !== '') {
+            $model->groupStart()
+                  ->like('UPPER(nombre)', $search)
+                  ->orLike('UPPER(ubicacion)', $search)
+                  ->orLike('UPPER(region)', $search)
+                  ->orLike('UPPER(nro)', $search)
+                  ->groupEnd();
+        }
 
-    // ── Otros filtros ──────────────────────────────────────────
-    if ($filtro_tipo) {
-        $model->where('tipo', $filtro_tipo);
-    }
+        // ── Otros filtros ──────────────────────────────────────────
+        if ($filtro_tipo)      $model->where('tipo', $filtro_tipo);
+        if ($filtro_region)    $model->where('region', $filtro_region);
+        if ($filtro_provincia) $model->where('provincia', $filtro_provincia);
 
-    if ($filtro_region) {
-        $model->where('region', $filtro_region);
-    }
-
-    if ($filtro_provincia) {
-        $model->where('provincia', $filtro_provincia);
-    }
-
-    // ── FILTRO DE ESTADO ───────────────────────────────────────
-    switch ($estado_modo) {
-
-        case 'activo':
-
-            // Solo bases activas
-            $filtro_estado = 'activo';
-            $model->where('estado', 'activo');
-
-            break;
-
-        case 'inactivo':
-
-            // Solo bases desactivadas
-            $filtro_estado = 'desactivado';
-            $model->where('estado', 'desactivado');
-
-            break;
-
-        case 'ninguno':
-
-            /*
-             * Ningún botón seleccionado:
-             * mostramos BASE + USE,
-             * activas + desactivadas.
-             */
+        // ── Estado: sin filtro se ven activas y desactivadas (nunca eliminadas) ──
+        if (in_array($filtro_estado, self::ESTADOS_VISIBLES, true)) {
+            $model->where('estado', $filtro_estado);
+        } else {
             $filtro_estado = '';
-            $model->whereIn('estado', ['activo', 'desactivado']);
+            $model->whereIn('estado', self::ESTADOS_VISIBLES);
+        }
 
-            break;
+        /*
+         * Botón de estado marcado en el listado: todos / activo / inactivo / ninguno.
+         * Solo cambia cómo se ve (color de los pines y tarjetas); el filtro real es `estado`.
+         * Si no viene (por ejemplo, desde el link de exportar), se deduce del estado.
+         */
+        $estado_modo = $this->request->getGet('estado_modo') ?? '';
+        if (!in_array($estado_modo, ['todos', 'activo', 'inactivo', 'ninguno'], true)) {
+            $estado_modo = match ($filtro_estado) {
+                'activo'      => 'activo',
+                'desactivado' => 'inactivo',
+                default       => 'ninguno',
+            };
+        }
 
-        case 'todos':
-
-        default:
-
-            /*
-             * Todos seleccionado:
-             * mostramos BASE + USE,
-             * activas + desactivadas.
-             */
-            $filtro_estado = '';
-            $model->whereIn('estado', ['activo', 'desactivado']);
-
-            break;
+        return compact('search', 'filtro_tipo', 'filtro_region', 'filtro_provincia', 'filtro_estado', 'estado_modo');
     }
 
-    return compact(
-        'search',
-        'filtro_tipo',
-        'filtro_region',
-        'filtro_provincia',
-        'filtro_estado',
-        'estado_modo'
-    );
-}
+    // Conteo respetando los filtros actuales + una condición extra
+    private function contarFiltrado(string $campo, string $valor): int
+    {
+        $model = model('BaseModel', false);
+        $this->aplicarFiltros($model);
 
- public function index()
-{
-    helper('auth');
-    $config  = config('Obse');
-    $perPage = $config->regPerPage ?? 10;
-
-    // ── Auditoría PRIMERO (antes de aplicar filtros al modelo) ────────
-    $userId      = user()->id;
-    $visitModel  = model('UserLastVisitModel');
-    $registro    = $visitModel->where('user_id', $userId)
-                              ->where('modulo', 'bases')
-                              ->first();
-    $ultimaVista = $registro ? $registro->ultima_vista : '2000-01-01 00:00:00';
-
-    $nuevas = model('BaseModel')
-        ->where('created_at >', $ultimaVista)
-        ->whereIn('estado', ['activo','desactivado'])
-        ->countAllResults(); // resetea el builder
-
-    $modificadas = model('BaseModel')
-        ->where('updated_at >', $ultimaVista)
-        ->where('updated_at != created_at')
-        ->whereIn('estado', ['activo','desactivado'])
-        ->countAllResults(); // resetea el builder
-
-    $totalRedGlobal = model('BaseModel')
-        ->whereIn('estado', ['activo', 'desactivado'])
-        ->countAllResults();
-
-        $totalActivasGlobal = model('BaseModel')
-        ->where('estado', 'activo')
-        ->countAllResults();
-
-    $totalDesactivadasGlobal = model('BaseModel')
-        ->where('estado', 'desactivado')
-        ->countAllResults();
-
-    // ── Filtros DESPUÉS de los conteos ────────────────────────────────
-    $model   = model('BaseModel');
-    $filtros = $this->aplicarFiltros($model); // ahora el builder está limpio
-
-    // ── Conteo de activas/desactivadas (respetando los filtros actuales) ──
-    $modelActivas = model('BaseModel');
-    $this->aplicarFiltros($modelActivas);
-    $totalActivas = $modelActivas->where('estado', 'activo')->countAllResults();
-
-    $modelDesact = model('BaseModel');
-    $this->aplicarFiltros($modelDesact);
-    $totalDesactivadas = $modelDesact->where('estado', 'desactivado')->countAllResults();
-
-    // ── Conteo por TIPO: BASE / USE (respetando filtros, sobre estado activo+desactivado) ──
-    $modelBases = model('BaseModel');
-    $this->aplicarFiltros($modelBases);
-    $totalBases = $modelBases->where('tipo', 'BASE')->countAllResults();
-
-    $modelUses = model('BaseModel');
-    $this->aplicarFiltros($modelUses);
-    $totalUses = $modelUses->where('tipo', 'USE')->countAllResults();
-
-    // ── Datos para el mapa (sin paginar) ──
-    $modelMap = model('BaseModel');
-    $this->aplicarFiltros($modelMap);
-    $basesMap = $modelMap->orderBy('tipo','ASC')->orderBy('nombre','ASC')->findAll();
-
-    $totalGeneral = $totalBases + $totalUses;
-
-    $regiones   = ['PUNA','QUEBRADA','CENTRO','VALLE','RAMAL I','RAMAL II'];
-    $provincias = ['JUJUY'];
-
-    return view('base/base_list', array_merge($filtros, [
-        'bases'             => $model->orderBy('tipo','ASC')->orderBy('nombre','ASC')->paginate($perPage),
-        'basesMap'          => $basesMap,
-        'pager'             => $model->pager,
-        'regiones'          => $regiones,
-        'provincias'        => $provincias,
-        'nuevas'            => $nuevas,
-        'modificadas'       => $modificadas,
-        'ultimaVista'       => $ultimaVista,
-        'totalActivas'      => $totalActivas,
-        'totalDesactivadas' => $totalDesactivadas,
-        'totalBases'        => $totalBases,
-        'totalUses'         => $totalUses,
-        'totalGeneral'      => $totalGeneral,
-        'totalRedGlobal'    => $totalRedGlobal,
-        'totalActivasGlobal'      => $totalActivasGlobal,
-        'totalDesactivadasGlobal' => $totalDesactivadasGlobal,
-    ]));
-}
-// ─── Marcar Visto ────────────────────────────────────────────────────
-public function marcarVisto()
-{
-    helper('auth');
-    $userId = user()->id;
-    $ahora  = date('Y-m-d H:i:s');
-    $db     = \Config\Database::connect();
-
-    $existe = $db->table('user_last_visit')
-                 ->where('user_id', $userId)
-                 ->where('modulo', 'bases')
-                 ->get()->getRow();
-
-    if ($existe) {
-        $db->table('user_last_visit')
-           ->where('user_id', $userId)
-           ->where('modulo', 'bases')
-           ->update(['ultima_vista' => $ahora]);
-    } else {
-        $db->table('user_last_visit')
-           ->insert([
-               'user_id'      => $userId,
-               'modulo'       => 'bases',
-               'ultima_vista' => $ahora,
-           ]);
+        return $model->where($campo, $valor)->countAllResults();
     }
 
-    return redirect()->to(route_to('base_list'));
-}
-// ─── Convertir POST a mayúsculas ─────────────────────────────────────
-private function postToUpper(): array
-{
-    $camposMayus = ['tipo','nro','nombre','coordenadas','ubicacion','region'];
-    $data = [];
-    foreach ($camposMayus as $campo) {
-        $valor = $this->request->getPost($campo);
-        $data[$campo] = $valor !== null ? strtoupper(trim($valor)) : null;
+    // ─── Última visita del usuario al módulo ─────────────────────────────
+    private function ultimaVista(): string
+    {
+        $registro = model('UserLastVisitModel', false)
+            ->where('user_id', user_id())
+            ->where('modulo', self::MODULO)
+            ->first();
+
+        return $registro ? $registro->ultima_vista : self::PRIMERA_VISITA;
     }
 
-    // Estos van tal cual, sin toUpperCase
-    $data['provincia'] = 'JUJUY'; // siempre fijo
-    $data['estado']    = $this->request->getPost('estado') ?? 'activo';
-    $data['base_id']   = $this->request->getPost('base_id');
+    // ─── Index ───────────────────────────────────────────────────────────
+    public function index()
+    {
+        helper('auth');
+        $perPage = config('Obse')->regPerPage ?? 10;
 
-    return $data;
-}
+        // ── Novedades desde la última visita ──────────────────────
+        $ultimaVista = $this->ultimaVista();
 
+        $nuevas = model('BaseModel', false)
+            ->whereIn('estado', self::ESTADOS_VISIBLES)
+            ->where('created_at >', $ultimaVista)
+            ->countAllResults();
+
+        $modificadas = model('BaseModel', false)
+            ->whereIn('estado', self::ESTADOS_VISIBLES)
+            ->where('updated_at >', $ultimaVista)
+            ->where('updated_at != created_at')
+            ->countAllResults();
+
+        // ── Totales de toda la red (sin filtros) ──────────────────
+        $totalRedGlobal          = model('BaseModel', false)->whereIn('estado', self::ESTADOS_VISIBLES)->countAllResults();
+        $totalActivasGlobal      = model('BaseModel', false)->where('estado', 'activo')->countAllResults();
+        $totalDesactivadasGlobal = model('BaseModel', false)->where('estado', 'desactivado')->countAllResults();
+
+        // ── Conteos respetando los filtros actuales ───────────────
+        $totalBases = $this->contarFiltrado('tipo', 'BASE');
+        $totalUses  = $this->contarFiltrado('tipo', 'USE');
+
+        // ── Listado lateral y mapa: todas las bases del filtro, sin paginar ──
+        $modelMapa = model('BaseModel', false);
+        $this->aplicarFiltros($modelMapa);
+        $basesMap = $modelMapa->orderBy('tipo', 'ASC')->orderBy('nombre', 'ASC')->findAll();
+
+        // ── Tabla paginada ────────────────────────────────────────
+        $model   = model('BaseModel', false);
+        $filtros = $this->aplicarFiltros($model);
+        $bases   = $model->orderBy('tipo', 'ASC')->orderBy('nombre', 'ASC')->paginate($perPage);
+
+        return view('base/base_list', array_merge($filtros, [
+            'bases'                   => $bases,
+            'basesMap'                => $basesMap,
+            'pager'                   => $model->pager,
+            'regiones'                => self::REGIONES,
+            'provincias'              => self::PROVINCIAS,
+            'nuevas'                  => $nuevas,
+            'modificadas'             => $modificadas,
+            'ultimaVista'             => $ultimaVista,
+            'totalActivas'            => $this->contarFiltrado('estado', 'activo'),
+            'totalDesactivadas'       => $this->contarFiltrado('estado', 'desactivado'),
+            'totalBases'              => $totalBases,
+            'totalUses'               => $totalUses,
+            'totalGeneral'            => $totalBases + $totalUses,
+            'totalRedGlobal'          => $totalRedGlobal,
+            'totalActivasGlobal'      => $totalActivasGlobal,
+            'totalDesactivadasGlobal' => $totalDesactivadasGlobal,
+        ]));
+    }
+
+    // ─── Marcar Visto ────────────────────────────────────────────────────
+    public function marcarVisto()
+    {
+        helper('auth');
+        $visitas = model('UserLastVisitModel', false);
+        $clave   = ['user_id' => user_id(), 'modulo' => self::MODULO];
+        $ahora   = date('Y-m-d H:i:s');
+
+        // Una fila por usuario y módulo: siempre filtrar por los dos
+        if ($visitas->where($clave)->first()) {
+            $visitas->builder()->where($clave)->update(['ultima_vista' => $ahora]);
+        } else {
+            $visitas->insert($clave + ['ultima_vista' => $ahora]);
+        }
+
+        return redirect()->to(route_to('base_list'));
+    }
 
     // ─── Exportar Excel ──────────────────────────────────────────────────
     public function export()
-{
-    $model = model('BaseModel');
-    $this->aplicarFiltros($model);
-    $bases = $model->orderBy('tipo', 'ASC')->orderBy('nombre', 'ASC')->findAll();
+    {
+        $model = model('BaseModel', false);
+        $this->aplicarFiltros($model);
+        $bases = $model->orderBy('tipo', 'ASC')->orderBy('nombre', 'ASC')->findAll();
 
-    $spreadsheet = new Spreadsheet();
-    $sheet       = $spreadsheet->getActiveSheet();
+        $spreadsheet = new Spreadsheet();
+        $sheet       = $spreadsheet->getActiveSheet();
 
-    // Encabezados
-    $headers = ['A'=>'Tipo','B'=>'Nro','C'=>'Nombre','D'=>'Coordenadas',
-                'E'=>'Ubicación','F'=>'Región','G'=>'Provincia','H'=>'Estado'];
+        // Encabezados
+        $sheet->fromArray(['Tipo', 'Nro', 'Nombre', 'Coordenadas', 'Ubicación', 'Región', 'Provincia', 'Estado'], null, 'A1');
+        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
 
-    foreach ($headers as $col => $header) {
-        $sheet->setCellValue($col . '1', $header);
-        $sheet->getStyle($col . '1')->getFont()->setBold(true);
+        // Datos
+        $filas = array_map(fn ($b) => [
+            $b->tipo, $b->nro, $b->nombre, $b->coordenadas,
+            $b->ubicacion, $b->region, $b->provincia, $b->estado,
+        ], $bases);
+        if ($filas) {
+            $sheet->fromArray($filas, null, 'A2', true);
+        }
+
+        // Autoajuste columnas
+        foreach (range('A', 'H') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        ob_start();
+        (new Xlsx($spreadsheet))->save('php://output');
+        $contenido = ob_get_clean();
+        $spreadsheet->disconnectWorksheets();
+
+        return $this->response->download('bases_' . date('Ymd_His') . '.xlsx', $contenido);
     }
-
-    // Datos
-    foreach ($bases as $i => $b) {
-        $row = $i + 2;
-        $sheet->setCellValue('A' . $row, $b->tipo);
-        $sheet->setCellValue('B' . $row, $b->nro);
-        $sheet->setCellValue('C' . $row, $b->nombre);
-        $sheet->setCellValue('D' . $row, $b->coordenadas);
-        $sheet->setCellValue('E' . $row, $b->ubicacion);
-        $sheet->setCellValue('F' . $row, $b->region);
-        $sheet->setCellValue('G' . $row, $b->provincia);
-        $sheet->setCellValue('H' . $row, $b->estado);
-    }
-
-    // Autoajuste columnas
-    foreach (range('A', 'H') as $col) {
-        $sheet->getColumnDimension($col)->setAutoSize(true);
-    }
-
-    $writer   = new Xlsx($spreadsheet);
-    $filename = 'bases_' . date('Ymd_His') . '.xlsx';
-
-    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    header('Content-Disposition: attachment;filename="' . $filename . '"');
-    header('Cache-Control: max-age=0');
-
-    $writer->save('php://output');
-    exit;
-}
 
     // ─── Create ──────────────────────────────────────────────────────────
     public function create()
@@ -292,13 +206,10 @@ private function postToUpper(): array
     public function store()
     {
         if (!$this->valida()) {
-            return redirect()->back()->withInput()
-                ->with('errors', $this->validator->getErrors())
-                ->with('msg', ['type' => 'danger', 'body' => 'Corrija los errores']);
+            return $this->volverConErrores();
         }
 
-        $base = new Base($this->postToUpper());
-        model('BaseModel')->save($base);
+        model('BaseModel')->insert($this->datosPost());
 
         return redirect()->to(route_to('base_list'))
             ->with('msg', ['type' => 'success', 'body' => 'Base guardada correctamente']);
@@ -307,11 +218,11 @@ private function postToUpper(): array
     // ─── Show / Edit ─────────────────────────────────────────────────────
     public function show($base_id)
     {
-        $model = model('BaseModel');
-        if (!$base = $model->find($base_id)) {
+        if (!$base = model('BaseModel')->find($base_id)) {
             throw \CodeIgniter\Exceptions\PageNotFoundException::forPageNotFound();
         }
         $base->setCampoOculto();
+
         return view('base/base_form', ['base' => $base, 'formRoute' => 'base_update']);
     }
 
@@ -321,55 +232,79 @@ private function postToUpper(): array
         $id    = $this->request->getPost('base_id');
         $model = model('BaseModel');
 
-        if (!$model->find($id)) {
+        if (!$id || !$model->find($id)) {
             return redirect()->to(route_to('base_list'))
                 ->with('msg', ['type' => 'danger', 'body' => 'Base no encontrada']);
         }
 
-        if (!$this->valida(true)) {
-            return redirect()->back()->withInput()
-                ->with('errors', $this->validator->getErrors())
-                ->with('msg', ['type' => 'danger', 'body' => 'Corrija los errores']);
+        if (!$this->valida((int) $id)) {
+            return $this->volverConErrores();
         }
 
-        $base = new Base($this->postToUpper());
-        $model->save($base);
+        $model->update($id, $this->datosPost());
 
         return redirect()->to(route_to('base_list'))
             ->with('msg', ['type' => 'success', 'body' => 'Base actualizada correctamente']);
     }
 
-    // ─── Destroy ─────────────────────────────────────────────────────────
+    // ─── Destroy (baja lógica) ───────────────────────────────────────────
     public function destroy()
     {
         $id    = $this->request->getVar('id');
         $model = model('BaseModel');
-        if ($model->find($id)) {
-            $model->update($id, ['estado' => 'eliminado']);
+
+        if (!$id || !$model->find($id)) {
+            return redirect()->to(route_to('base_list'))
+                ->with('msg', ['type' => 'danger', 'body' => 'Base no encontrada']);
         }
+
+        $model->update($id, ['estado' => 'eliminado']);
+
         return redirect()->to(route_to('base_list'))
             ->with('msg', ['type' => 'success', 'body' => 'Base eliminada correctamente']);
     }
 
-    // ─── Validación ──────────────────────────────────────────────────────
- public function valida($isEditing = false)
-{
-    $rules = [
-        'nombre'    => 'required|regex_match[/^[A-Z0-9\s\.\-\,]+$/]',
-        'tipo'      => 'required',
-        'ubicacion' => 'required|regex_match[/^[A-Z0-9\s\.\-\,]+$/]',
-        'region'    => 'required',
-        'provincia' => 'required',
-    ];
-    if (!$isEditing) {
-        $rules['nombre'] = 'required|is_unique[base.nombre]|regex_match[/^[A-Z0-9\s\.\-\,]+$/]';
+    // ─── Campos del POST en mayúsculas; la provincia es siempre JUJUY ────
+    private function datosPost(): array
+    {
+        $data = [];
+        foreach (['tipo', 'nro', 'nombre', 'coordenadas', 'ubicacion', 'region'] as $campo) {
+            $valor        = $this->request->getPost($campo);
+            $data[$campo] = $valor !== null ? strtoupper(trim($valor)) : null;
+        }
+
+        $data['provincia'] = self::PROVINCIAS[0];
+        $estado            = $this->request->getPost('estado');
+        $data['estado']    = in_array($estado, self::ESTADOS_VISIBLES, true) ? $estado : 'activo';
+
+        return $data;
     }
 
-    $messages = [
-        'nombre'    => ['regex_match' => 'El nombre debe estar en MAYÚSCULAS.'],
-        'ubicacion' => ['regex_match' => 'La ubicación debe estar en MAYÚSCULAS.'],
-    ];
+    private function volverConErrores()
+    {
+        return redirect()->back()->withInput()
+            ->with('errors', $this->validator->getErrors())
+            ->with('msg', ['type' => 'danger', 'body' => 'Corrija los errores']);
+    }
 
-    return $this->validate($rules, $messages);
-}
+    // ─── Validación ──────────────────────────────────────────────────────
+    // En edición, el nombre único excluye al propio registro
+    private function valida(?int $id = null): bool
+    {
+        $mayusculas = 'regex_match[/^[A-Z0-9\s\.\-\,]+$/]';
+        $unico      = $id ? "is_unique[base.nombre,base_id,{$id}]" : 'is_unique[base.nombre]';
+
+        return $this->validate([
+            'nombre'    => "required|{$unico}|{$mayusculas}",
+            'tipo'      => 'required|in_list[BASE,USE]',
+            'ubicacion' => "required|{$mayusculas}",
+            'region'    => 'required|in_list[' . implode(',', self::REGIONES) . ']',
+        ], [
+            'nombre'    => [
+                'regex_match' => 'El nombre debe estar en MAYÚSCULAS.',
+                'is_unique'   => 'Ya existe una base con ese nombre.',
+            ],
+            'ubicacion' => ['regex_match' => 'La ubicación debe estar en MAYÚSCULAS.'],
+        ]);
+    }
 }

@@ -47,6 +47,10 @@ class BaseVController extends BaseController
 
         // ── BASES ──────────────────────────────────────────────
         $bases_total   = $baseModel->countAll();
+        // Totales sin los registros dados de baja (baja lógica = 'eliminado')
+        $estadosVisibles = ['activo', 'desactivado'];
+
+        $bases_total   = $baseModel->whereIn('estado', $estadosVisibles)->countAllResults();
         $bases_activas = $baseModel->where('estado', 'activo')->countAllResults();
         $pct_bases     = ($bases_total > 0) ? round(($bases_activas / $bases_total) * 100) : 0;
 
@@ -57,18 +61,21 @@ class BaseVController extends BaseController
             ->selectSum('cantidad')
             ->where('ejercicio', $ejercicio_actual)
             ->where('tipo', 'MOVILES OPERATIVOS')
+            ->whereIn('estado', $estadosVisibles)
             ->get()->getRowObject()->cantidad ?? 0);
 
         $moviles_mantenimiento = (int)($db->table('movil')
             ->selectSum('cantidad')
             ->where('ejercicio', $ejercicio_actual)
             ->where('tipo', 'MOVILES LOGISTICA')
+            ->whereIn('estado', $estadosVisibles)
             ->get()->getRowObject()->cantidad ?? 0);
 
         $moviles_baja = (int)($db->table('movil')
             ->selectSum('cantidad')
             ->where('ejercicio', $ejercicio_actual)
             ->where('tipo', 'FUERA DE SERVICIO')
+            ->whereIn('estado', $estadosVisibles)
             ->get()->getRowObject()->cantidad ?? 0);
 
         $moviles_total = $moviles_op + $moviles_mantenimiento + $moviles_baja;
@@ -89,6 +96,7 @@ class BaseVController extends BaseController
             ')
             ->where('ejercicio', $ejercicio_actual)
             ->whereIn('mes', $meses_seleccionados)
+            ->whereIn('estado', $estadosVisibles)
             ->get()->getRowObject();
 
         $total_asistencias  = (int)($asistencia_totales->total                    ?? 0);
@@ -108,6 +116,7 @@ class BaseVController extends BaseController
             ->select('mes, SUM(total) AS total')
             ->where('ejercicio', $ejercicio_actual)
             ->whereIn('mes', $meses_seleccionados)
+            ->whereIn('estado', $estadosVisibles)
             ->groupBy('mes')
             ->get()->getResultObject();
 
@@ -124,6 +133,7 @@ class BaseVController extends BaseController
             ->select('nombre, SUM(total) AS total')
             ->where('ejercicio', $ejercicio_actual)
             ->whereIn('mes', $meses_seleccionados)
+            ->whereIn('estado', $estadosVisibles)
             ->groupBy('nombre')
             ->orderBy('total', 'DESC')
             ->limit(5)
@@ -134,6 +144,7 @@ class BaseVController extends BaseController
         $identificacion_totales = $db->table('identificacion')
             ->select('SUM(adulto) AS adulto, SUM(pediatrico) AS pediatrico, SUM(total) AS total')
             ->where('ejercicio', $ejercicio_actual)
+            ->whereIn('estado', $estadosVisibles)
             ->get()->getRowObject();
 
         $internacion_total      = (int)($identificacion_totales->total      ?? 0);
