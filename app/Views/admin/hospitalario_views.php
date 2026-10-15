@@ -487,19 +487,12 @@
     var quiTopHospitales   = <?= json_encode($quiTopHospitales) ?>;
     var quiComparativo     = <?= json_encode($quiComparativo) ?>;
 
-    // Paleta pastel (misma línea que Móviles)
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
-    // Colores por ejercicio: cada año recibe siempre el mismo color,
-    // ordenando todos los ejercicios de la BD.
-    // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
-    var paletaEjercicios = [
-        '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
-        '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
-    ];
+    // Colores por ejercicio: cada año recibe siempre el mismo color de la paleta,
+    // ordenando todos los ejercicios de la BD (el más viejo primero).
+    var paletaEjercicios = chartPalette;
 
     var ejercicioColorMap = {};
     (todosLosEjercicios || [])
@@ -509,7 +502,7 @@
         .forEach(function (ej, i) { ejercicioColorMap[String(ej)] = paletaEjercicios[i % paletaEjercicios.length]; });
 
     function colorParaEjercicio(ejercicio) {
-        return ejercicioColorMap[String(parseInt(ejercicio, 10))] || '#95a5a6';
+        return ejercicioColorMap[String(parseInt(ejercicio, 10))] || dashboardColors.slate;
     }
 
     // Con un ejercicio filtrado, los demás años se atenúan
@@ -721,7 +714,7 @@
     crearBarrasH(
         'chartAmbEspecialidad',
         ambPorEspecialidad.map(function (d) { return d.etiqueta; }),
-        [{ label: 'Turnos', data: ambPorEspecialidad.map(function (d) { return parseInt(d.valor, 10); }), color: '#81e6d9' }]
+        [{ label: 'Turnos', data: ambPorEspecialidad.map(function (d) { return parseInt(d.valor, 10); }), color: dashboardColors.primary }]
     );
     crearDona(
         'chartAmbTipo',
@@ -859,7 +852,7 @@
         'chartIntCamas',
         ['UTI', 'UTIN', 'Básicas'],
         [intCamas.uti || 0, intCamas.utin || 0, intCamas.basicas || 0],
-        ['#feb2b2', '#d6bcfa', '#81e6d9']
+        [colorPaleta(0), colorPaleta(1), colorPaleta(2)]
     );
     };
 
@@ -869,18 +862,18 @@
         'chartQuiHospitales',
         quiTopHospitales.map(function (d) { return d.etiqueta; }),
         [
-            { label: 'Urgencia',    data: quiTopHospitales.map(function (d) { return parseInt(d.urgencia, 10) || 0; }),    color: '#feb2b2' },
-            { label: 'Programadas', data: quiTopHospitales.map(function (d) { return parseInt(d.programadas, 10) || 0; }), color: '#81e6d9' }
+            { label: 'Urgencia',    data: quiTopHospitales.map(function (d) { return parseInt(d.urgencia, 10) || 0; }),    color: dashboardColors.danger },
+            { label: 'Programadas', data: quiTopHospitales.map(function (d) { return parseInt(d.programadas, 10) || 0; }), color: dashboardColors.success }
         ]
     );
     (function () {
         var etiquetas = ['Alta', 'Mediana', 'Baja'];
         var valores   = [qui.alta || 0, qui.mediana || 0, qui.baja || 0];
-        var colores   = ['#feb2b2', '#90cdf4', '#81e6d9'];
+        var colores   = [dashboardColors.danger, dashboardColors.warning, dashboardColors.success];
         if ((qui.desconocido || 0) > 0) {
             etiquetas.push('Desconocida');
             valores.push(qui.desconocido);
-            colores.push('#cbd5e0');
+            colores.push(dashboardColors.slate);
         }
         crearDona('chartQuiComplejidad', etiquetas, valores, colores);
     })();

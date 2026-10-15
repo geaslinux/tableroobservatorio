@@ -519,12 +519,8 @@
     var hospKpi         = <?= json_encode($hospKpi) ?>;
     var hospFilas       = <?= json_encode($hospFilas) ?>;
 
-    // Paleta pastel (misma línea que Móviles)
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99',
-        '#bb8fce', '#7fb3d5', '#b5ead7', '#e6b0aa', '#c7ceea', '#ffdac1'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     function esMovil() {
         return window.matchMedia('(max-width: 600px)').matches;
@@ -693,7 +689,7 @@
             crearBarrasH(
                 'chartProdHospital',
                 prodPorHospital.map(function (h) { return h.hospital; }),
-                [{ label: 'Producción', data: prodPorHospital.map(function (h) { return parseInt(h.produccion, 10); }), color: '#90cdf4' }],
+                [{ label: 'Producción', data: prodPorHospital.map(function (h) { return parseInt(h.produccion, 10); }), color: dashboardColors.primary }],
                 'Sin producción de quirófano por hospital para los filtros elegidos'
             );
             crearDona(
@@ -711,19 +707,19 @@
                 'chartHospCirugias',
                 hospFilas.map(function (f) { return f.hospital; }),
                 [
-                    { label: 'Urgencia',    data: hospFilas.map(function (f) { return parseInt(f.urgencia, 10); }),    color: '#feb2b2' },
-                    { label: 'Programadas', data: hospFilas.map(function (f) { return parseInt(f.programadas, 10); }), color: '#81e6d9' }
+                    { label: 'Urgencia',    data: hospFilas.map(function (f) { return parseInt(f.urgencia, 10); }),    color: dashboardColors.danger },
+                    { label: 'Programadas', data: hospFilas.map(function (f) { return parseInt(f.programadas, 10); }), color: dashboardColors.success }
                 ],
                 'Sin cirugías registradas para los filtros elegidos'
             );
 
             var etiquetas = ['Alta', 'Mediana', 'Baja'];
             var valores   = [hospKpi.alta || 0, hospKpi.mediana || 0, hospKpi.baja || 0];
-            var colores   = ['#feb2b2', '#90cdf4', '#81e6d9'];
+            var colores   = [dashboardColors.danger, dashboardColors.warning, dashboardColors.success];
             if ((hospKpi.desconocido || 0) > 0) {
                 etiquetas.push('Desconocida');
                 valores.push(hospKpi.desconocido);
-                colores.push('#cbd5e0');
+                colores.push(dashboardColors.slate);
             }
             crearDona('chartHospComplejidad', etiquetas, valores, colores, 'Sin cirugías programadas por complejidad para los filtros elegidos');
         }

@@ -16,6 +16,8 @@
     <link rel="stylesheet" href="/css/kpi-responsive.css">
     <!-- Botón para ocultar / mostrar los filtros en celular -->
     <link rel="stylesheet" href="/css/filtros-movil.css">
+    <!-- Paleta de colores de los gráficos de barras y de dona (dashboardColors, chartPalette, colorPaleta) -->
+    <script src="/js/dashboard-colors.js"></script>
 
     <style> 
 

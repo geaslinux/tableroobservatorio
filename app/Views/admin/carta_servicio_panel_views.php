@@ -526,19 +526,15 @@
     var rrhhPorEspecialidad     = <?= json_encode($rrhhPorEspecialidad) ?>;
     var rrhhPorRevista          = <?= json_encode($rrhhPorRevista) ?>;
 
-    // Paleta pastel (misma línea que Móviles)
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99',
-        '#bb8fce', '#7fb3d5', '#b5ead7', '#e6b0aa', '#c7ceea', '#ffdac1'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     // Colores fijos por turno
     var coloresTurno = {
-        'MAÑANA':   '#f8c471',
-        'TARDE':    '#90cdf4',
-        'NOCHE':    '#d6bcfa',
-        'SIN DATO': '#cbd5e0'
+        'MAÑANA':   dashboardColors.warning,
+        'TARDE':    dashboardColors.primary,
+        'NOCHE':    dashboardColors.secondary,
+        'SIN DATO': dashboardColors.slate
     };
 
     function esMovil() {

@@ -480,42 +480,35 @@
         var statsVisible = true;
         var chartsInicializados = false;
 
-        var paleta = [
-            '#ce93d8', '#7fd8be', '#85c1e9', '#f8c471', '#d2b4de', '#f1948a',
-            '#82e0aa', '#f9e79f', '#ffb7b2', '#76d7c4', '#edbb99', '#7dcea0',
-            '#bb8fce', '#7fb3d5', '#f8c471', '#b5ead7', '#a3e4d7', '#e6b0aa',
-            '#c7ceea', '#e2f0cb', '#ef9a9a', '#ffdac1', '#90caf9', '#a5d6a7'
-        ];
+        // Paleta común de los gráficos (public/js/dashboard-colors.js)
+        var paleta = chartPalette;
 
         // Colores por mes: tonos de azul (misma gama que ejercicio), alternando oscuro/claro
         var colorMesMap = {
-            'ENERO':      '#0B2E59',
-            'FEBRERO':    '#8FD3F4',
-            'MARZO':      '#1A5FA8',
-            'ABRIL':      '#C6E9FA',
-            'MAYO':       '#123F73',
-            'JUNIO':      '#4FB3E6',
-            'JULIO':      '#2F80C8',
-            'AGOSTO':     '#A9DDF5',
-            'SEPTIEMBRE': '#1E4E8C',
-            'OCTUBRE':    '#6EC6EA',
-            'NOVIEMBRE':  '#0F5E9C',
-            'DICIEMBRE':  '#7FBEE8'
+            'ENERO':      colorPaleta(0),
+            'FEBRERO':    colorPaleta(1),
+            'MARZO':      colorPaleta(2),
+            'ABRIL':      colorPaleta(3),
+            'MAYO':       colorPaleta(4),
+            'JUNIO':      colorPaleta(5),
+            'JULIO':      colorPaleta(6),
+            'AGOSTO':     colorPaleta(7),
+            'SEPTIEMBRE': colorPaleta(8),
+            'OCTUBRE':    colorPaleta(9),
+            'NOVIEMBRE':  colorPaleta(10),
+            'DICIEMBRE':  colorPaleta(11)
         };
 
         function colorParaMes(mes) {
-            return colorMesMap[String(mes).toUpperCase()] || '#95a5a6';
+            return colorMesMap[String(mes).toUpperCase()] || dashboardColors.slate;
         }
         
         var listaEjerciciosOrdenada = todosLosEjercicios.slice().sort(function(a, b) {
             return parseInt(a, 10) - parseInt(b, 10);
         });
 
-        // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
-        var paletaEjercicios = [
-            '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
-            '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
-        ];
+        // Colores por año de la paleta común, el más viejo primero (public/js/dashboard-colors.js)
+        var paletaEjercicios = chartPalette;
 
         var ejercicioColorMap = {};
         listaEjerciciosOrdenada.forEach(function (ejercicio, index) {
@@ -523,7 +516,7 @@
         });
 
         function colorParaEjercicio(ejercicio) {
-            return ejercicioColorMap[String(ejercicio)] || '#95a5a6';
+            return ejercicioColorMap[String(ejercicio)] || dashboardColors.slate;
         }
 
         var baseColorMap = {};
@@ -535,12 +528,12 @@
         });
 
         function colorParaBase(base) {
-            if (!base) return '#95a5a6';
+            if (!base) return dashboardColors.slate;
             var clave = String(base).trim().toUpperCase();
             if (baseColorMapServidor && baseColorMapServidor[clave]) {
                 return baseColorMapServidor[clave];
             }
-            return baseColorMap[clave] || '#95a5a6';
+            return baseColorMap[clave] || dashboardColors.slate;
         }
 
         var chartBarrasInstance;

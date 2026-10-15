@@ -230,10 +230,11 @@
 
     // Colores por rango de estándar ocupacional
     $coloresEstandar = [
-        '≤ 30%'    => '#feb2b2',
-        '31 - 59%' => '#f8c471',
-        '60 - 84%' => '#82e0aa',
-        '≥ 85%'    => '#f1948a',
+        // Misma paleta que los gráficos (public/js/dashboard-colors.js)
+        '≤ 30%'    => '#D98B73', // coral
+        '31 - 59%' => '#F2A272', // warning
+        '60 - 84%' => '#5BB8A6', // success
+        '≥ 85%'    => '#D96C6C', // danger
     ];
     $badge = function ($estandar) use ($coloresEstandar) {
         $color = $coloresEstandar[$estandar] ?? '#e2e8f0';
@@ -831,15 +832,11 @@
     var capacidadPorTipo   = <?= json_encode($capacidadPorTipo) ?>;
     var coloresEstandar    = <?= json_encode($coloresEstandar) ?>;
 
-    // Paleta pastel (misma línea que Móviles)
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99',
-        '#bb8fce', '#7fb3d5', '#b5ead7', '#e6b0aa', '#c7ceea', '#ffdac1'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     // Colores fijos por categoría
-    var coloresTipo = { 'PUBLICO': '#81e6d9', 'PRIVADO': '#d6bcfa', 'SIN DATO': '#cbd5e0' };
+    var coloresTipo = { 'PUBLICO': dashboardColors.primary, 'PRIVADO': dashboardColors.secondary, 'SIN DATO': dashboardColors.slate };
 
     function esMovil() {
         return window.matchMedia('(max-width: 600px)').matches;
@@ -1046,7 +1043,7 @@
                 'chartEsperaHospital',
                 esperaPorHospital.map(function (h) { return h.hospital; }),
                 esperaPorHospital.map(function (h) { return parseInt(h.pacientes, 10); }),
-                '#90cdf4',
+                dashboardColors.primary,
                 '',
                 'Sin pacientes en lista de espera para los filtros elegidos'
             );
@@ -1056,11 +1053,11 @@
             var sinClasificar = Math.max(0, (esperaKpi.pacientes || 0) - clasificados);
             var etiquetas = ['Alta', 'Mediana', 'Baja'];
             var valores   = [esperaKpi.alta || 0, esperaKpi.mediana || 0, esperaKpi.baja || 0];
-            var colores   = ['#feb2b2', '#90cdf4', '#81e6d9'];
+            var colores   = [dashboardColors.danger, dashboardColors.warning, dashboardColors.success];
             if (sinClasificar > 0) {
                 etiquetas.push('Sin clasificar');
                 valores.push(sinClasificar);
-                colores.push('#cbd5e0');
+                colores.push(dashboardColors.slate);
             }
             crearDona('chartEsperaComplejidad', etiquetas, valores, colores, 'Sin pacientes en lista de espera para los filtros elegidos');
         },
@@ -1087,7 +1084,7 @@
                 'chartMaternoOcupacion',
                 maternoFilas.map(function (f) { return f.sector; }),
                 maternoFilas.map(function (f) { return f.ocupacion; }),
-                maternoFilas.map(function (f) { return coloresEstandar[f.estandar] || '#cbd5e0'; }),
+                maternoFilas.map(function (f) { return coloresEstandar[f.estandar] || dashboardColors.slate; }),
                 '%',
                 'Sin datos de ocupación materno-infantil para los filtros elegidos'
             );
@@ -1106,7 +1103,7 @@
                 series['UTIN'][r]    = capacidadPorRegion[r].utin;
                 series['Básicas'][r] = capacidadPorRegion[r].basicas;
             });
-            crearBarrasApiladas('chartCapacidadRegion', regiones, series, { 'UTI': '#feb2b2', 'UTIN': '#d6bcfa', 'Básicas': '#81e6d9' },
+            crearBarrasApiladas('chartCapacidadRegion', regiones, series, { 'UTI': colorPaleta(0), 'UTIN': colorPaleta(1), 'Básicas': colorPaleta(2) },
                 'Sin capacidad de camas cargada para los filtros elegidos');
 
             var tipos = Object.keys(capacidadPorTipo);
@@ -1124,7 +1121,7 @@
                 'chartOcupacion_' + clave,
                 datos.filas.map(function (f) { return f.hospital; }),
                 datos.filas.map(function (f) { return f.ocupacion; }),
-                datos.filas.map(function (f) { return coloresEstandar[f.estandar] || '#cbd5e0'; }),
+                datos.filas.map(function (f) { return coloresEstandar[f.estandar] || dashboardColors.slate; }),
                 '%',
                 'Sin datos de ocupación hospitalaria para los filtros elegidos'
             );

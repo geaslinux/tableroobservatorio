@@ -525,9 +525,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var porRegion = <?= json_encode($porRegion) ?>;   // {region: turnos}
 
     // Colores de la planilla de referencia
-    var COLOR_BARRA = '#3aafbf';
-    var COLOR_LINEA = '#263a5a';
-    var coloresRegion = ['#263a5a', '#3aafbf', '#e98d69', '#9aa4ad', '#8fd3f4', '#f1c27d', '#82e0aa'];
+    var COLOR_BARRA = dashboardColors.primary;
+    var COLOR_LINEA = dashboardColors.secondary;
+    var coloresRegion = chartPalette;
 
     var chartsInicializados = false;
 

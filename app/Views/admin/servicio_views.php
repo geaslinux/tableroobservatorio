@@ -580,10 +580,8 @@
     var trPorAnio      = <?= json_encode($trPorAnio) ?>;
     var trMensual      = <?= json_encode($trMensual) ?>;
 
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     function esMovil() {
         return window.matchMedia('(max-width: 600px)').matches;
@@ -786,8 +784,8 @@
                 'chartOpOperativo',
                 opPorOperativo.map(function (d) { return d.operativo; }),
                 [
-                    { label: 'Vía pública',      data: opPorOperativo.map(function (d) { return parseInt(d.via_publica, 10) || 0; }),      color: '#81e6d9' },
-                    { label: 'Vía hospitalaria', data: opPorOperativo.map(function (d) { return parseInt(d.via_hospitalaria, 10) || 0; }), color: '#90cdf4' }
+                    { label: 'Vía pública',      data: opPorOperativo.map(function (d) { return parseInt(d.via_publica, 10) || 0; }),      color: colorPaleta(0) },
+                    { label: 'Vía hospitalaria', data: opPorOperativo.map(function (d) { return parseInt(d.via_hospitalaria, 10) || 0; }), color: colorPaleta(1) }
                 ],
                 'Sin operativos registrados para los filtros elegidos'
             );
@@ -803,7 +801,7 @@
             crearBarrasH(
                 'chartTrHospital',
                 trPorHospital.map(function (d) { return d.hospital; }),
-                [{ label: 'Transfusiones', data: trPorHospital.map(function (d) { return parseInt(d.total, 10); }), color: '#feb2b2' }],
+                [{ label: 'Transfusiones', data: trPorHospital.map(function (d) { return parseInt(d.total, 10); }), color: dashboardColors.coral }],
                 'Sin transfusiones por hospital para los filtros elegidos'
             );
             crearDona(
@@ -816,14 +814,14 @@
                 'chartTrAnio',
                 trPorAnio.map(function (d) { return d.ejercicio + ' (' + d.hospitales + ' hosp.)'; }),
                 trPorAnio.map(function (d) { return parseInt(d.total, 10); }),
-                '#90cdf4',
+                dashboardColors.primary,
                 'Sin transfusiones por año para los filtros elegidos'
             );
             crearBarrasV(
                 'chartTrMes',
                 trMensual.map(function (d) { return d.mes; }),
                 trMensual.map(function (d) { return d.total; }),
-                '#feb2b2',
+                dashboardColors.coral,
                 'Sin transfusiones mensuales para los filtros elegidos'
             );
         }

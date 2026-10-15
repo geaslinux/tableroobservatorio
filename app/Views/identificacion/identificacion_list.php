@@ -502,13 +502,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var todosLosEjercicios    = <?= json_encode($todosLosEjercicios ?? $ejercicios ?? []) ?>;
     var statsFilasJS          = <?= json_encode($statsFilas ?? []) ?>;
 
-    // Paleta de colores fija
-    var paleta = [
-    '#ce93d8', '#7fd8be', '#85c1e9', '#f8c471', '#d2b4de', '#f1948a',
-    '#82e0aa', '#f9e79f', '#ffb7b2', '#76d7c4', '#edbb99', '#7dcea0',
-    '#bb8fce', '#7fb3d5', '#f8c471', '#b5ead7', '#a3e4d7', '#e6b0aa',
-    '#c7ceea', '#e2f0cb', '#ef9a9a', '#ffdac1', '#90caf9', '#a5d6a7'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     // ── MAPA FIJO Y DINÁMICO DE COLORES POR EJERCICIO ──
     var ejerciciosOrdenados = (todosLosEjercicios || [])
@@ -517,11 +512,8 @@ document.addEventListener('DOMContentLoaded', function () {
         .filter(function (ej, index, array) { return array.indexOf(ej) === index; })
         .sort(function (a, b) { return a - b; });
 
-    // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
-    var paletaEjercicios = [
-        '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
-        '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
-    ];
+    // Colores por año de la paleta común, el más viejo primero (public/js/dashboard-colors.js)
+    var paletaEjercicios = chartPalette;
 
     var ejercicioColorMap = {};
     ejerciciosOrdenados.forEach(function (ejercicio, index) {
@@ -530,33 +522,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function colorParaEjercicio(ejercicio) {
         var clave = String(parseInt(ejercicio, 10));
-        return ejercicioColorMap[clave] || '#95a5a6';
+        return ejercicioColorMap[clave] || dashboardColors.slate;
     }
 
     // Colores por departamento: tonos de azul (misma gama que ejercicio), alternando oscuro/claro
     var coloresDepartamento = {
-        'CAPITAL': '#0B2E59',
-        'COCHINOCA': '#8FD3F4',
-        'DR. MANUEL BELGRANO': '#1A5FA8',
-        'EL CARMEN': '#C6E9FA',
-        'HUMAHUACA': '#123F73',
-        'LEDESMA': '#4FB3E6',
-        'PALPALA': '#2F80C8',
-        'PERICO': '#A9DDF5',
-        'SAN PEDRO': '#1E4E8C',
-        'SANTA BARBARA': '#6EC6EA',
-        'SUSQUE': '#0F5E9C',
-        'TILCARA': '#7FBEE8',
-        'YAVI': '#07203F'
+        'CAPITAL': colorPaleta(0),
+        'COCHINOCA': colorPaleta(1),
+        'DR. MANUEL BELGRANO': colorPaleta(2),
+        'EL CARMEN': colorPaleta(3),
+        'HUMAHUACA': colorPaleta(4),
+        'LEDESMA': colorPaleta(5),
+        'PALPALA': colorPaleta(6),
+        'PERICO': colorPaleta(7),
+        'SAN PEDRO': colorPaleta(8),
+        'SANTA BARBARA': colorPaleta(9),
+        'SUSQUE': colorPaleta(10),
+        'TILCARA': colorPaleta(11),
+        'YAVI': colorPaleta(12)
     };
 
     // Departamentos que no estén en el mapa fijo también reciben un azul
     var paletaDepartamentos = Object.keys(coloresDepartamento).map(function (k) { return coloresDepartamento[k]; });
 
     var coloresTipo = {
-        'ADULTO': '#81e6d9',  
-        'PEDIATRICO': '#90cdf4',   
-        'JERIATRICO': '#feb2b2'    
+        'ADULTO': colorPaleta(0),
+        'PEDIATRICO': colorPaleta(1),
+        'JERIATRICO': colorPaleta(2)
     };
 
     // Mapa de colores por departamento
@@ -568,7 +560,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function colorParaDepartamento(dep) {
         var clave = String(dep).trim().toUpperCase();
         if (coloresDepartamento[clave]) return coloresDepartamento[clave];
-        return colorDepMap[dep] || '#95a5a6';
+        return colorDepMap[dep] || dashboardColors.slate;
     }
 
     // 4. INICIALIZACIÓN DE GRÁFICOS

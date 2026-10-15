@@ -630,11 +630,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var todosLosEjercicios = <?= json_encode($todosLosEjercicios) ?>;
 
     // Colores de la planilla de referencia
-    var COLOR_TOTAL = '#3aafbf', COLOR_ATENDIDOS = '#263a5a', COLOR_ABANDONADAS = '#e98d69';
-    var coloresTorta = ['#263a5a', '#3aafbf', '#e98d69', '#9aa4ad', '#8fd3f4', '#f1c27d', '#82e0aa', '#bb8fce', '#f1948a', '#76d7c4', '#edbb99', '#7fb3d5'];
+    var COLOR_TOTAL = dashboardColors.primary, COLOR_ATENDIDOS = dashboardColors.secondary, COLOR_ABANDONADAS = dashboardColors.warning;
+    var coloresTorta = chartPalette;
 
-    // Colores por ejercicio: 10 tonos de azul (el más viejo primero), como en el resto del sistema
-    var paletaEjercicios = ['#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8', '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'];
+    // Colores por año de la paleta común, el más viejo primero (public/js/dashboard-colors.js)
+    var paletaEjercicios = chartPalette;
     function colorParaEjercicio(ej) {
         var i = todosLosEjercicios.indexOf(parseInt(ej, 10));
         return paletaEjercicios[(i < 0 ? 0 : i) % paletaEjercicios.length];

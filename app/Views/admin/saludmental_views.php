@@ -339,7 +339,7 @@
     ], 'strlen'));
     $urlExcel = base_url(route_to('electrodependiente_export')) . ($q !== '' ? '?' . $q : '');
 
-    $coloresRiesgo = ['ALTO' => '#e53e3e', 'MEDIANO' => '#d69e2e', 'BAJO' => '#38a169', 'S/D' => '#718096'];
+    $coloresRiesgo = ['ALTO' => '#D96C6C', 'MEDIANO' => '#F2A272', 'BAJO' => '#5BB8A6', 'S/D' => '#708090']; // danger / warning / success / slate (public/js/dashboard-colors.js)
 
     $headerStats = function ($titulo) {
         return '<div class="ml-stats-header">
@@ -733,10 +733,8 @@
     var puntos         = <?= json_encode($puntos) ?>;
     var coloresRiesgo  = <?= json_encode($coloresRiesgo) ?>;
 
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     function esMovil() {
         return window.matchMedia('(max-width: 600px)').matches;
@@ -848,7 +846,7 @@
             'chartDiagnostico',
             porDiagnostico.map(function (d) { return d.diagnostico; }),
             porDiagnostico.map(function (d) { return parseInt(d.pacientes, 10); }),
-            '#90cdf4',
+            dashboardColors.primary,
             'Sin pacientes de salud mental por diagnóstico para los filtros elegidos'
         );
 
@@ -862,7 +860,7 @@
                 labels: porRiesgo.map(function (r) { return r.riesgo; }),
                 datasets: [{
                     data: porRiesgo.map(function (r) { return parseInt(r.pacientes, 10); }),
-                    backgroundColor: porRiesgo.map(function (r) { return coloresRiesgo[r.riesgo] || '#cbd5e0'; }),
+                    backgroundColor: porRiesgo.map(function (r) { return coloresRiesgo[r.riesgo] || dashboardColors.slate; }),
                     borderWidth: 0,
                     spacing: seccionesConDatos > 1 ? 6 : 0,
                     offset: seccionesConDatos > 1 ? 10 : 0,
@@ -1322,7 +1320,7 @@
             'chartHospital',
             porHospital.map(function (h) { return h.hospital; }),
             porHospital.map(function (h) { return parseInt(h.pacientes, 10); }),
-            '#81e6d9',
+            dashboardColors.secondary,
             'Sin pacientes de salud mental por hospital para los filtros elegidos'
         );
     }

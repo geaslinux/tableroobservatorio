@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/admin-lte@3.1/dist/css/adminlte.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Paleta de colores de los gráficos (esta vista no usa el layout principal) -->
+    <script src="/js/dashboard-colors.js"></script>
     <style>
         .content-wrapper {
             padding: 20px;
@@ -214,7 +216,7 @@
             labels: <?= json_encode(array_column($expedientesPorEstado, 'estado')) ?>,
             datasets: [{
                 data: <?= json_encode(array_column($expedientesPorEstado, 'count')) ?>,
-                backgroundColor: ['#f39c12', '#00c0ef', '#00a65a', '#f56954']
+                backgroundColor: chartPalette.slice(0, 4)
             }]
         },
         plugins: [centerTextPlugin],
@@ -234,7 +236,7 @@
             labels: <?= json_encode(array_column($asignacionesPorUsuario, 'usuario_asignado_id')) ?>,
             datasets: [{
                 data: <?= json_encode(array_column($asignacionesPorUsuario, 'count')) ?>,
-                backgroundColor: '#3c8dbc'
+                backgroundColor: dashboardColors.primary
             }]
         },
         options: {
@@ -252,7 +254,7 @@
             labels: <?= json_encode(array_column($expedientesPorTipo, 'tipo_expediente')) ?>,
             datasets: [{
                 data: <?= json_encode(array_column($expedientesPorTipo, 'count')) ?>,
-                backgroundColor: ['#f39c12', '#00c0ef', '#00a65a']
+                backgroundColor: chartPalette.slice(0, 3)
             }]
         },
         options: {
@@ -270,7 +272,7 @@
             labels: <?= json_encode(array_column($expedientesPorPrioridad, 'prioridad')) ?>,
             datasets: [{
                 data: <?= json_encode(array_column($expedientesPorPrioridad, 'count')) ?>,
-                backgroundColor: ['#f56954', '#00a65a', '#f39c12']
+                backgroundColor: [dashboardColors.danger, dashboardColors.success, dashboardColors.warning]
             }]
         },
         options: {

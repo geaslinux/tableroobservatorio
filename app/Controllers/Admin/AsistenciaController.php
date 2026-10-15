@@ -157,11 +157,12 @@ class AsistenciaController extends BaseController
             'nombre'
         );
 
+        // Misma paleta que los gráficos (chartPalette en public/js/dashboard-colors.js)
         $paletaBase = [
-            '#ce93d8', '#7fd8be', '#85c1e9', '#f8c471', '#d2b4de', '#f1948a',
-            '#82e0aa', '#f9e79f', '#ffb7b2', '#76d7c4', '#edbb99', '#7dcea0',
-            '#bb8fce', '#7fb3d5', '#f8c471', '#b5ead7', '#a3e4d7', '#e6b0aa',
-            '#c7ceea', '#e2f0cb', '#ef9a9a', '#ffdac1', '#90caf9', '#a5d6a7'
+            '#243B63', '#3FA7C4', '#F2A272', '#5BB8A6', '#7D8A99', '#8E6C88',
+            '#C97C5D', '#A89B6D', '#54728C', '#74C0B3', '#D98B73', '#6F8F72',
+            '#4E5D78', '#B38B59', '#8C8C8C', '#5C7A95', '#B06C7A', '#4D9BB5',
+            '#8AA29E', '#6B7280', '#A76F5A', '#617C63', '#927AA8', '#3E5C76'
         ];
         $baseColorMap = [];
         $baseRankingRaw = model('AsistenciaModel')
