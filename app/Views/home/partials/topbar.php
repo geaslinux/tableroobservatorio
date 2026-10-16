@@ -5,7 +5,8 @@
 
     <div class="topbar-title">
         <span class="eyebrow">Dirección General del</span>
-        <h1>OBSERVATORIO Y ESTADISTICAS DEL M.S.</h1>
+
+        <h1>OBSERVATORIO Y ESTADÍSTICAS DEL M.S.</h1>
     </div>
 
     <div class="topbar-tools">

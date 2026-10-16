@@ -199,20 +199,20 @@ a { color: inherit; text-decoration: none; }
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 6px 6px 14px;
+    padding: 14px 16px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     margin-bottom: 5px;
 }
 
+/* Logo más chico y con aire alrededor (sin márgenes negativos que lo pegaban al borde) */
 .brand img {
-    max-width: auto; 
     height: auto;
     object-fit: contain;
     filter: brightness(1.2);
-    margin-top: -20px;
-    margin-bottom: -10px;
-    display: block; 
-    width: 100%; 
+    display: block;
+    width: 100%;
+    max-width: 180px;
+    margin: 0 auto;
     transition: all 0.28s ease;
 }
 
@@ -658,15 +658,26 @@ a { color: inherit; text-decoration: none; }
 }
 
 .stat-card {
-    padding: 16px 16px 15px;
+    --accent: var(--blue);
+    padding: 20px 22px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(16, 42, 75, 0.08);
+    background:
+        radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--accent) 9%, transparent) 0, transparent 55%),
+        rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(16, 42, 75, 0.07);
+    box-shadow: 0 10px 28px rgba(10, 28, 48, 0.05);
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
 }
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 34px rgba(10, 28, 48, 0.09);
+}
+.stat-card.teal   { --accent: var(--teal); }
+.stat-card.orange { --accent: var(--orange); }
 
 .stat-icon {
     width: 56px;
@@ -685,18 +696,24 @@ a { color: inherit; text-decoration: none; }
 
 .stat-label {
     font-size: 10px;
+    font-size: 11px;
+    line-height: 1.35;
     text-transform: uppercase;
     letter-spacing: 1.2px;
+    letter-spacing: .9px;
     color: var(--muted);
     font-weight: 700;
 }
 
 .stat-value {
     font-size: clamp(24px, 2.6vw, 33px);
+    font-size: clamp(26px, 2.6vw, 34px);
     font-weight: 900;
     line-height: 1.05;
     margin-top: 2px;
+    margin-top: 6px;
     color: var(--navy);
+    letter-spacing: -.5px;
 }
 
 .stat-sub {
@@ -724,13 +741,24 @@ a { color: inherit; text-decoration: none; }
     opacity: .95;
 }
 
+/* Título de sección con línea que completa el ancho */
 .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 1px;
     text-transform: uppercase;
     color: var(--muted);
     margin: 8px 0 2px;
+}
+.section-title i { color: var(--blue); font-size: 13px; }
+.section-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(16, 42, 75, 0.14), transparent);
 }
 
 .dashboard-grid {
@@ -743,11 +771,18 @@ a { color: inherit; text-decoration: none; }
 .dashboard-card {
     padding: 20px;
     min-height: 214px;
+    padding: 22px 22px 22px 26px;
+    min-height: 200px;
     display: grid;
     grid-template-columns: minmax(0, 1.05fr) minmax(120px, .9fr);
     gap: 14px;
     position: relative;
     overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.dashboard-card:not(.is-proximamente):hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 48px rgba(10, 28, 48, 0.12);
 }
 
 .dashboard-card::before {
@@ -814,7 +849,28 @@ a { color: inherit; text-decoration: none; }
     letter-spacing: .6px;
     background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 72%, #000 28%));
     box-shadow: 0 12px 24px rgba(16, 42, 75, 0.12);
+    transition: transform .18s ease, box-shadow .18s ease;
 }
+a.dash-btn:hover {
+    transform: translateX(2px);
+    box-shadow: 0 14px 28px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+a.dash-btn:hover i { transform: translateX(2px); }
+.dash-btn i { transition: transform .18s ease; }
+
+/* Tableros todavía no disponibles: botón gris e ilustración más apagada */
+.dash-btn.btn-disabled {
+    color: var(--muted);
+    background: rgba(16, 42, 75, 0.05);
+    border: 1px dashed rgba(16, 42, 75, 0.18);
+    box-shadow: none;
+    cursor: default;
+    pointer-events: none;
+    text-transform: none;
+    letter-spacing: .2px;
+    font-weight: 700;
+}
+.dashboard-card.is-proximamente .dash-art { opacity: .72; filter: saturate(.7); }
 
 .dash-art {
     position: relative;
@@ -1104,17 +1160,23 @@ a { color: inherit; text-decoration: none; }
     transform: scale(1.2);
     transform-origin: center;
 }
+.dash-img-art,
 .dash-img-art-coord {
     width: 100%;
     max-width: 100%;
     height: 180px;
     max-height: 180px;
+    height: 170px;
     object-fit: contain;
     display: block;
     margin: 0 auto;
     transform: scale(1.1);
     transform-origin: center;
+    transition: transform .3s ease;
 }
+/* Las imágenes de Salud y Salud Mental traen más margen interno: un poco más altas para igualar */
+.dash-img-art { height: 200px; }
+.dashboard-card:not(.is-proximamente):hover .dash-img-art { transform: scale(1.04); }
 
 @media (max-width: 1200px) {
     .hero,
@@ -1163,8 +1225,13 @@ a { color: inherit; text-decoration: none; }
 
     .dashboard-card .dash-art {
         min-height: 110px;
+        min-height: 0;
         justify-self: center;
     }
+
+    /* Ilustraciones más chicas para que las tarjetas no ocupen toda la pantalla */
+    .dash-img-art,
+    .dash-img-art-coord { height: 130px; }
 }
 
 @media (max-width: 560px) {
@@ -1176,6 +1243,9 @@ a { color: inherit; text-decoration: none; }
     .dashboard-card { min-height: auto; }
     .system-footer { flex-direction: column; align-items: flex-start; }
     .government-mark { align-items: flex-start; }
+    .stat-card { padding: 16px 18px; }
+    .dash-img-art,
+    .dash-img-art-coord { height: 110px; }
 }
 
 /* ══════════ SIDEBAR: bloque "Última actualización" ══════════ */
@@ -1253,7 +1323,7 @@ body.sidebar-collapsed .sidebar:not(:hover) .nav-item { gap: 0; }
     body.sidebar-collapsed .sidebar .nav-section {
         font-size: 10px !important; text-align: left; margin: 18px 0 8px; padding: 0 10px; opacity: 1;
     }
-    body.sidebar-collapsed .sidebar .brand img { width: 100%; margin: -20px 0 -10px; max-width: 100%; }
+    body.sidebar-collapsed .sidebar .brand img { width: 100%; margin: 0 auto; max-width: 180px; }
     body.sidebar-collapsed .sidebar .sidebar-update {
         justify-content: flex-start; padding: 12px;
         border-color: rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.05);
@@ -1338,12 +1408,27 @@ body.sidebar-collapsed .sidebar:not(:hover) .nav-item { gap: 0; }
 }
 
 .dashboard-grid--gap { margin-top: 10px; }
+.dashboard-grid--gap { margin-top: 0; }
 .section-title--tight { margin-top: 4px; }
+/* Pie: fuente a la izquierda y marca de gobierno a la derecha, alineadas y separadas por una línea */
 .home-bottom {
     display: flex; justify-content: space-between; align-items: flex-end;
     gap: 16px; flex-wrap: wrap; margin-top: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 16px; flex-wrap: wrap;
+    margin-top: 18px; padding-top: 16px;
+    border-top: 1px solid rgba(16, 42, 75, 0.08);
 }
 .home-bottom .source { background: transparent; border: none; padding: 0; }
+.home-bottom .source {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(16, 42, 75, 0.07);
+    color: var(--muted); font-size: 12px;
+}
+.home-bottom .source i { color: var(--blue); }
+.home-bottom .government-mark .jujuy { font-size: clamp(24px, 2.2vw, 30px); }
 
 @media (max-width: 1280px) {
     .mini-chart { width: 104px; }

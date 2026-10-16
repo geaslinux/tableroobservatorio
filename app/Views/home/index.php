@@ -34,7 +34,6 @@
                 <div class="stat-body">
                     <div class="stat-label">Población estimada de la Provincia de Jujuy</div>
                     <div class="stat-value"><?= esc($pob['valor']) ?></div>
-                    <div class="trend up"><i class="fas fa-arrow-trend-up"></i> <?= esc($pob['tendencia']) ?></div>
                 </div>
                 <div class="stat-visual">
                     <svg class="mini-chart" viewBox="0 0 130 56" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -61,7 +60,6 @@
                 <div class="stat-body">
                     <div class="stat-label">Efectores hospitalarios</div>
                     <div class="stat-value"><?= number_format($efe['porcentaje'], 1, ',', '.') ?>%</div>
-                    <div class="trend up"><i class="fas fa-arrow-trend-up"></i> <?= esc($efe['tendencia']) ?></div>
                 </div>
                 <div class="stat-visual">
                     <div class="ring" role="img" aria-label="<?= number_format($efe['porcentaje'], 1, ',', '.') ?>% de efectores">
@@ -86,7 +84,6 @@
                 <div class="stat-body">
                     <div class="stat-label">Establecimientos de APS</div>
                     <div class="stat-value"><?= esc($aps['valor']) ?></div>
-                    <div class="trend neutral"><i class="fas fa-circle-info"></i> <?= esc($aps['detalle']) ?></div>
                 </div>
                 <div class="stat-visual">
                     <div class="soft-badge" aria-hidden="true"><i class="fas fa-hand-holding-medical"></i></div>
@@ -94,7 +91,7 @@
             </article>
         </div>
 
-        <div class="section-title section-title--tight">Tableros de mando</div>
+        <div class="section-title section-title--tight"><i class="fas fa-table-columns"></i> Tableros de mando</div>
         <div class="dashboard-grid dashboard-grid--gap">
             <article class="panel dashboard-card blue">
                 <div>
@@ -116,7 +113,7 @@
                 </div>
             </article>
 
-            <article class="panel dashboard-card teal">
+            <article class="panel dashboard-card teal is-proximamente">
                 <div>
                     <div class="dash-head">
                         <div class="dash-badge"><i class="fas fa-brain"></i></div>
@@ -126,8 +123,8 @@
                         </div>
                     </div>
                     <div class="dash-actions">
-                        <span class="dash-btn btn-disabled">
-                            Acceder al tablero <i class="fas fa-arrow-right"></i>
+                        <span class="dash-btn btn-disabled" aria-disabled="true">
+                            <i class="fas fa-clock"></i> Próximamente
                         </span>
                     </div>
                 </div>
@@ -136,7 +133,7 @@
                 </div>
             </article>
 
-            <article class="panel dashboard-card purple">
+            <article class="panel dashboard-card purple is-proximamente">
                 <div>
                     <div class="dash-head">
                         <div class="dash-badge"><i class="fas fa-network-wired"></i></div>
@@ -146,8 +143,8 @@
                         </div>
                     </div>
                     <div class="dash-actions">
-                        <span class="dash-btn btn-disabled">
-                            Acceder al tablero <i class="fas fa-arrow-right"></i>
+                        <span class="dash-btn btn-disabled" aria-disabled="true">
+                            <i class="fas fa-clock"></i> Próximamente
                         </span>
                     </div>
                 </div>
@@ -156,7 +153,7 @@
                 </div>
             </article>
 
-            <article class="panel dashboard-card orange">
+            <article class="panel dashboard-card orange is-proximamente">
                 <div>
                     <div class="dash-head">
                         <div class="dash-badge"><i class="fas fa-scale-balanced"></i></div>
@@ -166,8 +163,8 @@
                         </div>
                     </div>
                     <div class="dash-actions">
-                        <span class="dash-btn btn-disabled">
-                            Acceder al tablero <i class="fas fa-arrow-right"></i>
+                        <span class="dash-btn btn-disabled" aria-disabled="true">
+                            <i class="fas fa-clock"></i> Próximamente
                         </span>
                     </div>
                 </div>

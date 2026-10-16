@@ -214,6 +214,19 @@
         }
     }
 
+    /* Celulares: el logo completo queda ilegible a este tamaño, así que se muestra solo
+       la parte "Gobierno de JUJUY" (del 56 % al 100 % del ancho de la imagen), más grande */
+    @media (max-width: 600px) {
+        .topbar-brand { width: 80px; padding: 0 8px; border-right: none; overflow: hidden; }
+        .topbar-brand img {
+            width: 227%;          /* 100 / 0,44: la parte visible ocupa todo el ancho del enlace */
+            max-width: none;
+            max-height: none;
+            height: auto;
+            margin-left: -127%;   /* corre la imagen para dejar afuera "Ministerio de Salud" */
+        }
+    }
+
     /* Móviles pequeños */
     @media (max-width: 480px) {
         .topbar-brand { width: 80px; padding: 0 8px; border-right: none; }

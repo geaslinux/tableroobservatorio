@@ -6,7 +6,8 @@
     <title><?= $this->renderSection('title') ?></title>
     <link rel="icon" href="/imag/logoobse.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
-    <link rel="stylesheet" href="<?= base_url('css/home.css') ?>">
+    <!-- ?v= con la fecha del archivo: el navegador descarga el CSS de nuevo cada vez que cambia -->
+    <link rel="stylesheet" href="<?= base_url('css/home.css') ?>?v=<?= @filemtime(FCPATH . 'css/home.css') ?: '1' ?>">
     <?= $this->renderSection('styles') ?>
 </head>
 <body>
