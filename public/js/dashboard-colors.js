@@ -76,8 +76,46 @@
         return 'rgba(' + r + ',' + g + ',' + b + ',' + alfa + ')';
     }
 
+    // Color de texto legible sobre un fondo: blanco sobre oscuros, gris oscuro sobre claros.
+    // Acepta #rgb, #rrggbb, #rrggbbaa (transparencia: se mezcla con el blanco del gráfico) y rgb()/rgba().
+    function colorTextoSobre(fondo) {
+        var texto = String(fondo || '').trim();
+        var r, g, b, a = 1, m;
+
+        if ((m = /^#([0-9a-f]{3})$/i.exec(texto))) {
+            texto = '#' + m[1].replace(/(.)/g, '$1$1');
+        }
+        if ((m = /^#([0-9a-f]{6})([0-9a-f]{2})?$/i.exec(texto))) {
+            var n = parseInt(m[1], 16);
+            r = n >> 16; g = (n >> 8) & 255; b = n & 255;
+            if (m[2]) a = parseInt(m[2], 16) / 255;
+        } else if ((m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/i.exec(texto))) {
+            r = +m[1]; g = +m[2]; b = +m[3];
+            if (m[4] !== undefined) a = parseFloat(m[4]);
+        } else {
+            return '#1d2b3c';
+        }
+
+        // Con transparencia, el color que se ve es la mezcla con el fondo blanco
+        r = r * a + 255 * (1 - a);
+        g = g * a + 255 * (1 - a);
+        b = b * a + 255 * (1 - a);
+
+        return (0.299 * r + 0.587 * g + 0.114 * b) < 150 ? '#ffffff' : '#1d2b3c';
+    }
+
+    // Para chartjs-plugin-datalabels: color de la etiqueta según el segmento donde se dibuja.
+    // Uso: datalabels: { color: colorEtiqueta, ... } en etiquetas que van DENTRO de barras o donas.
+    function colorEtiqueta(ctx) {
+        var bg = ctx.dataset.backgroundColor;
+        if (Array.isArray(bg)) bg = bg[ctx.dataIndex];
+        return typeof bg === 'string' ? colorTextoSobre(bg) : '#1d2b3c';
+    }
+
     global.dashboardColors = dashboardColors;
     global.chartPalette    = chartPalette;
     global.colorPaleta     = colorPaleta;
     global.colorAlfa       = colorAlfa;
+    global.colorTextoSobre = colorTextoSobre;
+    global.colorEtiqueta   = colorEtiqueta;
 })(window);

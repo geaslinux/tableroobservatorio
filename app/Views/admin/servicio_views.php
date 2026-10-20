@@ -684,7 +684,7 @@
                     legend: { position: esMovil() ? 'bottom' : 'right', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } },
                     tooltip: { callbacks: { label: function (ctx) { return ctx.label + ': ' + formatoNumero(ctx.parsed); } } },
                     datalabels: {
-                        color: '#333333',
+                        color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 11 },
                         formatter: function (value, ctx) {
                             var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);

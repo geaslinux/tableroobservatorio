@@ -909,7 +909,7 @@
                 plugins: {
                     legend: { position: esMovil() ? 'bottom' : 'right', labels: { boxWidth: 12, padding: 8 } },
                     datalabels: {
-                        color: '#ffffff',
+                        color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 12 },
                         formatter: function (value, ctx) {
                             var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
@@ -976,7 +976,7 @@
                         }
                     },
                     datalabels: {
-                        color: '#ffffff',
+                        color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 11 },
                         // Solo se muestra el número si el segmento tiene lugar (≥ 8% de su barra)
                         display: function (ctx) {

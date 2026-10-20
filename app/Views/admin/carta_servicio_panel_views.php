@@ -624,7 +624,7 @@
                         labels: { boxWidth: 15, padding: 10 }
                     },
                     datalabels: {
-                        color: '#333333',
+                        color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 14 },
                         formatter: function (value, ctx) {
                             var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
@@ -669,7 +669,7 @@
                 plugins: {
                     legend: { position: 'top' },
                     datalabels: {
-                        color: '#333333',
+                        color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 11 },
                         formatter: function (value) { return value > 0 ? value : ''; }
                     }
