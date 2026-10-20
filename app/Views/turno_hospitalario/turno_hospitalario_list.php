@@ -621,13 +621,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Colores de la planilla de referencia
     var SERIES = [
-        { clave: 'atendidos',     nombre: 'TURNOS ATENDIDOS', color: '#263a5a' },
-        { clave: 'ausentes',      nombre: 'AUSENTES',         color: '#e98d69' },
-        { clave: 'cancelados',    nombre: 'CANCELADOS',       color: '#2a9d8f' },
-        { clave: 'sin_codificar', nombre: 'SIN CODIFICAR',    color: '#9aa4ad' }
+        { clave: 'atendidos',     nombre: 'TURNOS ATENDIDOS', color: dashboardColors.secondary },
+        { clave: 'ausentes',      nombre: 'AUSENTES',         color: dashboardColors.warning },
+        { clave: 'cancelados',    nombre: 'CANCELADOS',       color: dashboardColors.danger },
+        { clave: 'sin_codificar', nombre: 'SIN CODIFICAR',    color: dashboardColors.slate }
     ];
-    var COLOR_TOTAL  = '#3aafbf';
-    var coloresTorta = ['#263a5a', '#f0a57a', '#e98d69', '#9aa4ad', '#3aafbf', '#8fd3f4', '#2a9d8f', '#f1c27d', '#bb8fce', '#7fb3d5'];
+    var COLOR_TOTAL  = dashboardColors.primary;
+    var coloresTorta = chartPalette;
 
     var variosAnios  = porMes.some(function (m) { return m.ejercicio !== porMes[0].ejercicio; });
     var etiquetasMes = porMes.map(function (m) { return m.mes + (variosAnios ? ' ' + m.ejercicio : ''); });
@@ -649,7 +649,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         var totalEf = valoresEf.reduce(function (a, b) { return a + b; }, 0);
         var coloresEf = etiquetasEf.map(function (n, i) {
-            return i === MAX_PORCIONES ? '#cbd5e0' : coloresTorta[i % coloresTorta.length];
+            return i === MAX_PORCIONES ? dashboardColors.slate : coloresTorta[i % coloresTorta.length];
         });
         // Plugin: total en el centro de las donas
         var centerTextPlugin = {

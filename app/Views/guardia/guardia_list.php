@@ -461,7 +461,7 @@
                     labels: totalPorSemestre.map(function (d) { return d.semestre; }),
                     datasets: [{
                         label: 'Total',
-                        backgroundColor: '#00b4a0',
+                        backgroundColor: dashboardColors.primary,
                         data: totalPorSemestre.map(function (d) { return parseInt(d.total, 10); })
                     }]
                 },
@@ -475,7 +475,7 @@
                     labels: totalPorSemestre.map(function (d) { return d.semestre; }),
                     datasets: [{
                         data: totalPorSemestre.map(function (d) { return parseInt(d.total, 10); }),
-                        backgroundColor: ['#1a2b45', '#00b4a0', '#3498db', '#e67e22']
+                        backgroundColor: chartPalette.slice(0, 4)
                     }]
                 },
                 options: { responsive: true, cutout: '60%', plugins: { legend: { position: 'bottom' } } }

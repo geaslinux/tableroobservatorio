@@ -498,12 +498,8 @@
     var tablaHospitales = <?= json_encode($tablaHospitales) ?>;
     var porRegion       = <?= json_encode($porRegion) ?>;
 
-    // Paleta pastel (misma línea que Móviles)
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99',
-        '#bb8fce', '#7fb3d5', '#b5ead7', '#e6b0aa', '#c7ceea', '#ffdac1'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     function esMovil() {
         return window.matchMedia('(max-width: 600px)').matches;
@@ -594,7 +590,7 @@
                 labels: etiq,
                 datasets: [{
                     data: vals,
-                    backgroundColor: etiq.map(function (e, i) { return e === 'OTROS' ? '#cbd5e0' : paleta[i % paleta.length]; }),
+                    backgroundColor: etiq.map(function (e, i) { return e === 'OTROS' ? dashboardColors.slate : paleta[i % paleta.length]; }),
                     borderColor: '#ffffff',
                     borderWidth: seccionesConDatos > 1 ? 3 : 0,
                     hoverOffset: seccionesConDatos > 1 ? 8 : 0,
@@ -631,11 +627,8 @@
         });
     }
 
-    // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
-    var paletaEjercicios = [
-        '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
-        '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
-    ];
+    // Colores por año de la paleta común, el más viejo primero (public/js/dashboard-colors.js)
+    var paletaEjercicios = chartPalette;
     var todosLosAnios = <?= json_encode(array_map('intval', $anios)) ?>.sort(function (x, y) { return x - y; });
 
     // Color fijo por año (el más viejo primero); no cambia al filtrar un año
@@ -706,7 +699,7 @@
                 datasets: [{
                     label: 'Atenciones',
                     data: tablaHospitales.map(function (h) { return parseInt(h.cantidad, 10); }),
-                    backgroundColor: '#90cdf4',
+                    backgroundColor: dashboardColors.primary,
                     borderRadius: 4,
                     maxBarThickness: 22
                 }]

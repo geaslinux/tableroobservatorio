@@ -652,9 +652,14 @@ $userAvatarColor = generateColorFromString($userName);
     </div>
 
     <nav class="sidebar-nav">
+        <?php $rutaPath = static fn (string $ruta) => rtrim(parse_url(base_url(route_to($ruta)), PHP_URL_PATH), '/'); ?>
         <div class="nav-section-label">Principal</div>
         <a href="<?= base_url(route_to('inicio_views')); ?>" class="nav-item">
             <i class="fas fa-th-large"></i> Panel de inicio
+        </a>
+        <a href="<?= base_url(route_to('manual_inicio')); ?>" class="nav-item"
+           data-rutas="<?= esc($rutaPath('manual_inicio'), 'attr') ?>">
+            <i class="fas fa-book-open"></i> <span>Documentación</span>
         </a>
 
         <div class="nav-section-label">Módulos</div>
@@ -693,7 +698,6 @@ $userAvatarColor = generateColorFromString($userName);
             <a href="<?= base_url(route_to('call_center_list')); ?>" class="nav-sub"><i class="fas fa-phone"></i> 0800 Call center</a>
         </div>
 
-        <?php $rutaPath = static fn (string $ruta) => rtrim(parse_url(base_url(route_to($ruta)), PHP_URL_PATH), '/'); ?>
 
         <!-- Enlaces directos al panel. data-rutas: páginas del módulo que también marcan el ítem como activo -->
         <a href="<?= base_url(route_to('saludmental_views')); ?>" class="nav-item"
@@ -709,6 +713,8 @@ $userAvatarColor = generateColorFromString($userName);
         <div class="nav-section-label">Administración</div>
         <a href="<?= base_url(route_to('list_users')); ?>" class="nav-item"><i class="fas fa-user-cog"></i> Usuarios</a>
         <a href="<?= base_url(route_to('groups_list')); ?>" class="nav-item"><i class="fas fa-users-cog"></i> Grupos</a>
+        <a href="<?= base_url(route_to('documentacion_list')); ?>" class="nav-item"
+           data-rutas="<?= esc($rutaPath('documentacion_create'), 'attr') ?>"><i class="fas fa-book-medical"></i> Manual</a>
         <a href="<?= base_url(route_to('logout')); ?>" class="nav-item danger"><i class="fas fa-sign-out-alt"></i> Cerrar sesión</a>
     </nav>
 </aside>

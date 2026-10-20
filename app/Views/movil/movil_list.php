@@ -449,9 +449,9 @@
 
     // Colores para cada tipo de móvil
     var coloresTipo = {
-        'MOVILES OPERATIVOS': '#81e6d9',  // Teal pastel
-        'MOVILES LOGISTICA': '#90cdf4',   // Blue pastel
-        'FUERA DE SERVICIO': '#feb2b2'    // Red pastel
+        'MOVILES OPERATIVOS': dashboardColors.success,  // operativos
+        'MOVILES LOGISTICA': dashboardColors.primary,   // logística
+        'FUERA DE SERVICIO': dashboardColors.danger     // fuera de servicio
     };
 
     (function () {
@@ -482,13 +482,8 @@
             });
         }
 
-        // 2. Paleta de 24 colores únicos
-        var paleta = [
-        '#ce93d8', '#7fd8be', '#85c1e9', '#f8c471', '#d2b4de', '#f1948a',
-        '#82e0aa', '#f9e79f', '#ffb7b2', '#76d7c4', '#edbb99', '#7dcea0',
-        '#bb8fce', '#7fb3d5', '#f8c471', '#b5ead7', '#a3e4d7', '#e6b0aa',
-        '#c7ceea', '#e2f0cb', '#ef9a9a', '#ffdac1', '#90caf9', '#a5d6a7'
-        ];
+        // 2. Paleta común de los gráficos (public/js/dashboard-colors.js)
+        var paleta = chartPalette;
 
         // 3. Limpiar, filtrar y ordenar TODOS los ejercicios de la BD
         var ejerciciosOrdenados = (todosLosEjercicios || [])
@@ -498,11 +493,8 @@
             .sort(function (a, b) { return a - b; });
 
         // 4. Crear mapa fijo permanente (Año -> Color)
-        // Colores por ejercicio: 10 tonos de azul (el más viejo primero)
-        var paletaEjercicios = [
-            '#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8',
-            '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'
-        ];
+        // Colores por ejercicio: colores de la paleta común (el más viejo primero)
+        var paletaEjercicios = chartPalette;
 
         var ejercicioColorMap = {};
         ejerciciosOrdenados.forEach(function (ejercicio, index) {
@@ -511,7 +503,7 @@
 
         function colorParaEjercicio(ejercicio) {
             var clave = String(parseInt(ejercicio, 10));
-            return ejercicioColorMap[clave] || '#95a5a6';
+            return ejercicioColorMap[clave] || dashboardColors.slate;
         }
 
         // 5. Configurar Gráfico de Barras
@@ -544,7 +536,7 @@
                         return {
                             label: dataset.label,
                             backgroundColor: tipos.map(function(tipo) {
-                                return coloresTipo[tipo] || '#9b59b6';
+                                return coloresTipo[tipo] || dashboardColors.slate;
                             }),
                             maxBarThickness: 90,
                             data: dataset.data
@@ -670,7 +662,7 @@
                     datasets: [{
                         data: dataValues,
                         backgroundColor: filtroEjercicio
-                            ? tipos.map(function(tipo) { return coloresTipo[tipo] || '#9b59b6'; })
+                            ? tipos.map(function(tipo) { return coloresTipo[tipo] || dashboardColors.slate; })
                             : datosTorta.map(function(d) { return colorParaEjercicio(d.ejercicio); }),
                         borderColor: '#ffffff',
                         // Separación con borde blanco: con "spacing", Chart.js dibuja las

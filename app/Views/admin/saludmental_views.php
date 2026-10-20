@@ -294,6 +294,10 @@
     .sm-paciente-info   { font-size: 12px; color: var(--text-muted); }
     .sm-paciente-tags   { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
     .sm-paciente-tag    { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; background: #e0e0e0; }
+    /* Pacientes sin coordenadas (aparecen con el filtro S/D): no se ubican en el mapa */
+    .sm-paciente-item.is-sin-geo { cursor: default; border-style: dashed; }
+    .sm-paciente-item.is-sin-geo:hover { background: #f9f9f9; }
+    .sm-paciente-tag.sm-tag-sin-geo { background: #708090; color: #fff; }
     .sm-list-vacia      { padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 13px; font-style: italic; }
 
     /* Panel del mapa */
@@ -339,7 +343,7 @@
     ], 'strlen'));
     $urlExcel = base_url(route_to('electrodependiente_export')) . ($q !== '' ? '?' . $q : '');
 
-    $coloresRiesgo = ['ALTO' => '#e53e3e', 'MEDIANO' => '#d69e2e', 'BAJO' => '#38a169', 'S/D' => '#718096'];
+    $coloresRiesgo = ['ALTO' => '#D96C6C', 'MEDIANO' => '#F2A272', 'BAJO' => '#5BB8A6', 'S/D' => '#708090']; // danger / warning / success / slate (public/js/dashboard-colors.js)
 
     $headerStats = function ($titulo) {
         return '<div class="ml-stats-header">
@@ -579,7 +583,7 @@
                                 <div class="sm-legend-group" id="filtroRiesgo">
                                     <?php foreach ($coloresRiesgo as $r => $c): ?>
                                         <button type="button" class="sm-legend-item sm-legend-btn" data-riesgo="<?= esc($r, 'attr') ?>"
-                                                aria-pressed="false" title="Mostrar solo riesgo <?= esc($r, 'attr') ?>">
+                                                aria-pressed="false" title="<?= $r === 'S/D' ? 'Mostrar pacientes sin datos: riesgo sin cargar o sin coordenadas' : 'Mostrar solo riesgo ' . esc($r, 'attr') ?>">
                                             <span class="sm-legend-color" style="background:<?= $c ?>;"></span>
                                             <?= esc($r) ?>
                                         </button>
@@ -637,6 +641,35 @@
                                     <?php else: ?>
                                         <div class="sm-list-vacia">Sin pacientes con coordenadas para los filtros elegidos</div>
                                     <?php endif; ?>
+
+                                    <!-- Pacientes sin coordenadas: no están en el mapa; se muestran al elegir "S/D" (sin datos) -->
+                                    <?php foreach ($sinUbicacion ?? [] as $j => $p): ?>
+                                        <?php
+                                            $riesgoKey = strtoupper($p['riesgo'] ?? '');
+                                            $riesgoKey = isset($coloresRiesgo[$riesgoKey]) ? $riesgoKey : 'S/D';
+                                        ?>
+                                        <div class="sm-paciente-item is-sin-geo" data-sin="<?= $j ?>" data-riesgo="S/D"
+                                             title="Sin coordenadas: no figura en el mapa" style="display:none;">
+                                            <div class="sm-paciente-nombre"><?= esc($p['paciente']) ?></div>
+                                            <?php if (!empty($p['dni'])): ?>
+                                                <div class="sm-paciente-dni"><i class="fas fa-id-card"></i> DNI <span><?= esc($p['dni']) ?></span></div>
+                                            <?php endif; ?>
+                                            <div class="sm-paciente-info">
+                                                <i class="fas fa-map-marker-alt"></i> <?= esc($p['localidad'] ?: '—') ?> |
+                                                <i class="fas fa-hospital"></i> <?= esc($p['efector'] ?: '—') ?>
+                                            </div>
+                                            <div class="sm-paciente-tags">
+                                                <span class="sm-paciente-tag sm-tag-sin-geo"><i class="fas fa-location-crosshairs"></i> Sin coordenadas</span>
+                                                <span class="sm-paciente-tag" style="background:<?= $coloresRiesgo[$riesgoKey] ?>; color:#fff;">
+                                                    Riesgo <?= esc($p['riesgo'] ?: 'S/D') ?>
+                                                </span>
+                                                <?php if (!empty($p['tipo'])): ?>
+                                                    <span class="sm-paciente-tag"><?= esc($p['tipo']) ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+
                                     <div class="sm-list-vacia" id="listaSinRiesgo" style="display:none;">Sin pacientes con este nivel de riesgo</div>
                                 </div>
                             </div>
@@ -731,12 +764,11 @@
     var riesgoPorTipo  = <?= json_encode($riesgoPorTipo) ?>;
     var porHospital    = <?= json_encode($porHospital) ?>;
     var puntos         = <?= json_encode($puntos) ?>;
+    var sinUbicacion   = <?= json_encode($sinUbicacion ?? []) ?>; // sin coordenadas: solo en el listado, con el filtro S/D
     var coloresRiesgo  = <?= json_encode($coloresRiesgo) ?>;
 
-    var paleta = [
-        '#81e6d9', '#90cdf4', '#d6bcfa', '#feb2b2', '#f8c471', '#82e0aa',
-        '#f1948a', '#85c1e9', '#ce93d8', '#f9e79f', '#76d7c4', '#edbb99'
-    ];
+    // Paleta común de los gráficos (public/js/dashboard-colors.js)
+    var paleta = chartPalette;
 
     function esMovil() {
         return window.matchMedia('(max-width: 600px)').matches;
@@ -848,7 +880,7 @@
             'chartDiagnostico',
             porDiagnostico.map(function (d) { return d.diagnostico; }),
             porDiagnostico.map(function (d) { return parseInt(d.pacientes, 10); }),
-            '#90cdf4',
+            dashboardColors.primary,
             'Sin pacientes de salud mental por diagnóstico para los filtros elegidos'
         );
 
@@ -862,7 +894,7 @@
                 labels: porRiesgo.map(function (r) { return r.riesgo; }),
                 datasets: [{
                     data: porRiesgo.map(function (r) { return parseInt(r.pacientes, 10); }),
-                    backgroundColor: porRiesgo.map(function (r) { return coloresRiesgo[r.riesgo] || '#cbd5e0'; }),
+                    backgroundColor: porRiesgo.map(function (r) { return coloresRiesgo[r.riesgo] || dashboardColors.slate; }),
                     borderWidth: 0,
                     spacing: seccionesConDatos > 1 ? 6 : 0,
                     offset: seccionesConDatos > 1 ? 10 : 0,
@@ -1145,8 +1177,14 @@
 
         var visibles = 0;
         document.querySelectorAll('#listaPacientes .sm-paciente-item').forEach(function (item) {
-            var p = puntos[parseInt(item.dataset.punto, 10)] || {};
-            var mostrar = coincide(p, item.dataset.riesgo);
+            var sinGeo = item.dataset.sin !== undefined;
+            var p = sinGeo
+                ? (sinUbicacion[parseInt(item.dataset.sin, 10)] || {})
+                : (puntos[parseInt(item.dataset.punto, 10)] || {});
+            // Los pacientes sin coordenadas solo aparecen con el filtro "S/D" (sin datos)
+            var mostrar = sinGeo
+                ? (riesgo === 'S/D' && coincideNombre(p.paciente, busqueda) && coincideDni(p.dni, busquedaDni))
+                : coincide(p, item.dataset.riesgo);
             item.style.display = mostrar ? '' : 'none';
             if (mostrar) visibles++;
             if (!mostrar) item.classList.remove('is-active');
@@ -1167,10 +1205,13 @@
             vacio.style.display = (hayFiltro && visibles === 0) ? '' : 'none';
             vacio.textContent = hayBusqueda
                 ? 'Ningún paciente coincide con ' + criterios.join(' y ') + (riesgo ? ' con riesgo ' + riesgo : '')
-                : 'Sin pacientes con este nivel de riesgo';
+                : (riesgo === 'S/D'
+                    ? 'No hay pacientes sin riesgo cargado ni sin coordenadas'
+                    : 'Sin pacientes con este nivel de riesgo');
         }
         var info = document.getElementById('busquedaInfo');
-        if (info) info.textContent = hayFiltro && visibles > 0 ? visibles + ' de ' + puntos.length + ' pacientes' : '';
+        var total = puntos.length + (riesgo === 'S/D' ? sinUbicacion.length : 0);
+        if (info) info.textContent = hayFiltro && visibles > 0 ? visibles + ' de ' + total + ' pacientes' : '';
 
         if (grupoPacientes) {
             var visiblesMapa = [];
@@ -1322,7 +1363,7 @@
             'chartHospital',
             porHospital.map(function (h) { return h.hospital; }),
             porHospital.map(function (h) { return parseInt(h.pacientes, 10); }),
-            '#81e6d9',
+            dashboardColors.secondary,
             'Sin pacientes de salud mental por hospital para los filtros elegidos'
         );
     }

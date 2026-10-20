@@ -112,20 +112,21 @@
     .mcp-pill i { font-size: 9px; }
 
     /* ── ADMIN GRID ── */
+    /* Mismo estilo que sistemabasec: tarjetas de ancho fijo (auto-fill), ícono azul marino sobre gris */
     .admin-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 12px;
         max-width: 100%;
     }
     .admin-card {
-        background: var(--white); border-radius: 10px; padding: 14px 16px;
+        background: var(--white); border-radius: 12px; padding: 14px 16px;
         display: flex; align-items: center; gap: 12px;
         text-decoration: none; color: var(--text-main);
-        border: 0.5px solid var(--border); transition: box-shadow 0.2s, background 0.15s;
+        border: 1px solid var(--border); transition: box-shadow 0.2s, background 0.15s, transform 0.15s;
     }
-    .admin-card:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.09); background: #f5faff; text-decoration: none; color: var(--text-main); }
-    .ac-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--teal-bg); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--teal); flex-shrink: 0; }
+    .admin-card:hover { box-shadow: 0 6px 16px rgba(17,30,48,0.1); background: #f6fbfd; transform: translateY(-2px); text-decoration: none; color: var(--text-main); }
+    .ac-icon { width: 38px; height: 38px; border-radius: 10px; background: rgba(26,43,69,0.08); display: flex; align-items: center; justify-content: center; font-size: 16px; color: #1a2b45; flex-shrink: 0; }
     .ac-title { font-size: 12px; font-weight: 700; color: var(--text-main); }
     .ac-desc  { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
 
@@ -284,6 +285,14 @@
     <a href="<?= base_url(route_to('groups_list')); ?>" class="admin-card">
         <div class="ac-icon"><i class="fas fa-users-cog"></i></div>
         <div><div class="ac-title">Admin grupos</div><div class="ac-desc">Roles y permisos</div></div>
+    </a>
+    <a href="<?= base_url(route_to('manual_inicio')); ?>" class="admin-card">
+        <div class="ac-icon"><i class="fas fa-book-open"></i></div>
+        <div><div class="ac-title">Documentación</div><div class="ac-desc">Consulta del manual de usuario</div></div>
+    </a>
+    <a href="<?= base_url(route_to('documentacion_list')); ?>" class="admin-card">
+        <div class="ac-icon"><i class="fas fa-book-medical"></i></div>
+        <div><div class="ac-title">Manual</div><div class="ac-desc">Carga de páginas del manual</div></div>
     </a>
 </div>
 <?= $this->endSection() ?>

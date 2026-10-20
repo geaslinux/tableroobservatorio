@@ -271,15 +271,15 @@
     $fmt = function ($n) { return number_format((int) $n, 0, ',', '.'); };
     $pct = function ($parte, $total) { return $total > 0 ? number_format($parte * 100 / $total, 1, ',', '.') . '%' : '—'; };
 
-    // Colores por tipo (consultas verde, reclamos rojo, como la planilla)
+    // Colores por tipo (consultas verde, reclamos rojo, como la planilla), de la paleta de public/js/dashboard-colors.js
     $coloresTipo = [
-        'CONSULTA'     => '#7bc47f',
-        'RECLAMO'      => '#e57373',
-        'SUGERENCIA'   => '#f0a57a',
-        'FELICITACION' => '#3aafbf',
+        'CONSULTA'     => '#5BB8A6', // success
+        'RECLAMO'      => '#D96C6C', // danger
+        'SUGERENCIA'   => '#F2A272', // warning
+        'FELICITACION' => '#39A9C6', // primary
     ];
     foreach ($tipos as $t) {
-        if (!isset($coloresTipo[$t])) $coloresTipo[$t] = '#9aa4ad';
+        if (!isset($coloresTipo[$t])) $coloresTipo[$t] = '#708090'; // slate
     }
     $nombreTipo = function ($t) {
         return ['CONSULTA' => 'Consultas', 'RECLAMO' => 'Reclamos', 'SUGERENCIA' => 'Sugerencias', 'FELICITACION' => 'Felicitaciones'][$t] ?? ucfirst(strtolower($t));
@@ -736,11 +736,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var coloresTipo  = <?= json_encode($coloresTipo) ?>;
     var todosLosEjercicios = <?= json_encode($todosLosEjercicios) ?>;
 
-    var COLOR_BARRA = '#263a5a';
-    var coloresTorta = ['#263a5a', '#3aafbf', '#e98d69', '#9aa4ad', '#8fd3f4', '#f1c27d', '#82e0aa', '#bb8fce', '#f1948a', '#76d7c4', '#edbb99', '#7fb3d5'];
+    var COLOR_BARRA = dashboardColors.secondary;
+    var coloresTorta = chartPalette;
 
-    // Colores por ejercicio: 10 tonos de azul (el más viejo primero), como en el resto del sistema
-    var paletaEjercicios = ['#4FB3E6', '#1A5FA8', '#0B2E59', '#8FD3F4', '#2F80C8', '#123F73', '#6EC6EA', '#1E4E8C', '#A9DDF5', '#0F5E9C'];
+    // Colores por año de la paleta común, el más viejo primero (public/js/dashboard-colors.js)
+    var paletaEjercicios = chartPalette;
     function colorParaEjercicio(ej) {
         var i = todosLosEjercicios.indexOf(parseInt(ej, 10));
         return paletaEjercicios[(i < 0 ? 0 : i) % paletaEjercicios.length];

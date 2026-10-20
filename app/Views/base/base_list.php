@@ -1,5 +1,4 @@
-<?= $this->extend('layout/main'); ?> //3333
-<?= $this->extend('layout/main'); ?> //cambios
+<?= $this->extend('layout/main'); ?>
 <?= $this->section('title') ?> Bases · Ministerio de Salud <?= $this->endSection() ?>
 <?= $this->section('menu') ?> <?= $this->include('admin/menu'); ?> <?= $this->endSection() ?>
 
@@ -325,6 +324,24 @@
     /* Leyendas */
     .bl-legend-group { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;}
     .bl-legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+
+    /* Cards del listado vinculadas al mapa: clic = centrar el pin y abrir su popup */
+    .bl-base-item { cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+    .bl-base-item.is-activo { border-color: var(--teal); background: var(--teal-bg); }
+    .bl-base-item.sin-coordenadas { cursor: default; }
+    .bl-base-item.is-oculto { display: none; }
+
+    /* Leyenda del listado como filtro (BASE/USE o Activo/Inactivo) */
+    .bl-legend-btn {
+        font: inherit; font-size: 11px; font-weight: 600; color: var(--text-main);
+        background: transparent; border: 1px solid transparent; border-radius: 999px;
+        padding: 3px 9px; cursor: pointer;
+        transition: background .15s, border-color .15s, opacity .15s;
+    }
+    .bl-legend-btn:hover { background: #f0f5f9; border-color: #d0d7e0; }
+    .bl-legend-btn.is-active { background: var(--teal-bg); border-color: var(--teal); }
+    .bl-legend-group.has-filter .bl-legend-btn:not(.is-active) { opacity: .45; }
+    .bl-legend-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
     
     /* Filtro mapa B&W */
     .leaflet-tile-pane { filter: grayscale(100%); }
@@ -694,22 +711,43 @@
 
     <!-- COLUMNA IZQUIERDA: LISTA -->
     <div>
-        <!-- Leyenda Tipos (Sobre la lista) -->
-        <div class="bl-legend-group" style="margin-bottom: 10px;">
-            <div class="bl-legend-item">
-                <div class="bl-legend-color" style="background:#132f57;"></div>
-                BASE
-            </div>
-            <div class="bl-legend-item">
-                <div class="bl-legend-color" style="background:#ee6f00;"></div>
-                USE
-            </div>
+        <?php
+            // La leyenda filtra por tipo (sin botón de estado) o por estado (con Todos / Activo / Inactivo)
+            $modoLeyenda = $estado_modo ?? 'ninguno';
+            if ($modoLeyenda === 'ninguno') {
+                $campoLeyenda   = 'tipo';
+                $botonesLeyenda = ['BASE' => ['BASE', '#132f57'], 'USE' => ['USE', '#ee6f00']];
+            } else {
+                $campoLeyenda   = 'estado';
+                $botonesLeyenda = [];
+                if ($modoLeyenda !== 'inactivo') $botonesLeyenda['activo']      = ['Activo', '#27ae60'];
+                if ($modoLeyenda !== 'activo')   $botonesLeyenda['desactivado'] = ['Inactivo', '#e74c3c'];
+            }
+        ?>
+        <!-- Leyenda (sobre la lista): cada botón filtra listado y mapa; otro clic lo quita -->
+        <div class="bl-legend-group" id="filtroLeyenda" data-campo="<?= $campoLeyenda ?>" style="margin-bottom: 10px;">
+            <?php foreach ($botonesLeyenda as $valor => [$texto, $color]): ?>
+                <button type="button" class="bl-legend-item bl-legend-btn" data-valor="<?= $valor ?>"
+                        aria-pressed="false" title="Mostrar solo <?= $texto ?>">
+                    <span class="bl-legend-color" style="background:<?= $color ?>;"></span>
+                    <?= $texto ?>
+                </button>
+            <?php endforeach; ?>
+            <span class="bl-legend-item" style="color:var(--text-muted);">
+                <span id="contadorListado"><?= count($basesMap) ?></span> en el listado
+            </span>
         </div>
 
-        <div class="bl-list-container">
+        <div class="bl-list-container" id="listaBases">
             <?php if (!empty($basesMap)): ?>
-                <?php foreach ($basesMap as $b): ?>
-                    <div class="bl-base-item">
+                <?php foreach ($basesMap as $i => $b):
+                    $tieneCoordenadas = (bool) preg_match('/^\s*-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?\s*$/', (string) $b->coordenadas);
+                ?>
+                    <div class="bl-base-item <?= $tieneCoordenadas ? '' : 'sin-coordenadas' ?>"
+                         data-idx="<?= $i ?>"
+                         data-tipo="<?= esc($b->tipo, 'attr') ?>"
+                         data-estado="<?= esc($b->estado, 'attr') ?>"
+                         title="<?= $tieneCoordenadas ? 'Ver en el mapa' : 'Sin coordenadas cargadas' ?>">
                         <div class="bl-base-name"><?= esc($b->nombre) ?></div>
                         <div class="bl-base-info">
                             <i class="fas fa-map-marker-alt"></i> <?= esc($b->ubicacion) ?> | 
@@ -776,8 +814,9 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 
 <script>
+    // Todas las bases del filtro (sin paginar); idx = posición de la card en el listado
     var basesParaMapa = [
-        <?php foreach ($basesMap as $b): ?>
+        <?php foreach ($basesMap as $i => $b): ?>
             <?php
                 $coords = trim((string) $b->coordenadas);
                 $lat = $lng = null;
@@ -791,6 +830,7 @@
             ?>
             <?php if ($lat !== null && $lng !== null): ?>
             {
+                idx: <?= $i ?>,
                 lat: <?= $lat ?>,
                 lng: <?= $lng ?>,
                 nombre: <?= json_encode($b->nombre) ?>,
@@ -807,6 +847,28 @@
         var defaultCenter = [-23.3128, -65.3097]; // Centro de Jujuy
         var map = null;
         var mapaInicializado = false;
+        var marcadores = {}; // idx de la card => marcador del mapa
+
+        function escapar(texto) {
+            var div = document.createElement('div');
+            div.textContent = texto == null ? '' : texto;
+            return div.innerHTML;
+        }
+
+        // Marca en el listado la card cuyo popup está abierto
+        function resaltarItem(idx, activo) {
+            document.querySelectorAll('.bl-base-item.is-activo').forEach(function (el) { el.classList.remove('is-activo'); });
+            if (!activo) return;
+            var item = document.querySelector('.bl-base-item[data-idx="' + idx + '"]');
+            if (!item) return;
+            item.classList.add('is-activo');
+            // Desplaza solo el listado (no la página) hasta dejar la card a la vista
+            var lista  = document.getElementById('listaBases');
+            var arriba = item.getBoundingClientRect().top - lista.getBoundingClientRect().top;
+            if (arriba < 0 || arriba + item.offsetHeight > lista.clientHeight) {
+                lista.scrollTo({ top: lista.scrollTop + arriba - 8, behavior: 'smooth' });
+            }
+        }
 
         // Mapeo por Región (Fondo):
         var regionColors = {
@@ -974,16 +1036,26 @@ var icon = L.divIcon({
           '<div style="width:8px; height:8px; border-radius:50%; transform:rotate(45deg);"></div>' +
           '</div>',
     iconSize: [24, 24],
-    iconAnchor: [12, 24]
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24]
 });
             var marker = L.marker([b.lat, b.lng], { icon: icon }).addTo(map);
             marker.bindPopup(
                 '<div class="bl-map-popup">' +
-                '<b>' + b.nombre + '</b><br>' +
-                b.ubicacion + '<br>' +
-                '<span class="bl-map-tag">' + b.tipo + '</span>' +
-                '</div>'
+                '<b>' + escapar(b.nombre) + '</b><br>' +
+                escapar(b.ubicacion) + '<br>' +
+                '<span class="bl-map-tag">' + escapar(b.tipo) + '</span>' +
+                '</div>',
+                // Sin autoPan: si no, Leaflet corre el mapa para que entre el popup y el pin deja de quedar centrado
+                { autoPan: false }
             );
+            // Clic en el pin: lo centra en el mapa
+            marker.on('click', function () { centrarEn(marker); });
+            // Al abrir/cerrar el popup se resalta la card en el listado
+            marker.on('popupopen',  function () { resaltarItem(b.idx, true); });
+            marker.on('popupclose', function () { resaltarItem(b.idx, false); });
+            marker.datos = b;
+            marcadores[b.idx] = marker;
             bounds.push([b.lat, b.lng]);
         });
         map.fitBounds(bounds, { padding: [30, 30] });
@@ -1018,6 +1090,68 @@ var icon = L.divIcon({
                 iconoMapa.className = 'fas fa-eye';
                 textoMapa.textContent = 'Mostrar mapa';
             }
+        });
+
+        // ── Clic en una card del listado: muestra el mapa, centra el pin y abre su popup ──
+        document.getElementById('listaBases').addEventListener('click', function (e) {
+            var item = e.target.closest('.bl-base-item');
+            if (!item) return;
+            var marker = marcadores[item.getAttribute('data-idx')];
+            if (!marker) return; // sin coordenadas
+            if (!mapaVisible) btnMapa.click();
+            setTimeout(function () {
+                map.setView(marker.getLatLng(), 13, { animate: true });
+                marker.openPopup();
+                // En celular el mapa queda debajo del listado: lo traemos a la vista
+                if (window.innerWidth < 993) mapaPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 160);
+        });
+
+        // ── Leyenda como filtro (BASE/USE o Activo/Inactivo): filtra listado y mapa sin recargar ──
+        var grupoLeyenda = document.getElementById('filtroLeyenda');
+        var campoLeyenda = grupoLeyenda.getAttribute('data-campo');
+        var valorLeyenda = null;
+
+        function aplicarFiltroLeyenda(valor) {
+            valorLeyenda = valor;
+
+            grupoLeyenda.classList.toggle('has-filter', !!valor);
+            grupoLeyenda.querySelectorAll('.bl-legend-btn').forEach(function (b) {
+                var activo = b.getAttribute('data-valor') === valor;
+                b.classList.toggle('is-active', activo);
+                b.setAttribute('aria-pressed', activo ? 'true' : 'false');
+            });
+
+            var visibles = 0;
+            document.querySelectorAll('.bl-base-item').forEach(function (item) {
+                var mostrar = !valor || item.getAttribute('data-' + campoLeyenda) === valor;
+                item.classList.toggle('is-oculto', !mostrar);
+                if (!mostrar) item.classList.remove('is-activo');
+                if (mostrar) visibles++;
+            });
+            document.getElementById('contadorListado').textContent = visibles;
+
+            if (!map) return;
+            var bounds = [];
+            Object.keys(marcadores).forEach(function (idx) {
+                var marker  = marcadores[idx];
+                var mostrar = !valor || marker.datos[campoLeyenda] === valor;
+                if (mostrar) {
+                    marker.addTo(map);
+                    bounds.push(marker.getLatLng());
+                } else {
+                    marker.closePopup();
+                    map.removeLayer(marker);
+                }
+            });
+            if (bounds.length) map.fitBounds(bounds, { padding: [30, 30] });
+        }
+
+        grupoLeyenda.querySelectorAll('.bl-legend-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var valor = btn.getAttribute('data-valor');
+                aplicarFiltroLeyenda(valorLeyenda === valor ? null : valor);
+            });
         });
     })();
 
