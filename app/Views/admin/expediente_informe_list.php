@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Paleta de colores de los gráficos (esta vista no usa el layout principal) -->
-    <script src="/js/dashboard-colors.js"></script>
+    <script src="/js/dashboard-colors.js?v=<?= @filemtime(FCPATH . 'js/dashboard-colors.js') ?: '1' ?>"></script>
     <style>
         .content-wrapper {
             padding: 20px;

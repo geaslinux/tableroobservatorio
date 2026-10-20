@@ -938,7 +938,7 @@
                         }
                     },
                     datalabels: {
-                        color: '#333333',
+                        color: window.colorEtiqueta || '#1d2b3c',
                         font: { weight: 'bold', size: 12 },
                         formatter: function (value, ctx) {
                             var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
@@ -1001,17 +1001,49 @@
         var todos = [];
         nombres.forEach(function (n) { Object.keys(series[n]).forEach(function (k) { todos.push(series[n][k]); }); });
         if (sinDatos(todos)) { mostrarSinDatos(canvasId, mensajeSinDatos); return; }
+
+        // Total de cada barra y el más alto: los tramos muy chicos no llevan número (se pisarían);
+        // su valor queda en el tooltip y el total de la barra se muestra arriba
+        var totales = etiquetas.map(function (e) {
+            return nombres.reduce(function (s, n) { return s + (Number(series[n][e]) || 0); }, 0);
+        });
+        var maximo = Math.max.apply(null, totales);
+        var ultimo = nombres.length - 1;
+
         new Chart(document.getElementById(canvasId), {
             type: 'bar',
             data: {
                 labels: etiquetas,
                 datasets: nombres.map(function (n, i) {
+                    var etiquetasDato = {
+                        valor: {
+                            color: window.colorEtiqueta || '#1d2b3c',
+                            font: { weight: 'bold', size: 11 },
+                            display: function (ctx) {
+                                var v = ctx.dataset.data[ctx.dataIndex];
+                                // Si es el único tramo de la barra no se repite: ya está el total arriba
+                                return v > 0 && v >= maximo * 0.06 && v < totales[ctx.dataIndex];
+                            },
+                            formatter: function (v) { return formatoNumero(v); }
+                        }
+                    };
+                    // La última serie (la de arriba) lleva además el total de la barra
+                    if (i === ultimo) {
+                        etiquetasDato.total = {
+                            anchor: 'end', align: 'end', offset: 2,
+                            color: '#1d2b3c',
+                            font: { weight: 'bold', size: 12 },
+                            display: function (ctx) { return totales[ctx.dataIndex] > 0; },
+                            formatter: function (v, ctx) { return formatoNumero(totales[ctx.dataIndex]); }
+                        };
+                    }
                     return {
                         label: n,
                         backgroundColor: (colores && colores[n]) || paleta[i % paleta.length],
                         borderRadius: 4,
                         maxBarThickness: 60,
-                        data: etiquetas.map(function (e) { return series[n][e] || 0; })
+                        data: etiquetas.map(function (e) { return series[n][e] || 0; }),
+                        datalabels: { labels: etiquetasDato }
                     };
                 })
             },
@@ -1020,15 +1052,17 @@
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { position: 'top' },
-                    datalabels: {
-                        color: '#333333',
-                        font: { weight: 'bold', size: 11 },
-                        formatter: function (v) { return v > 0 ? formatoNumero(v) : ''; }
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) { return ctx.dataset.label + ': ' + formatoNumero(ctx.parsed.y); },
+                            footer: function (items) { return items.length ? 'Total: ' + formatoNumero(totales[items[0].dataIndex]) : ''; }
+                        }
                     }
                 },
                 scales: {
                     x: { stacked: true, ticks: { autoSkip: false } },
-                    y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } }
+                    // grace: espacio arriba para el total de cada barra
+                    y: { stacked: true, beginAtZero: true, grace: '10%', ticks: { precision: 0 } }
                 },
                 layout: { padding: 10 }
             }

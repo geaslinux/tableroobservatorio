@@ -17,7 +17,7 @@
     <!-- Botón para ocultar / mostrar los filtros en celular -->
     <link rel="stylesheet" href="/css/filtros-movil.css">
     <!-- Paleta de colores de los gráficos de barras y de dona (dashboardColors, chartPalette, colorPaleta) -->
-    <script src="/js/dashboard-colors.js"></script>
+    <script src="/js/dashboard-colors.js?v=<?= @filemtime(FCPATH . 'js/dashboard-colors.js') ?: '1' ?>"></script>
 
     <style> 
 

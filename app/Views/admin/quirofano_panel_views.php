@@ -622,7 +622,7 @@
                         }
                     },
                     datalabels: {
-                        color: '#333333',
+                        color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 12 },
                         formatter: function (value, ctx) {
                             var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
