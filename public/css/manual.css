@@ -1,0 +1,445 @@
+/* ==========================================================================
+   Manual de usuario — módulo Documentación y formulario de carga
+   Se suma a panel.css (usa sus mismos tokens: --navy, --teal, --border…).
+   Mobile-first: en celular el índice queda arriba y plegable.
+   ========================================================================== */
+
+/* ══════════════════════════════ FORMULARIO DE CARGA ══════════════════════ */
+
+/* Editor tipo Word (Summernote lite) con la estética de los inputs */
+.base-form-wrap .note-editor.note-frame {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--white);
+}
+.base-form-wrap .note-editor .note-toolbar {
+    background: #f4f6f9;
+    border-bottom: 1px solid var(--border);
+}
+.base-form-wrap .note-editor .note-btn { border-color: var(--border); }
+.base-form-wrap .note-editor .note-editing-area .note-editable {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 14px; line-height: 1.6; color: var(--text-main);
+    min-height: 260px;
+}
+.base-form-wrap .note-editor.has-error { border-color: var(--danger); }
+
+/* Tabla de validaciones editable */
+.mn-validaciones .bl-table td { padding: 6px 8px; vertical-align: top; }
+.mn-validaciones .bf-input { height: 36px; }
+.mn-validaciones textarea.bf-input { height: 36px; min-height: 36px; resize: vertical; }
+.mn-validaciones .col-acc { width: 46px; text-align: center; }
+
+/* Captura actual en edición */
+.mn-captura-actual {
+    display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    padding: 12px; margin-bottom: 12px;
+    border: 1px solid var(--border); border-radius: 10px; background: #f8f9fb;
+}
+.mn-captura-actual img {
+    max-width: 220px; max-height: 140px; border-radius: 6px;
+    border: 1px solid var(--border); object-fit: cover; background: #fff;
+}
+.mn-preview { margin-top: 10px; display: none; }
+.mn-preview img { max-width: 100%; max-height: 260px; border-radius: 8px; border: 1px solid var(--border); }
+
+/* Miniatura en el listado de carga */
+.mn-thumb {
+    width: 56px; height: 36px; object-fit: cover; border-radius: 4px;
+    border: 1px solid var(--border); background: #fff; cursor: zoom-in;
+}
+
+/* Pantallas sin documentar */
+.mn-pendientes { display: flex; flex-wrap: wrap; gap: 8px; }
+.mn-pendientes a {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: 10px; font-size: 12px; font-weight: 600;
+    background: rgba(240,165,0,0.12); color: #8a6200; text-decoration: none;
+    border: 1px dashed rgba(240,165,0,0.55);
+}
+.mn-pendientes a:hover { background: rgba(240,165,0,0.22); }
+.mn-pendientes small { color: var(--text-muted); font-weight: 400; }
+
+/* ══════════════════════════════ ELEGIR ROL ═══════════════════════════════ */
+/* Panel estándar (bl-panel) con tarjetas de rol al estilo de las de Inicio:
+   encabezado teñido con el color del rol, temas en cuadritos y pie con "Entrar".
+   Administrativo = azul marino (color institucional); Funcionario = azul (consulta), el de su etiqueta en el listado. */
+
+.mn-elegir {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 4px 0 18px; font-size: 13.5px; color: var(--text-muted); line-height: 1.55;
+}
+.mn-elegir i { color: var(--navy); margin-top: 3px; }
+
+.mn-roles { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 769px) { .mn-roles { grid-template-columns: 1fr 1fr; } }
+/* Un solo rol (el del sistema): tarjeta centrada con ancho de lectura */
+@media (min-width: 769px) { .mn-roles.is-unico { grid-template-columns: minmax(0, 720px); justify-content: center; } }
+
+.mn-rol {
+    --c-main: var(--navy); --c-tint: rgba(26,43,69,0.14); --c-tile: rgba(26,43,69,0.05);
+    background: var(--white); border: 0.5px solid var(--border); border-radius: 12px;
+    overflow: hidden; display: flex; flex-direction: column;
+    position: relative; transition: transform .2s, box-shadow .2s;
+}
+.mn-rol.mn-rol-func { --c-main: #2980b9; --c-tint: rgba(52,152,219,0.22); --c-tile: rgba(52,152,219,0.08); }
+/* Línea de color arriba al pasar el mouse (como las tarjetas de Inicio) */
+.mn-rol::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--c-main); transform: scaleX(0); transition: transform .2s ease;
+}
+.mn-rol:hover { transform: translateY(-4px); box-shadow: 0 8px 22px rgba(0,0,0,0.11); }
+.mn-rol:hover::before { transform: scaleX(1); }
+
+.mn-rol-head {
+    display: block; text-align: center; text-decoration: none;
+    padding: 22px 18px 16px; background: var(--c-tint);
+    border-bottom: 1px solid var(--border);
+}
+.mn-rol-head:hover { text-decoration: none; }
+.mn-rol-head i { display: block; font-size: 28px; color: var(--c-main); margin-bottom: 8px; }
+.mn-rol-nombre {
+    display: block; font-size: 13px; font-weight: 700; color: var(--c-main);
+    text-transform: uppercase; letter-spacing: 0.6px;
+}
+.mn-rol-texto { display: block; margin-top: 4px; font-size: 12.5px; color: var(--text-muted); }
+
+.mn-rol-temas {
+    padding: 14px 14px 6px; flex: 1;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start;
+}
+.mn-rol-tema {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+    min-height: 62px; padding: 9px 6px; border-radius: 8px;
+    background: var(--c-tile); text-align: center;
+}
+.mn-rol-tema i { font-size: 15px; color: var(--c-main); }
+.mn-rol-tema span { font-size: 11px; font-weight: 600; color: var(--text-muted); line-height: 1.25; }
+
+.mn-rol-foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 14px 14px;
+}
+.mn-rol-cant { font-size: 12px; color: var(--text-muted); }
+.mn-rol-cant i { color: var(--navy); margin-right: 3px; }
+.mn-rol-entrar {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 8px;
+    background: var(--c-main); color: #fff; text-decoration: none;
+    transition: filter .15s;
+}
+.mn-rol-entrar:hover { filter: brightness(1.1); color: #fff; text-decoration: none; }
+.mn-rol-entrar i { font-size: 10px; transition: transform .15s; }
+.mn-rol-entrar:hover i { transform: translateX(3px); }
+
+/* Ayudas al pie */
+.mn-ayudas {
+    display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 18px;
+    padding-top: 14px; border-top: 1px solid #eef0f3;
+}
+@media (min-width: 769px) { .mn-ayudas { grid-template-columns: repeat(3, 1fr); } }
+.mn-ayudas div { font-size: 12.5px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
+.mn-ayudas i { color: var(--navy); width: 16px; text-align: center; }
+
+/* ── Portada de un solo rol (el del sistema): tarjeta del rol + qué cubre el manual ── */
+.mn-portada {
+    --c-main: var(--navy); --c-dark: var(--navy-dark); --c-tint: rgba(26,43,69,0.08);
+    display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 4px;
+}
+.mn-portada.mn-rol-func { --c-main: #2980b9; --c-dark: #1f5f8b; --c-tint: rgba(52,152,219,0.10); }
+@media (min-width: 993px) { .mn-portada { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: stretch; } }
+
+/* Tarjeta del rol */
+.mn-portada-rol {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, var(--c-main) 0%, var(--c-dark) 100%);
+    color: #fff; border-radius: 14px; padding: 26px 26px 24px;
+    display: flex; flex-direction: column;
+    box-shadow: 0 10px 26px rgba(17, 30, 48, 0.16);
+}
+/* Círculos decorativos de fondo */
+.mn-portada-rol::before,
+.mn-portada-rol::after {
+    content: ''; position: absolute; border-radius: 50%; background: rgba(255,255,255,0.07); pointer-events: none;
+}
+.mn-portada-rol::before { width: 220px; height: 220px; right: -60px; top: -70px; }
+.mn-portada-rol::after  { width: 140px; height: 140px; right: 60px; bottom: -70px; }
+.mn-portada-rol > * { position: relative; }
+
+.mn-portada-icono {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: rgba(255,255,255,0.16); border: 1px solid rgba(255,255,255,0.22);
+    display: grid; place-items: center; font-size: 24px; margin-bottom: 14px;
+}
+.mn-portada-eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+    color: rgba(255,255,255,0.72);
+}
+.mn-portada-titulo {
+    margin: 2px 0 10px; font-size: 26px; font-weight: 800; line-height: 1.15; color: #fff;
+    letter-spacing: 0.2px;
+}
+.mn-portada-texto { margin: 0 0 8px; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.88); max-width: 520px; }
+
+.mn-portada-cant {
+    margin: 8px 0 18px; align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #fff; padding: 6px 12px; border-radius: 999px;
+    background: rgba(255,255,255,0.14);
+}
+.mn-portada-cant strong { font-size: 15px; color: #fff; } /* Bulma oscurece los <strong> */
+
+.mn-portada-acciones { margin-top: auto; display: flex; flex-wrap: wrap; gap: 10px; }
+.mn-portada-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700;
+    text-decoration: none; transition: transform .15s, box-shadow .15s, background .15s;
+}
+.mn-portada-btn:hover { text-decoration: none; transform: translateY(-1px); }
+.mn-portada-btn.principal { background: #fff; color: var(--c-main); box-shadow: 0 6px 16px rgba(0,0,0,0.15); }
+.mn-portada-btn.principal:hover { color: var(--c-dark); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }
+.mn-portada-btn.principal i { font-size: 11px; transition: transform .15s; }
+.mn-portada-btn.principal:hover i { transform: translateX(3px); }
+.mn-portada-btn.secundario { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+.mn-portada-btn.secundario:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+/* Qué vas a encontrar */
+.mn-portada-temas {
+    background: var(--white); border: 1px solid var(--border); border-radius: 14px; padding: 20px 20px 10px;
+}
+.mn-portada-subtitulo {
+    margin: 0 0 12px; font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-muted);
+}
+.mn-temas-lista { list-style: none; margin: 0; padding: 0; }
+.mn-tema {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 12px 10px; border-radius: 10px; transition: background .15s;
+}
+.mn-tema + .mn-tema { border-top: 1px solid #eef0f3; }
+.mn-tema:hover { background: var(--c-tint); }
+.mn-tema-icono {
+    width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px;
+    display: grid; place-items: center; font-size: 16px;
+    background: var(--c-tint); color: var(--c-main);
+}
+.mn-tema-titulo { display: block; font-size: 14px; color: var(--text-main); }
+.mn-tema-detalle { display: block; margin-top: 2px; font-size: 12.5px; color: var(--text-muted); line-height: 1.45; }
+
+/* Ayudas como tarjetas chicas */
+.mn-ayudas--tarjetas { border-top: none; padding-top: 0; gap: 12px; }
+.mn-ayudas--tarjetas > div {
+    padding: 12px 14px; border-radius: 10px; background: #f6f8fb; border: 1px solid #eef0f3;
+    font-size: 13px;
+}
+.mn-ayudas--tarjetas strong { color: var(--text-main); }
+
+@media (max-width: 600px) {
+    .mn-portada-rol { padding: 20px 18px; }
+    .mn-portada-titulo { font-size: 22px; }
+    .mn-portada-btn { flex: 1 1 100%; justify-content: center; }
+}
+
+/* ══════════════════════════════ LECTOR DEL MANUAL ════════════════════════ */
+
+/* Banda superior con el rol elegido */
+.mn-hero {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
+    color: #fff; border-radius: 12px; padding: 16px 20px; margin-bottom: 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+/* Mismo estilo que los títulos de panel (bl-panel-title): blanco, mayúsculas, ícono blanco.
+   El color va explícito porque Bulma pinta todo <strong> de gris oscuro. */
+.mn-hero-titulo { display: flex; align-items: center; gap: 12px; }
+.mn-hero-titulo i { color: #fff; font-size: 17px; }
+.mn-hero-titulo strong {
+    display: block; font-size: 15px; font-weight: 700; color: #fff;
+    text-transform: uppercase;
+}
+.mn-hero-titulo span { font-size: 12px; color: rgba(255,255,255,0.7); }
+.mn-hero .bl-btn.ghost { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.25); }
+.mn-hero .bl-btn.ghost:hover { background: rgba(255,255,255,0.18); }
+
+/* Índice + contenido */
+.mn-layout { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+@media (min-width: 1024px) { .mn-layout { grid-template-columns: 290px minmax(0, 1fr); } }
+
+.mn-sidebar {
+    background: var(--white); border: 0.5px solid var(--border); border-radius: 12px;
+    overflow: hidden;
+}
+@media (min-width: 1024px) {
+    .mn-sidebar { position: sticky; top: 76px; max-height: calc(100vh - 96px); overflow-y: auto; }
+}
+.mn-buscar { padding: 12px; border-bottom: 1px solid #eef0f3; background: #f8f9fb; }
+.mn-buscar form { position: relative; }
+.mn-buscar i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--navy); font-size: 13px; }
+.mn-buscar input {
+    width: 100%; height: 38px; padding: 0 12px 0 34px;
+    border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none;
+    font-family: inherit;
+}
+.mn-buscar input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(0,180,160,0.12); }
+
+.mn-indice-toggle {
+    display: flex; width: 100%; align-items: center; justify-content: space-between;
+    padding: 12px 14px; border: 0; background: var(--white); cursor: pointer;
+    font-size: 13px; font-weight: 700; color: var(--navy); font-family: inherit;
+}
+@media (min-width: 1024px) { .mn-indice-toggle { display: none; } }
+.mn-indice { padding: 6px 0 10px; }
+@media (max-width: 1023px) {
+    .mn-indice { display: none; }
+    .mn-sidebar.is-open .mn-indice { display: block; }
+}
+.mn-indice-modulo {
+    padding: 12px 16px 6px;
+    font-size: 10px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex; justify-content: space-between;
+}
+.mn-indice a {
+    display: block; padding: 7px 16px 7px 20px; margin: 1px 8px;
+    border-radius: 8px; font-size: 13px; color: var(--text-main); text-decoration: none;
+    border-left: 3px solid transparent;
+}
+.mn-indice a:hover { background: #f4f6f9; color: var(--navy); }
+.mn-indice a.is-active {
+    background: var(--teal-bg); color: var(--navy); font-weight: 700;
+    border-left-color: var(--teal);
+}
+.mn-indice a small { display: block; color: var(--text-muted); font-size: 11px; font-weight: 400; }
+
+/* Hoja de contenido */
+.mn-doc {
+    background: var(--white); border: 0.5px solid var(--border); border-radius: 12px;
+    padding: 20px 18px 26px; min-width: 0;
+}
+@media (min-width: 769px) { .mn-doc { padding: 30px 38px 36px; } }
+
+.mn-ruta { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+.mn-ruta i { color: var(--text-muted); margin: 0 4px; font-size: 10px; }
+.mn-doc h1 { font-size: 26px; font-weight: 800; color: var(--navy); margin: 0 0 10px; line-height: 1.25; }
+.mn-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.mn-resumen {
+    font-size: 15px; color: var(--text-muted); line-height: 1.6;
+    border-left: 4px solid var(--teal); padding: 4px 0 4px 14px; margin: 0 0 22px;
+}
+
+.mn-doc h2.mn-h2 {
+    font-size: 15px; font-weight: 800; color: var(--navy);
+    text-transform: uppercase; letter-spacing: 0.8px;
+    margin: 30px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--teal-bg);
+    display: flex; align-items: center; gap: 8px;
+}
+.mn-doc h2.mn-h2 i { color: var(--navy); }
+
+/* Captura con marco de navegador */
+.mn-captura {
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(26,43,69,0.10); background: #fff;
+}
+.mn-captura-barra {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+    background: #eef0f3; border-bottom: 1px solid var(--border);
+}
+.mn-captura-barra span { width: 10px; height: 10px; border-radius: 50%; background: #d0d5de; }
+.mn-captura-barra span:nth-child(1) { background: #ff6058; }
+.mn-captura-barra span:nth-child(2) { background: #ffbd2e; }
+.mn-captura-barra span:nth-child(3) { background: #28c940; }
+.mn-captura-barra em {
+    margin-left: 10px; font-style: normal; font-size: 11px; color: var(--text-muted);
+    background: #fff; border-radius: 5px; padding: 2px 10px; flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mn-captura img { display: block; width: 100%; height: auto; cursor: zoom-in; }
+.mn-captura-pie { font-size: 11.5px; color: var(--text-muted); text-align: center; margin-top: 8px; }
+
+/* Visor de imagen ampliada */
+.mn-lightbox {
+    position: fixed; inset: 0; z-index: 20000; display: none;
+    background: rgba(8,16,28,0.88); padding: 24px; cursor: zoom-out;
+    align-items: center; justify-content: center;
+}
+.mn-lightbox.is-open { display: flex; }
+.mn-lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+.mn-lightbox button {
+    position: absolute; top: 14px; right: 18px; border: 0; background: rgba(255,255,255,0.15);
+    color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 18px; cursor: pointer;
+}
+
+/* Texto de la descripción (lo que se escribió en el editor) */
+.mn-prose { font-size: 14.5px; line-height: 1.75; color: var(--text-main); overflow-wrap: anywhere; }
+.mn-prose h1, .mn-prose h2, .mn-prose h3, .mn-prose h4 { color: var(--navy); font-weight: 700; margin: 22px 0 8px; line-height: 1.3; }
+.mn-prose h1 { font-size: 21px; } .mn-prose h2 { font-size: 18px; } .mn-prose h3 { font-size: 16px; } .mn-prose h4 { font-size: 15px; }
+.mn-prose p { margin: 0 0 12px; }
+.mn-prose ul, .mn-prose ol { margin: 0 0 14px 22px; }
+.mn-prose ul { list-style: disc; } .mn-prose ol { list-style: decimal; }
+.mn-prose li { margin-bottom: 4px; }
+.mn-prose a { color: var(--teal); text-decoration: underline; }
+.mn-prose blockquote {
+    margin: 0 0 14px; padding: 10px 16px; border-left: 4px solid var(--teal);
+    background: var(--teal-bg); border-radius: 0 8px 8px 0; color: var(--navy);
+}
+.mn-prose pre, .mn-prose code { background: #f4f6f9; border-radius: 6px; font-size: 13px; }
+.mn-prose pre { padding: 12px; overflow-x: auto; } .mn-prose code { padding: 1px 6px; }
+.mn-prose table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 13.5px; display: block; overflow-x: auto; }
+.mn-prose table td, .mn-prose table th { border: 1px solid var(--border); padding: 7px 10px; }
+.mn-prose table th, .mn-prose table tr:first-child td { background: #f4f6f9; font-weight: 700; }
+.mn-prose img { max-width: 100%; height: auto; border-radius: 6px; }
+.mn-prose hr { border: 0; border-top: 1px solid var(--border); margin: 18px 0; }
+
+/* Validaciones */
+.mn-validacion-campo { font-weight: 700; color: var(--navy); white-space: nowrap; }
+.mn-validacion-msg {
+    display: inline-block; font-size: 12.5px; color: #c0392b;
+    background: rgba(231,76,60,0.07); border-radius: 6px; padding: 3px 8px;
+}
+
+/* Anterior / siguiente */
+.mn-nav-paginas {
+    display: grid; grid-template-columns: 1fr; gap: 12px;
+    margin-top: 34px; padding-top: 20px; border-top: 1px solid #eef0f3;
+}
+@media (min-width: 641px) { .mn-nav-paginas { grid-template-columns: 1fr 1fr; } }
+.mn-nav-paginas a {
+    display: block; padding: 12px 16px; border: 1px solid var(--border); border-radius: 10px;
+    text-decoration: none; color: var(--navy);
+}
+.mn-nav-paginas a:hover { border-color: var(--teal); background: var(--teal-bg); }
+.mn-nav-paginas small { display: block; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.mn-nav-paginas strong { font-size: 14px; }
+.mn-nav-paginas .siguiente { text-align: right; }
+@media (min-width: 641px) { .mn-nav-paginas .siguiente { grid-column: 2; } }
+
+.mn-pie-pagina { margin-top: 16px; font-size: 11.5px; color: var(--text-muted); }
+
+/* Portada del rol: tarjetas por módulo */
+.mn-modulos { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 769px) { .mn-modulos { grid-template-columns: 1fr 1fr; } }
+.mn-modulo-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+.mn-modulo-card h3 {
+    margin: 0 0 10px; font-size: 15px; font-weight: 800; color: var(--navy);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.mn-modulo-card ul { list-style: none; margin: 0; padding: 0; }
+.mn-modulo-card li { padding: 6px 0; border-top: 1px solid #eef0f3; font-size: 13px; }
+.mn-modulo-card li:first-child { border-top: 0; }
+.mn-modulo-card li a { color: var(--text-main); text-decoration: none; font-weight: 600; }
+.mn-modulo-card li a:hover { color: var(--teal); }
+.mn-modulo-card li span { display: block; color: var(--text-muted); font-size: 12px; font-weight: 400; }
+
+.mn-resultado { padding: 14px 0; border-top: 1px solid #eef0f3; }
+.mn-resultado:first-child { border-top: 0; }
+.mn-resultado a { font-size: 15px; font-weight: 700; color: var(--navy); text-decoration: none; }
+.mn-resultado a:hover { color: var(--teal); }
+.mn-resultado p { margin: 4px 0 0; font-size: 13px; color: var(--text-muted); }
+
+/* Impresión: solo la hoja, sin menú ni índice */
+@media print {
+    .sidebar, .topbar, .mn-sidebar, .mn-hero, .mn-nav-paginas, .bl-breadcrumb, .no-print { display: none !important; }
+    .mn-layout { display: block; }
+    .mn-doc { border: 0; padding: 0; }
+    .base-list-wrap { background: #fff !important; padding: 0 !important; }
+}

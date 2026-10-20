@@ -314,8 +314,24 @@ $routes->put('capacidad-camas',           'CapacidadCamasController::update',   
 $routes->delete('capacidad-camas',        'CapacidadCamasController::destroy',     ['as' => 'capacidad_camas_destroy', 'filter' => 'permiso: ELIMINAR PERSONA']);
 $routes->get('capacidad-camas-export',    'CapacidadCamasController::export',      ['as' => 'capacidad_camas_export',  'filter' => 'permiso: LISTADO PERSONA']);
 $routes->get('capacidad-camas-visto',     'CapacidadCamasController::marcarVisto', ['as' => 'capacidad_camas_visto',   'filter' => 'permiso: LISTADO PERSONA']);
-});
+// ── Manual de usuario: carga (Administración → Manual). Módulo traído de sistemabasec ──
+$routes->get('documentacion',           'DocumentacionController::index',   ['as' => 'documentacion_list',    'filter' => 'permiso: LISTADO PERSONA']);
+$routes->get('documentacion-create',    'DocumentacionController::create',  ['as' => 'documentacion_create',  'filter' => 'permiso: GUARDAR PERSONA']);
+$routes->post('documentacion',          'DocumentacionController::store',   ['as' => 'documentacion_store',   'filter' => 'permiso: GUARDAR PERSONA']);
+$routes->get('documentacion/(:num)',    'DocumentacionController::show/$1', ['as' => 'documentacion_show',    'filter' => 'permiso: LISTADO PERSONA']);
+$routes->put('documentacion',           'DocumentacionController::update',  ['as' => 'documentacion_update',  'filter' => 'permiso: EDITAR PERSONA']);
+$routes->delete('documentacion',        'DocumentacionController::destroy', ['as' => 'documentacion_destroy', 'filter' => 'permiso: ELIMINAR PERSONA']);
+$routes->get('documentacion-export',    'DocumentacionController::export',  ['as' => 'documentacion_export',  'filter' => 'permiso: LISTADO PERSONA']);
 
+// ── Documentación: consulta del manual (primero se elige el rol) ──
+$routes->get('manual',                  'ManualController::inicio',         ['as' => 'manual_inicio',         'filter' => 'permiso: LISTADO PERSONA']);
+$routes->get('manual/(:alpha)',         'ManualController::rol/$1',         ['as' => 'manual_rol',            'filter' => 'permiso: LISTADO PERSONA']);
+$routes->get('manual/(:alpha)/(:num)',  'ManualController::pagina/$1/$2',   ['as' => 'manual_pagina',         'filter' => 'permiso: LISTADO PERSONA']);
+$routes->get('manual/(:alpha)/pdf',     'ManualController::pdf/$1',         ['as' => 'manual_pdf',            'filter' => 'permiso: LISTADO PERSONA']);
+$routes->get('manual/(:alpha)/(:num)/pdf', 'ManualController::pdfPagina/$1/$2', ['as' => 'manual_pagina_pdf', 'filter' => 'permiso: LISTADO PERSONA']);
+// Capturas: están en la carpeta de sistemabasec (Config\Manual), se entregan desde acá
+$routes->get('manual-imagen/(:num)',    'ManualController::imagen/$1',      ['as' => 'manual_imagen',         'filter' => 'permiso: LISTADO PERSONA']);
+});
 
 
 

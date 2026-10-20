@@ -202,3 +202,13 @@ Auditoría: `ElectrodependienteModel::update()` compara el registro anterior con
 - `base-visto` y `asistencia-visto` no tienen filtro de permiso.
 - Los permisos son todos `* PERSONA` (heredados), así que no hay separación de permisos por módulo.
 - `DepuracionQueueService` depende de modelos inexistentes (`RepositoriosModel`, etc.).
+
+## 7. Documentación (manual de usuario) — módulo traído de sistemabasec
+
+Mismo módulo que en sistemabasec: **Documentación** (consulta: elegir rol, índice, búsqueda, PDF, imprimir) y **Administración → Manual**.
+
+- **Tabla compartida:** `documentacion` en la base `rep`, la misma que usa sistemabasec. Lo que se carga en un sistema se ve en el otro. Migración `2026-10-15-120000_CreateDocumentacion` (`CREATE TABLE IF NOT EXISTS`).
+- **Capturas en una sola carpeta:** se guardan y se leen en `sistemabasec/public/uploads/documentacion` (configurable en `app/Config/Manual.php`, `$raizImagenes`, o en `.env` con `manual.raizImagenes`). Como no están en el `public/` de este sistema, se entregan con la ruta `manual_imagen` (`ManualController::imagen`), que solo sirve imágenes dentro de esa carpeta.
+- **Catálogo de pantallas:** `app/Helpers/navegacion_helper.php` es copia del de sistemabasec, para que las claves de módulo/pantalla sean las mismas en los dos sistemas (no son nombres de ruta de este sistema). Si se agrega una pantalla, actualizar el helper en los dos.
+- **Archivos:** `Controllers/Admin/AdminController.php` (solo los helpers que usa este módulo), `DocumentacionController`, `ManualController`, `Models/DocumentacionModel`, `Entities/Documentacion`, `Views/documentacion/*`, `Views/partials/breadcrumb` y `form_errores`, `public/css/manual.css`. El layout `main.php` ahora renderiza la sección `css`.
+- **Rutas** (grupo `/admin`): `documentacion_list|create|store|show|update|destroy|export`, `manual_inicio`, `manual_rol`, `manual_pagina`, `manual_pdf`, `manual_pagina_pdf`, `manual_imagen`. Menú lateral: *Documentación* (Principal) y *Manual* (Administración).

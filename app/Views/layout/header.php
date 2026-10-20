@@ -395,7 +395,7 @@
         const activeSub = document.querySelector('.sidebar .nav-sub.active');
 
         if (activeSub) {
-            let subText = activeSub.innerText.replace(/[^\w\sáéíóúüñÁÉÍÓÚÜÑ]/g, '').trim();
+            let subText = activeSub.textContent.replace(/[^\w\sáéíóúüñÁÉÍÓÚÜÑ]/g, '').replace(/\s+/g, ' ').trim();
 
             const subGroup = activeSub.closest('.nav-sub-group');
             let parentText = '';
@@ -403,7 +403,7 @@
             if (subGroup) {
                 const parentNavItem = subGroup.previousElementSibling;
                 if (parentNavItem) {
-                    parentText = parentNavItem.innerText.replace(/[^\w\sáéíóúüñÁÉÍÓÚÜÑ]/g, '').trim();
+                    parentText = parentNavItem.textContent.replace(/[^\w\sáéíóúüñÁÉÍÓÚÜÑ]/g, '').replace(/\s+/g, ' ').trim();
                 }
             }
 
@@ -415,7 +415,9 @@
             // 3. Ítems principales sin submenú activo (ej: PREHOSPITALARIO, USUARIOS)
             const activeMain = document.querySelector('.sidebar .nav-item.active');
             if (activeMain) {
-                let mainText = activeMain.innerText
+                // textContent (no innerText): con el menú contraído los <span> del texto están ocultos y innerText vendría vacío
+                let mainText = activeMain.textContent
+                    .replace(/\s+/g, ' ')
                     .replace(/^Panel de\s*/i, '')
                     .replace(/[^\w\sáéíóúüñÁÉÍÓÚÜÑ]/g, '')
                     .trim();

@@ -173,6 +173,7 @@
             }
         }
     </style>   
+    <?= $this->renderSection('css');?>
 </head>
 
 <body>

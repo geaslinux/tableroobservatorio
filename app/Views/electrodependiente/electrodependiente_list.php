@@ -92,10 +92,15 @@
         box-shadow: 0 2px 6px rgba(0,0,0,0.12);
         overflow: hidden;
         border-left: 5px solid #718096;
+        border-left: 5px solid #708090; /* S/D: slate de la paleta común */
     }
     .card-paciente.riesgo-alto    { border-left-color: #e53e3e; }
     .card-paciente.riesgo-mediano { border-left-color: #d69e2e; }
     .card-paciente.riesgo-bajo    { border-left-color: #38a169; }
+    /* Riesgo con la paleta común (public/js/dashboard-colors.js): danger / warning / success */
+    .card-paciente.riesgo-alto    { border-left-color: #D96C6C; }
+    .card-paciente.riesgo-mediano { border-left-color: #F2A272; }
+    .card-paciente.riesgo-bajo    { border-left-color: #5BB8A6; }
     .card-paciente.es-nuevo       { background: #f0fff4; }
     .card-paciente.es-modificado  { background: #fffde7; }
     .card-paciente.desactivado    { opacity: 0.5; }
@@ -290,6 +295,10 @@
             <span><span class="leyenda-dot" style="background:#d69e2e;"></span>MEDIANO</span>
             <span><span class="leyenda-dot" style="background:#38a169;"></span>BAJO</span>
             <span><span class="leyenda-dot" style="background:#718096;"></span>S/D</span>
+            <span><span class="leyenda-dot" style="background:#D96C6C;"></span>ALTO</span>
+            <span><span class="leyenda-dot" style="background:#F2A272;"></span>MEDIANO</span>
+            <span><span class="leyenda-dot" style="background:#5BB8A6;"></span>BAJO</span>
+            <span><span class="leyenda-dot" style="background:#708090;"></span>S/D</span>
             <span class="leyenda-nota" style="color:#aaa; font-size:0.73rem; margin-left:auto;">Solo pacientes con coordenadas cargadas.</span>
         </div>
     </div>
@@ -471,6 +480,10 @@
             case 'MEDIANO': return '#d69e2e';
             case 'BAJO': return '#38a169';
             default: return '#718096';
+            case 'ALTO': return '#D96C6C';    // danger
+            case 'MEDIANO': return '#F2A272'; // warning
+            case 'BAJO': return '#5BB8A6';    // success
+            default: return '#708090';        // slate (S/D)
         }
     }
 

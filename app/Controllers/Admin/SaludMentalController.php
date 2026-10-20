@@ -127,8 +127,9 @@ class SaludMentalController extends BaseController
             ->orderBy('pacientes', 'DESC')
             ->get()->getResultArray();
 
-        // Puntos del mapa: solo pacientes con coordenadas válidas
-        $filasGeo = $this->builder($db, $filtros)
+        // Pacientes del filtro: los que tienen coordenadas válidas van al mapa ($puntos);
+        // el resto ($sinUbicacion) aparece en el listado al elegir "S/D" (sin datos)
+        $filasPacientes = $this->builder($db, $filtros)
             ->select("
                 electrodependiente.electrodependiente_id AS id,
                 electrodependiente.paciente, electrodependiente.edad, electrodependiente.tipo,
@@ -137,18 +138,23 @@ class SaludMentalController extends BaseController
                 electrodependiente.coordenadas, electrodependiente.factor_riesgo AS riesgo,
                 l.nombre AS localidad, e.nombre AS efector, d.nombre AS diagnostico
             ", false)
-            ->where("TRIM(COALESCE(electrodependiente.coordenadas, '')) <>", '')
+            ->orderBy('electrodependiente.paciente', 'ASC')
             ->get()->getResultArray();
 
-        $puntos = [];
-        foreach ($filasGeo as $f) {
-            $coords = array_map('trim', explode(',', $f['coordenadas']));
-            if (count($coords) < 2) continue;
-            $lat = (float) $coords[0];
-            $lng = (float) $coords[1];
-            if (($lat == 0 && $lng == 0) || abs($lat) > 90 || abs($lng) > 180) continue;
-
+        $puntos       = [];
+        $sinUbicacion = [];
+        foreach ($filasPacientes as $f) {
+            $coords = array_map('trim', explode(',', (string) $f['coordenadas']));
+            $lat    = (float) ($coords[0] ?? 0);
+            $lng    = (float) ($coords[1] ?? 0);
             unset($f['coordenadas']);
+
+            // Vacías, incompletas o fuera de rango: no se pueden ubicar en el mapa
+            if (count($coords) < 2 || ($lat == 0 && $lng == 0) || abs($lat) > 90 || abs($lng) > 180) {
+                $sinUbicacion[] = $f;
+                continue;
+            }
+
             $puntos[] = $f + ['lat' => $lat, 'lng' => $lng];
         }
         $kpi['geo_validos'] = count($puntos);
@@ -167,6 +173,7 @@ class SaludMentalController extends BaseController
             'porLocalidad'   => $porLocalidad,
             'porHospital'    => $porHospital,
             'puntos'         => $puntos,
+            'sinUbicacion'   => $sinUbicacion,
         ]));
     }
 }
