@@ -5,10 +5,12 @@ Los usuarios cargan datos por módulo (ABM e importación de Excel) y los consul
 
 ## Entorno
 
-- **CodeIgniter 4** (PHP 8.1, Laragon en Windows: `C:\laragon\bin\php\php-8.1.10-Win32-vs16-x64`)
+- **CodeIgniter 4.7** (PHP 8.3, mínimo 8.2; Laragon en Windows: `C:\laragon\bin\php\php-8.3.36-Win32-vs16-x64`)
 - **MySQL** con driver MySQLi. La BD activa se define en `.env` / `app/Config/Database.php`.
 - Servidor: vhost de Laragon o `php spark serve` (`baseURL` = `http://localhost:8080/`)
 - Dependencias: `myth/auth`, `phpoffice/phpspreadsheet`, `dompdf/dompdf`, `google/apiclient` (Drive)
+- `vendor/` está versionado en git. `google/apiclient-services` se limpia con `Google\Task\Composer::cleanup` y solo conserva el servicio Drive: si se usa otro servicio de Google, agregarlo en `extra.google/apiclient-services` de `composer.json`.
+- Revisar `composer audit` después de cada `composer update`.
 
 El mapa completo de tablas, relaciones, controllers y rutas está en docs/esquema.md. Leelo solo si la tarea lo necesita.
 
