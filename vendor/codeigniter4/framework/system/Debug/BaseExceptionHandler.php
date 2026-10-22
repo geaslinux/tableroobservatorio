@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -11,6 +13,8 @@
 
 namespace CodeIgniter\Debug;
 
+use CodeIgniter\HTTP\CLIRequest;
+use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
 use Config\Exceptions as ExceptionsConfig;
@@ -44,13 +48,13 @@ abstract class BaseExceptionHandler
 
         $this->obLevel = ob_get_level();
 
-        if ($this->viewPath === null) {
-            $this->viewPath = rtrim($this->config->errorViewPath, '\\/ ') . DIRECTORY_SEPARATOR;
-        }
+        $this->viewPath ??= rtrim($this->config->errorViewPath, '\\/ ') . DIRECTORY_SEPARATOR;
     }
 
     /**
      * The main entry point into the handler.
+     *
+     * @param CLIRequest|IncomingRequest $request
      *
      * @return void
      */
@@ -59,11 +63,21 @@ abstract class BaseExceptionHandler
         RequestInterface $request,
         ResponseInterface $response,
         int $statusCode,
-        int $exitCode
+        int $exitCode,
     );
 
     /**
      * Gathers the variables that will be made available to the view.
+     *
+     * @return array{
+     *   title: string,
+     *   type: string,
+     *   code: int,
+     *   message: string,
+     *   file: string,
+     *   line: int,
+     *   trace: list<array<string, mixed>>,
+     * }
      */
     protected function collectVars(Throwable $exception, int $statusCode): array
     {
@@ -81,8 +95,8 @@ abstract class BaseExceptionHandler
         }
 
         return [
-            'title'   => get_class($exception),
-            'type'    => get_class($exception),
+            'title'   => $exception::class,
+            'type'    => $exception::class,
             'code'    => $statusCode,
             'message' => $exception->getMessage(),
             'file'    => $exception->getFile(),
@@ -93,6 +107,11 @@ abstract class BaseExceptionHandler
 
     /**
      * Mask sensitive data in the trace.
+     *
+     * @param list<array<string, mixed>> $trace
+     * @param list<string>               $keysToMask
+     *
+     * @return list<array<string, mixed>>
      */
     protected function maskSensitiveData(array $trace, array $keysToMask, string $path = ''): array
     {
@@ -104,9 +123,10 @@ abstract class BaseExceptionHandler
     }
 
     /**
-     * @param array|object $args
+     * @param array<array-key, mixed>|object $args
+     * @param list<string>                   $keysToMask
      *
-     * @return array|object
+     * @return array<array-key, mixed>|object
      */
     private function maskData($args, array $keysToMask, string $path = '')
     {
@@ -114,7 +134,7 @@ abstract class BaseExceptionHandler
             $explode = explode('/', $keyToMask);
             $index   = end($explode);
 
-            if (strpos(strrev($path . '/' . $index), strrev($keyToMask)) === 0) {
+            if (str_starts_with(strrev($path . '/' . $index), strrev($keyToMask))) {
                 if (is_array($args) && array_key_exists($index, $args)) {
                     $args[$index] = '******************';
                 } elseif (
@@ -176,7 +196,7 @@ abstract class BaseExceptionHandler
 
         try {
             $source = file_get_contents($file);
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             return false;
         }
 
@@ -219,7 +239,7 @@ abstract class BaseExceptionHandler
                     "<span class='line highlight'><span class='number'>{$format}</span> %s\n</span>%s",
                     $n + $start + 1,
                     strip_tags($row),
-                    implode('', $tags[0])
+                    implode('', $tags[0]),
                 );
             } else {
                 $out .= sprintf('<span class="line"><span class="number">' . $format . '</span> %s', $n + $start + 1, $row) . "\n";
@@ -243,8 +263,14 @@ abstract class BaseExceptionHandler
      */
     protected function render(Throwable $exception, int $statusCode, $viewFile = null): void
     {
-        if (empty($viewFile) || ! is_file($viewFile)) {
-            echo 'The error view files were not found. Cannot render exception trace.';
+        if ($viewFile === null) {
+            echo 'The error view file was not specified. Cannot display error view.';
+
+            exit(1);
+        }
+
+        if (! is_file($viewFile)) {
+            echo 'The error view file "' . $viewFile . '" was not found. Cannot display error view.';
 
             exit(1);
         }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -16,24 +18,13 @@ namespace CodeIgniter\Commands\Utilities\Routes;
  *
  * @see \CodeIgniter\Commands\Utilities\Routes\AutoRouteCollectorTest
  */
-final class AutoRouteCollector
+final readonly class AutoRouteCollector
 {
-    /**
-     * @var string namespace to search
-     */
-    private string $namespace;
-
-    private string $defaultController;
-    private string $defaultMethod;
-
     /**
      * @param string $namespace namespace to search
      */
-    public function __construct(string $namespace, string $defaultController, string $defaultMethod)
+    public function __construct(private string $namespace, private string $defaultController, private string $defaultMethod)
     {
-        $this->namespace         = $namespace;
-        $this->defaultController = $defaultController;
-        $this->defaultMethod     = $defaultMethod;
     }
 
     /**
@@ -50,7 +41,7 @@ final class AutoRouteCollector
             $output = $reader->read(
                 $class,
                 $this->defaultController,
-                $this->defaultMethod
+                $this->defaultMethod,
             );
 
             foreach ($output as $item) {

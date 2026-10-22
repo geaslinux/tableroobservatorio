@@ -14,8 +14,8 @@
         "amenadiel/jpgraph": "^4.1",
         "codeigniter4/framework": "^4.0",
         "dompdf/dompdf": "^3.0",
-        "google/apiclient": "2.15",
-        "google/auth": "1.44",
+        "google/apiclient": "^2.15",
+        "google/auth": "^1.44",
         "guzzlehttp/guzzle": "^7.8",
         "guzzlehttp/psr7": "^2.6",
         "myth/auth": "^1.2",
@@ -26,17 +26,11 @@
         "mikey179/vfsstream": "^1.6",
         "phpunit/phpunit": "^9.1"
     },
-"autoload": {
-    "psr-4": {
-        "Google\\": "vendor/google/apiclient/src/"
+    "autoload": {
+        "exclude-from-classmap": [
+            "**/Database/Migrations/**"
+        ]
     },
-    "classmap": [
-        "vendor/google/apiclient-services/src/"
-    ],
-    "exclude-from-classmap": [
-        "**/Database/Migrations/**"
-    ]
-},
     "autoload-dev": {
         "psr-4": {
             "Tests\\Support\\": "tests/_support"
@@ -48,6 +42,12 @@
         "sort-packages": true
     },
     "scripts": {
+        "pre-autoload-dump": "Google\\Task\\Composer::cleanup",
         "test": "phpunit"
+    },
+    "extra": {
+        "google/apiclient-services": [
+            "Drive"
+        ]
     }
 }

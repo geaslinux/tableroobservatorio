@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -56,6 +58,36 @@ class CookieException extends FrameworkException
     public static function forEmptyCookieName()
     {
         return new static(lang('Cookie.emptyCookieName'));
+    }
+
+    /**
+     * Thrown when the cookie value contains invalid characters.
+     *
+     * @return static
+     */
+    public static function forInvalidCookieValue()
+    {
+        return new static(lang('Cookie.invalidCookieValue'));
+    }
+
+    /**
+     * Thrown when the cookie path contains invalid characters.
+     *
+     * @return static
+     */
+    public static function forInvalidCookiePath()
+    {
+        return new static(lang('Cookie.invalidCookiePath'));
+    }
+
+    /**
+     * Thrown when the cookie domain contains invalid characters.
+     *
+     * @return static
+     */
+    public static function forInvalidCookieDomain()
+    {
+        return new static(lang('Cookie.invalidCookieDomain'));
     }
 
     /**

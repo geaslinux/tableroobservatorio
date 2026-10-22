@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -21,14 +23,14 @@ class Iterator
     /**
      * Stores the tests that we are to run.
      *
-     * @var array
+     * @var array<string, Closure(): mixed>
      */
     protected $tests = [];
 
     /**
      * Stores the results of each of the tests.
      *
-     * @var array
+     * @var array<string, array{time: float, memory: int, n: int}>
      */
     protected $results = [];
 
