@@ -710,6 +710,12 @@ $userAvatarColor = generateColorFromString($userName);
             <i class="fas fa-project-diagram"></i> <span>Servicios transversales</span>
         </a>
 
+        <?php if (has_permission('LISTADO PERSONA')): ?>
+        <a href="<?= base_url(route_to('consulta_tablero')) ?>" class="nav-item" title="Atenciones de consulta">
+            <i class="fas fa-notes-medical" aria-hidden="true"></i><span>Atenciones de consulta</span>
+        </a>
+        <?php endif ?>
+
         <div class="nav-section-label">Administración</div>
         <a href="<?= base_url(route_to('list_users')); ?>" class="nav-item"><i class="fas fa-user-cog"></i> Usuarios</a>
         <a href="<?= base_url(route_to('groups_list')); ?>" class="nav-item"><i class="fas fa-users-cog"></i> Grupos</a>

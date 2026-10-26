@@ -1,0 +1,17 @@
+.consulta-tablero .table td, .consulta-tablero .table th { white-space: normal; overflow-wrap: anywhere; min-width: 125px; }
+.consulta-tablero .bl-panel-title { margin: 0; }
+.consulta-tablero .columns { margin-bottom: 0; }
+.consulta-tablero .ml-kpi-sub { white-space: normal; }
+.consulta-tablero .consulta-chart { height: 340px; position: relative; margin: 16px 0; min-width: 0; }
+.consulta-tablero .consulta-aplicados { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.consulta-tablero .consulta-aplicados .tag { white-space: normal; height: auto; padding: 5px 8px; overflow-wrap: anywhere; max-width: 100%; }
+.consulta-tablero details summary { cursor: pointer; padding: 12px 0; color: var(--navy); font-weight: 600; }
+.consulta-tablero a:focus-visible, .consulta-tablero summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+.consulta-tablero .select select { max-width: 100%; text-overflow: ellipsis; }
+.consulta-tablero [id^="consulta-"] { scroll-margin-top: 85px; }
+.consulta-tablero .buttons { gap: 8px; }
+@media (max-width: 768px) {
+    .consulta-tablero .consulta-chart { height: 380px; }
+    .consulta-tablero .columns { margin-left: 0; margin-right: 0; }
+    .consulta-tablero .column { padding-left: 0; padding-right: 0; }
+}

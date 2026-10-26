@@ -12,6 +12,9 @@ $routes->get('home', 'Home::index', ['as' => 'home']);
 $routes->group('/admin',['filter' => 'login', 'namespace'=>'App\Controllers\Admin'], function($routes){
 
     $routes->get('inicio', 'IndexController::inicio', ['as'=>'inicio_views']);
+    $routes->get('consulta_tablero', 'ConsultaTableroController::index', ['as' => 'consulta_tablero', 'filter' => 'permiso: LISTADO PERSONA']);
+    $routes->get('consulta_tablero/exportar', 'ConsultaTableroController::exportar', ['as' => 'consulta_tablero_exportar', 'filter' => 'permiso: LISTADO PERSONA']);
+    $routes->get('consulta_tablero/atencion/(:num)', 'ConsultaTableroController::detalle/$1', ['as' => 'consulta_tablero_detalle', 'filter' => 'permiso: LISTADO PERSONA']);
 
     $routes->get('basev', 'BaseVController::basev', ['as'=>'base_views']);
     $routes->get('hospitalariov', 'HospitalarioVController::hospitalariov', ['as'=>'hospitalario_views']);
