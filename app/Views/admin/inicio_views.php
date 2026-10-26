@@ -50,6 +50,7 @@
     .module-card-prehosp.card-paciente  { --c-main: #9b59b6; --c-dark: #8e44ad; }
     .module-card-prehosp.card-salud     { --c-main: #e67e22; --c-dark: #d35400; }
     .module-card-prehosp.card-servicios { --c-main: #00bcd4; --c-dark: #0097a7; }
+    .module-card-prehosp.card-consulta  { --c-main: #16a085; --c-dark: #117a65; }
     .module-card-prehosp.disabled {
         opacity: 0.55; cursor: default; pointer-events: none;
         --c-main: #6c757d; --c-dark: #495057;
@@ -263,6 +264,22 @@
             </div>
         </div>
     </a>
+
+    <!-- ATENCIONES DE CONSULTA -->
+    <?php if (has_permission('LISTADO PERSONA')): ?>
+    <a href="<?= base_url(route_to('consulta_tablero')); ?>" class="module-card-prehosp card-consulta">
+        <div class="mcp-header">
+            <i class="fas fa-notes-medical mc-icon"></i>
+            <div class="mc-title">Atenciones de consulta</div>
+            <div class="mc-sub">Médicos · Diagnósticos · Procedimientos</div>
+        </div>
+        <div class="mcp-stats">
+            <div class="mcp-pill">
+                <span><i class="fas fa-arrow-right"></i> Ver tablero de atenciones</span>
+            </div>
+        </div>
+    </a>
+    <?php endif; ?>
 
     <!-- HOSPITAL VIRTUAL (próximamente) -->
     <div class="module-card-prehosp disabled card-virtual">

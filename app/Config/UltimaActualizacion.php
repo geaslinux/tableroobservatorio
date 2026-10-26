@@ -18,6 +18,7 @@ class UltimaActualizacion extends BaseConfig
 
     /** @var array<string, array<string, list<string>>> */
     public array $modulos = [
+        'consulta_tablero' => ['default' => ['atencion_consulta']],
         // ── Prehospitalario ──
         'base'               => ['default' => ['base']],
         'movil'              => ['default' => ['movil']],
