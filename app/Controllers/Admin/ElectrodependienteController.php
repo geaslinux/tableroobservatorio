@@ -345,7 +345,7 @@ class ElectrodependienteController extends BaseController
                     $eq['marca']           ?? '',
                     $eq['serie']           ?? '',
                     $eq['modelo']          ?? '',
-                    $eq['fecha_entrega']   ? date('d/m/Y', strtotime($eq['fecha_entrega'])) : '',
+                    !empty($eq['fecha_entrega']) ? date('d/m/Y', strtotime($eq['fecha_entrega'])) : '',
                     $eq['tiempo_uso']      ?? '',
                     $eq['medico_tratante'] ?? '',
                     $eq['titular_servicio'] ?? '',
