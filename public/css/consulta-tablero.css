@@ -1,17 +1,471 @@
-.consulta-tablero .table td, .consulta-tablero .table th { white-space: normal; overflow-wrap: anywhere; min-width: 125px; }
-.consulta-tablero .bl-panel-title { margin: 0; }
-.consulta-tablero .columns { margin-bottom: 0; }
-.consulta-tablero .ml-kpi-sub { white-space: normal; }
-.consulta-tablero .consulta-chart { height: 340px; position: relative; margin: 16px 0; min-width: 0; }
-.consulta-tablero .consulta-aplicados { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.consulta-tablero .consulta-aplicados .tag { white-space: normal; height: auto; padding: 5px 8px; overflow-wrap: anywhere; max-width: 100%; }
-.consulta-tablero details summary { cursor: pointer; padding: 12px 0; color: var(--navy); font-weight: 600; }
-.consulta-tablero a:focus-visible, .consulta-tablero summary:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
-.consulta-tablero .select select { max-width: 100%; text-overflow: ellipsis; }
+/* ==========================================================================
+   Atenciones de consulta — complementa panel.css (clases bl-*).
+   Prefijo ct-*: solo lo propio del tablero y de la ficha de detalle.
+   ========================================================================== */
+
 .consulta-tablero [id^="consulta-"] { scroll-margin-top: 85px; }
-.consulta-tablero .buttons { gap: 8px; }
+.consulta-tablero a:focus-visible,
+.consulta-tablero button:focus-visible,
+.consulta-tablero summary:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+.consulta-tablero .ml-kpi-sub { white-space: normal; }
+
+/* Texto solo para lectores de pantalla */
+.ct-sr {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
+
+/* ── ENCABEZADO ── */
+.ct-hero {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    background: linear-gradient(135deg, var(--navy) 0%, #1d4a63 100%);
+    border-radius: 12px; padding: 18px 20px; margin-bottom: 14px;
+    color: #fff;
+}
+.ct-hero-icon {
+    width: 52px; height: 52px; flex-shrink: 0; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 24px;
+}
+.ct-hero-texto { flex: 1 1 240px; min-width: 0; }
+.ct-hero h1 { margin: 0; font-size: 20px; font-weight: 700; line-height: 1.2; color: #fff; }
+.ct-hero p { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,0.75); }
+.ct-hero-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ── NAVEGACIÓN POR SECCIONES ── */
+.ct-secciones { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.ct-secciones a {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 7px 14px; border-radius: 999px;
+    background: var(--white); border: 1px solid var(--border);
+    font-size: 12.5px; font-weight: 600; color: var(--text-muted); text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+}
+.ct-secciones a i { color: var(--navy); }
+.ct-secciones a:hover { border-color: var(--navy); color: var(--navy); }
+
+/* ── FILTROS ── */
+.ct-filtros {
+    display: grid; grid-template-columns: 1fr; gap: 14px 16px;
+    background: #f4f6f9; border: 0.5px solid var(--border); border-radius: 10px;
+    padding: 16px;
+}
+@media (min-width: 641px)  { .ct-filtros { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .ct-filtros { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ct-filtros .bl-filtro-group { flex: none; min-width: 0; }
+.ct-filtros .bl-filtro-label { letter-spacing: 0.6px; line-height: 1.3; }
+.ct-filtros .bl-filtro-select,
+.ct-filtros .bl-filtro-input { width: 100%; min-width: 0; text-overflow: ellipsis; }
+.ct-filtro-check { justify-content: flex-end; }
+.ct-filtro-check .bf-check { min-height: 36px; }
+
+.ct-ayuda {
+    display: flex; align-items: flex-start; gap: 8px;
+    margin: 12px 0 0; font-size: 12px; color: var(--text-muted);
+}
+.ct-ayuda i { color: var(--navy); margin-top: 2px; }
+
+.ct-filtros-pie {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; flex-wrap: wrap; margin-top: 14px;
+}
+.ct-filtros-pie .bl-filtro-actions { flex-wrap: wrap; }
+.ct-carga { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 12.5px; font-weight: 600; color: var(--navy); }
+.ct-carga[hidden] { display: none; }
+
+.ct-aplicados {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--border);
+}
+
+/* Botón Ocultar / Mostrar filtros (bl-btn ghost sm, igual que "Ocultar estadísticas"):
+   ocultos, solo queda la fila de filtros aplicados */
+#consulta-filtros-toggle:focus-visible,
+.consulta-tablero [data-ocultar-panel]:focus-visible { outline-color: #fff; }
+
+/* Paneles con botón Ocultar (data-ocultar-panel): el encabezado queda y el cuerpo se oculta */
+.ct-panel-acciones { display: inline-flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-left: auto; }
+.ct-panel-oculto > .bl-panel-body { display: none; }
+.ct-filtros-ocultos #consulta-form { display: none; }
+.ct-filtros-ocultos .ct-aplicados { margin-top: 0; padding-top: 0; border-top: none; }
+.ct-aplicados-titulo {
+    margin-right: 4px; font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);
+}
+.ct-aplicados .bl-tag { white-space: normal; overflow-wrap: anywhere; max-width: 100%; text-decoration: none; }
+.ct-aplicados a.bl-tag:hover { background: rgba(26,43,69,0.18); }
+.ct-aplicados a.bl-tag i { margin-left: 4px; font-size: 11px; opacity: 0.7; }
+
+/* ── PERÍODO ── */
+.ct-periodo {
+    display: flex; align-items: center; gap: 6px 22px; flex-wrap: wrap;
+    background: var(--white); border: 0.5px solid var(--border); border-left: 4px solid var(--navy);
+    border-radius: 10px; padding: 10px 16px; margin-bottom: 16px;
+    font-size: 12.5px; color: var(--text-muted);
+}
+.ct-periodo i { color: var(--navy); margin-right: 7px; }
+.ct-periodo strong { color: var(--navy); }
+.ct-periodo .ct-nota { flex-basis: 100%; font-size: 11.5px; }
+
+/* ── PANELES ── */
+.ct-intro { margin: 0 0 12px; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.ct-vacio { margin: 8px 0 12px; padding: 28px 14px; text-align: center; font-size: 13px; color: var(--text-muted); background: #f8f9fb; border-radius: 8px; }
+.ct-vacio i { display: block; font-size: 22px; opacity: 0.4; margin-bottom: 6px; }
+
+.consulta-tablero .consulta-chart { position: relative; height: 320px; min-width: 0; margin: 4px 0 14px; }
+
+/* Tabla completa desplegable debajo de cada gráfico */
+.ct-tabla-completa { border: 0.5px solid var(--border); border-radius: 8px; background: var(--white); }
+.ct-tabla-completa > summary {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; cursor: pointer; list-style: none;
+    font-size: 12.5px; font-weight: 600; color: var(--navy);
+}
+.ct-tabla-completa > summary::-webkit-details-marker { display: none; }
+.ct-tabla-completa > summary:hover { color: var(--navy); }
+.ct-tabla-completa > summary i { font-size: 11px; color: var(--navy); transition: transform 0.15s; }
+.ct-tabla-completa[open] > summary { border-bottom: 0.5px solid var(--border); }
+.ct-tabla-completa[open] > summary i { transform: rotate(90deg); }
+.ct-tabla-completa .bl-table-wrap { border: none; border-radius: 0 0 8px 8px; }
+
+/* Distribuciones: una tarjeta por dimensión */
+.ct-dist {
+    display: flex; flex-direction: column; min-width: 0;
+    background: var(--white); border: 0.5px solid var(--border); border-radius: 10px; overflow: hidden;
+}
+.ct-dist > .bl-section-header { margin: 0; }
+.ct-dist > .bl-section-body { flex: 1; }
+.ct-dist-cuenta { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--navy); white-space: nowrap; }
+.ct-dist .consulta-chart { height: 300px; }
+
+/* Porcentaje con barra */
+.ct-pct { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.ct-pct-barra { flex: 1 1 60px; min-width: 60px; height: 6px; border-radius: 3px; background: #eef0f3; overflow: hidden; }
+.ct-pct-barra > span { display: block; height: 100%; background: var(--navy); border-radius: 3px; }
+
+/* ── TABLAS ── */
+/* Las celdas bajan de línea entre palabras (break-word no achica la columna por debajo de la palabra más
+   larga, así un nombre no se parte "Stepanen-ko"); si la tabla no entra, se desplaza de costado */
+.consulta-tablero .bl-table td { white-space: normal; overflow-wrap: break-word; }
+/* Primera columna con nombres (médico, servicio…): ancho mínimo para que entren nombre y apellido */
+.consulta-tablero .ct-ordenable td.strong:first-child { min-width: 170px; }
+.consulta-tablero .bl-table td.num,
+.consulta-tablero .bl-table td.ct-nowrap { white-space: nowrap; overflow-wrap: normal; }
+.consulta-tablero .bl-table td.center > a:not(.bl-icon-link) { white-space: nowrap; }
+.ct-tabla-detalle { min-width: 980px; }
+.ct-tabla-detalle td.ct-texto { min-width: 200px; max-width: 320px; line-height: 1.45; }
+.ct-hora { font-size: 12px; color: var(--text-muted); }
+.ct-sin-dato { font-size: 12px; font-style: italic; color: #a0aec0; }
+
+.ct-toolbar-nota { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.ct-toolbar-nota i { color: var(--navy); }
+.consulta-tablero .bl-toolbar .ct-toolbar-nota { margin-left: auto; }
+
+.ct-pie-tabla { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.ct-pie-tabla .bl-pager { margin-top: 0; }
+
+/* ── FICHA DE DETALLE ── */
+.ct-atencion .bl-panel-body { padding: 20px; }
+.ct-atencion dl, .ct-atencion dd { margin: 0; }
+.ct-atencion dt {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);
+}
+
+/* Resumen: tres tarjetas (fecha y hora · servicio · profesional) */
+.ct-resumen-atencion { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 769px) { .ct-resumen-atencion { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.ct-dato {
+    display: flex; align-items: flex-start; gap: 12px; min-width: 0;
+    padding: 14px 16px; border: 1px solid #e3e8ef; border-radius: 10px; background: #f8f9fb;
+}
+.ct-dato > div { min-width: 0; }
+.ct-dato-icono {
+    width: 38px; height: 38px; flex-shrink: 0; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(26,43,69,0.08); color: var(--navy); font-size: 16px;
+}
+.ct-dato dd { margin-top: 4px; font-size: 15px; font-weight: 600; line-height: 1.35; color: var(--text-main); overflow-wrap: anywhere; }
+.ct-dato dd small { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; color: var(--text-muted); }
+.ct-dato dd small i { margin-right: 3px; color: var(--navy); opacity: 0.7; }
+
+/* Títulos de sección */
+.ct-ficha-seccion {
+    display: flex; align-items: center; gap: 8px; margin: 24px 0 12px;
+    font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--navy);
+}
+.ct-ficha-seccion::after { content: ''; flex: 1; height: 1px; background: #e3e8ef; }
+
+/* Origen: hospital › servicio */
+.ct-origen { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; }
+.ct-origen > div { flex: 1 1 240px; min-width: 0; padding: 10px 14px; border-left: 3px solid rgba(26,43,69,0.25); background: #f8f9fb; border-radius: 0 8px 8px 0; }
+.ct-origen dt i { width: 14px; text-align: center; color: var(--navy); margin-right: 4px; }
+.ct-origen dd { margin-top: 4px; font-size: 14px; line-height: 1.45; color: var(--text-main); overflow-wrap: anywhere; }
+.ct-origen-flecha { display: flex; align-items: center; color: #a0aec0; }
+@media (max-width: 768px) { .ct-origen-flecha { display: none; } }
+
+/* Registro clínico */
+.ct-clinico { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 1024px) { .ct-clinico { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ct-clinico-item { min-width: 0; padding: 14px 16px; border: 1px solid #e3e8ef; border-left: 4px solid var(--navy); border-radius: 8px; background: #fff; }
+.ct-clinico-item h3 {
+    display: flex; align-items: center; gap: 7px; margin: 0 0 6px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--navy);
+}
+.ct-clinico-item p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--text-main); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ct-clinico-vacio { grid-column: 1 / -1; margin: 0; font-size: 12px; font-style: italic; color: var(--text-muted); }
+.ct-clinico-vacio i { color: #a0aec0; margin-right: 4px; }
+
+/* ── TARJETAS KPI EN TABLET Y CELULAR ──
+   kpi-responsive.css (global) alinea el texto a la izquierda; en este tablero etiqueta, valor y subtítulo
+   van centrados en el espacio al lado del ícono, como en escritorio */
+@media (max-width: 1000px), (max-height: 500px) {
+    .main-content .consulta-tablero .ml-kpi-content { align-items: center; text-align: center; }
+    .main-content .consulta-tablero .ml-kpi-content > * { text-align: center; }
+}
+
+/* ── CELULAR ── */
 @media (max-width: 768px) {
     .consulta-tablero .consulta-chart { height: 380px; }
     .consulta-tablero .columns { margin-left: 0; margin-right: 0; }
     .consulta-tablero .column { padding-left: 0; padding-right: 0; }
+    .ct-hero { padding: 14px 16px; }
+    .ct-hero h1 { font-size: 18px; }
+    .ct-hero-acciones { width: 100%; }
+    /* Todas las secciones a la vista (sin carrusel): bajan de línea y cada fila se reparte el ancho */
+    .ct-secciones { gap: 6px; }
+    .ct-secciones a { flex: 1 1 auto; justify-content: center; white-space: nowrap; padding: 7px 12px; font-size: 13px; }
+    .consulta-tablero .consulta-chart { height: 360px; }
+    .consulta-tablero .bl-toolbar .ct-toolbar-nota { margin-left: 0; flex-basis: 100%; }
+    .ct-pie-tabla { justify-content: center; }
+}
+
+/* ── BOTONES EN AZUL MARINO (en lugar del verde agua de panel.css) ── */
+.bl-btn.navy-ghost { background: rgba(26,43,69,0.08); color: var(--navy); border: 1px solid rgba(26,43,69,0.25); }
+.bl-btn.navy-ghost:hover { background: rgba(26,43,69,0.16); filter: none; }
+.consulta-tablero .bl-table td > a:not(.bl-btn):not(.bl-icon-link),
+.consulta-tablero .bl-table td a.bl-icon-link {
+    background: rgba(26,43,69,0.08); color: var(--navy); border: 1px solid rgba(26,43,69,0.25);
+}
+.consulta-tablero .bl-table td > a:not(.bl-btn):not(.bl-icon-link):hover,
+.consulta-tablero .bl-table td a.bl-icon-link:hover { background: rgba(26,43,69,0.16); }
+
+/* ── GRÁFICO TEMPORAL POR MÉDICO ── */
+.consulta-tablero .consulta-chart.ct-chart-alto { height: 420px; }
+.ct-agrupar { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.ct-agrupar-label {
+    margin-right: 6px; font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);
+}
+.ct-agrupar-btn {
+    padding: 5px 14px; border-radius: 999px; cursor: pointer; font-family: inherit;
+    font-size: 12.5px; font-weight: 600; color: var(--text-muted);
+    background: var(--white); border: 1px solid var(--border);
+    transition: border-color 0.15s, color 0.15s;
+}
+.ct-agrupar-btn:hover { border-color: var(--navy); color: var(--navy); }
+.ct-agrupar-btn[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+@media (max-width: 768px) {
+    .consulta-tablero .consulta-chart.ct-chart-alto { height: 460px; }
+}
+
+/* ── TABLAS ORDENABLES ── */
+.ct-orden-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 0; margin: 0; border: 0; background: none; cursor: pointer;
+    font: inherit; color: inherit; text-transform: inherit; letter-spacing: inherit; text-align: inherit;
+}
+.ct-orden-btn i { font-size: 10px; opacity: 0.45; transition: opacity 0.15s; }
+.ct-orden-btn:hover { color: #fff; }
+.ct-orden-btn:hover i,
+.ct-ordenable th[aria-sort] .ct-orden-btn i { opacity: 1; }
+.ct-ordenable th[aria-sort] { color: #fff; }
+.consulta-tablero .ct-ordenable thead .ct-orden-btn:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+/* ── Calendario de fechas (jQuery UI datepicker con los colores del panel) ── */
+.ct-fecha { position: relative; }
+.ct-fecha .bl-filtro-input { padding-right: 34px; cursor: pointer; }
+.ct-fecha > i { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--navy); font-size: 14px; pointer-events: none; }
+.ui-datepicker.ct-calendario {
+    width: 286px; padding: 0; z-index: 1000 !important;
+    border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    background: var(--white); box-shadow: 0 12px 32px rgba(17,30,48,0.22);
+    font-family: inherit; font-size: 13px;
+}
+.ct-calendario .ui-datepicker-header {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    height: 52px; padding: 0 44px; margin: 0;
+    border: 0; border-radius: 0; background: var(--navy); color: var(--white);
+}
+.ct-calendario .ui-datepicker-title { display: flex; gap: 6px; margin: 0; line-height: 1; }
+.ct-calendario .ui-datepicker-title select {
+    width: auto; height: 30px; margin: 0; padding: 0 6px;
+    border: 1px solid rgba(255,255,255,0.25); border-radius: 6px;
+    background: rgba(255,255,255,0.12); color: var(--white);
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.ct-calendario .ui-datepicker-title select option { color: var(--text-main); background: var(--white); }
+.ct-calendario .ui-datepicker-prev,
+.ct-calendario .ui-datepicker-next {
+    top: 11px; width: 30px; height: 30px;
+    border: 0 !important; border-radius: 8px; background: transparent !important; cursor: pointer;
+}
+.ct-calendario .ui-datepicker-prev { left: 8px; }
+.ct-calendario .ui-datepicker-next { right: 8px; }
+.ct-calendario .ui-datepicker-prev:hover,
+.ct-calendario .ui-datepicker-next:hover { background: rgba(255,255,255,0.15) !important; }
+.ct-calendario .ui-datepicker-prev span,
+.ct-calendario .ui-datepicker-next span { display: none; }
+.ct-calendario .ui-datepicker-prev::before,
+.ct-calendario .ui-datepicker-next::before {
+    font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 13px; color: var(--white);
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+}
+.ct-calendario .ui-datepicker-prev::before { content: '\f053'; }
+.ct-calendario .ui-datepicker-next::before { content: '\f054'; }
+.ct-calendario .ui-datepicker-prev.ui-state-disabled,
+.ct-calendario .ui-datepicker-next.ui-state-disabled { opacity: 0.3; cursor: default; }
+.ct-calendario table { width: calc(100% - 20px); margin: 10px; font-size: 13px; border-collapse: separate; border-spacing: 2px; }
+.ct-calendario th { padding: 4px 0; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.ct-calendario td { padding: 0; }
+.ct-calendario td a.ui-state-default,
+.ct-calendario td span.ui-state-default {
+    display: flex; align-items: center; justify-content: center; height: 32px; padding: 0;
+    border: 0; border-radius: 8px; background: transparent; color: var(--text-main);
+    text-align: center; font-weight: 500;
+}
+.ct-calendario td a.ui-state-default:hover { background: rgba(26,43,69,0.08); color: var(--navy); }
+.ct-calendario td a.ui-state-highlight { box-shadow: inset 0 0 0 1.5px var(--navy); font-weight: 700; }
+.ct-calendario td a.ui-state-active { background: var(--navy); color: var(--white); font-weight: 700; }
+.ct-calendario .ui-datepicker-other-month a.ui-state-default { color: #a7b1bf; }
+.ct-calendario .ui-state-disabled span.ui-state-default { color: #c9cfd8; opacity: 1; }
+.ct-calendario .ui-datepicker-buttonpane {
+    display: flex; justify-content: space-between; margin: 0; padding: 8px 10px;
+    border-top: 1px solid var(--border); background: #f4f6f9;
+}
+.ct-calendario .ui-datepicker-buttonpane button {
+    float: none; margin: 0; padding: 5px 12px; opacity: 1 !important;
+    border: 1px solid var(--border); border-radius: 7px; background: var(--white);
+    color: var(--navy); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.ct-calendario .ui-datepicker-buttonpane button.ui-datepicker-close { background: var(--navy); border-color: var(--navy); color: var(--white); }
+
+/* ── Paginación de tablas en el navegador (ct-paginada) ── */
+.ct-pie-paginada { margin-top: 10px; padding: 0 2px; }
+.ct-pie-paginada .bl-pager li button {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 34px; padding: 0 10px;
+    border-radius: 8px; border: 1px solid var(--border);
+    background: var(--white); color: var(--text-muted);
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.ct-pie-paginada .bl-pager li button:hover { border-color: var(--navy); color: var(--navy); }
+.ct-pie-paginada .bl-pager li.ct-pager-salto span { border-color: transparent; background: transparent; min-width: 20px; padding: 0 2px; }
+@media (max-width: 600px) {
+    .ct-pie-paginada { justify-content: center; }
+    .ct-pie-paginada .bl-pager ul { justify-content: center; }
+}
+
+/* ── Paginador del detalle de atenciones ── */
+.ct-paginador {
+    padding: 12px 14px; margin-top: 14px;
+    border: 1px solid var(--border); border-radius: 10px; background: #f8f9fb;
+}
+.ct-paginador .ct-toolbar-nota strong { color: var(--text-main); font-weight: 700; }
+.ct-paginador .bl-pager { margin: 0 0 0 auto; }
+.consulta-tablero .bl-pager li a { color: var(--text-main); transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.consulta-tablero .bl-pager li a:hover { border-color: var(--navy); background: rgba(26,43,69,0.06); color: var(--navy); }
+.consulta-tablero .bl-pager li.active span { box-shadow: 0 2px 6px rgba(26,43,69,0.25); }
+.consulta-tablero .bl-pager li.ct-pager-salto span { border-color: transparent; background: transparent; min-width: 20px; padding: 0 2px; opacity: 1; }
+.ct-ir-pagina { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.ct-ir-pagina label { font-weight: 600; }
+.ct-ir-pagina .bl-filtro-input { width: 64px; min-width: 0; height: 34px; padding: 0 8px; text-align: center; }
+.ct-ir-pagina .bl-filtro-input:focus { border-color: var(--navy); }
+.ct-ir-boton {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border: 0; border-radius: 8px;
+    background: var(--navy); color: var(--white); cursor: pointer;
+}
+.ct-ir-boton:hover { background: var(--navy-dark); }
+@media (max-width: 768px) {
+    .ct-paginador { justify-content: center; }
+    .ct-paginador .ct-toolbar-nota { width: 100%; justify-content: center; }
+    .ct-paginador .bl-pager { margin: 0; }
+    .ct-paginador .bl-pager ul { justify-content: center; }
+    .ct-pager-texto, .ct-pager-extremo { display: none !important; }
+}
+/* El texto "Anterior/Siguiente" va en un span dentro del botón: no debe heredar la caja de .bl-pager li span */
+.consulta-tablero .bl-pager li .ct-pager-texto {
+    display: inline; min-width: 0; height: auto; padding: 0; margin: 0;
+    border: 0; border-radius: 0; background: none; box-shadow: none; opacity: 1;
+    color: inherit; font: inherit;
+}
+.ct-ir-pagina .ct-ir-boton { width: auto; gap: 6px; padding: 0 12px; font-family: inherit; font-size: 12px; font-weight: 700; }
+.ct-intro .ct-ver-todos { margin-left: 8px; padding: 3px 10px; font-size: 12px; vertical-align: middle; }
+.ct-intro .ct-ver-todos[hidden] { display: none; }
+
+/* ── Leyenda del gráfico temporal (HTML): médicos y flecha para desplegar el resto ── */
+.ct-leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0 0 8px; }
+.ct-leyenda-item {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 4px 8px; border: 0; border-radius: 6px; background: transparent;
+    font-family: inherit; font-size: 13px; font-weight: 600; color: #1a2b45;
+    cursor: pointer; transition: color 0.15s, background 0.15s;
+}
+.ct-leyenda-item:hover,
+.ct-leyenda-item:focus-visible { background: rgba(26,43,69,0.06); outline: none; }
+.ct-leyenda-item.is-atenuado { color: rgba(26,43,69,0.4); }
+.ct-leyenda-item[hidden] { display: none; }
+.ct-leyenda-color { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; transition: background 0.15s; }
+.ct-leyenda-mas {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border: 1px solid rgba(26,43,69,0.25); border-radius: 999px;
+    background: rgba(26,43,69,0.06); color: var(--navy);
+    font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.ct-leyenda-mas:hover { background: rgba(26,43,69,0.14); }
+.ct-leyenda-mas i { font-size: 11px; }
+.ct-ver-mas-barras { margin: -6px 0 14px; }
+/* Solo el gráfico de barras que crece con "Ver N más" anima su alto: en los demás, Chart.js podría medir
+   a mitad de la animación (al pasar a celular) y el lienzo quedaría más alto que el recuadro */
+.consulta-tablero #consulta-medicos .consulta-chart { transition: height 0.2s ease; }
+.consulta-tablero .consulta-chart canvas { display: block; }
+/* Tabla por mes y médico: valores (y sus encabezados) centrados en cada columna */
+.consulta-tablero .ct-tabla-centrada th.num,
+.consulta-tablero .ct-tabla-centrada td.num { text-align: center; }
+
+/* ── Tabla por mes y médico ──
+   Con los primeros médicos entra completa: encabezados en varias líneas y celdas más angostas.
+   Con todos (ct-con-extras) los nombres van en una línea y la tabla se desplaza con Mes y Total fijos
+   (tablas-fijas.js + .tiene-fijas de panel.css). */
+.ct-tabla-mes .ct-col-extra { display: none; }
+.ct-tabla-mes.ct-con-extras .ct-col-extra { display: table-cell; }
+.consulta-tablero .ct-tabla-mes thead th { padding: 10px 8px; white-space: normal; line-height: 1.35; letter-spacing: 0.6px; }
+.consulta-tablero .ct-tabla-mes tbody td { padding: 10px 8px; }
+.consulta-tablero .ct-tabla-mes thead th:first-child,
+.consulta-tablero .ct-tabla-mes tbody td:first-child { padding-left: 14px; }
+.consulta-tablero .ct-tabla-mes thead th:last-child,
+.consulta-tablero .ct-tabla-mes tbody td:last-child { padding-right: 14px; }
+.consulta-tablero .ct-tabla-mes.ct-con-extras thead th { white-space: nowrap; }
+
+/* Barra "Viendo X de Y columnas" en los colores del tablero (panel.css la trae en verde) */
+.consulta-tablero .bl-scroll-nav { margin: 10px 10px 8px; background: rgba(26,43,69,0.06); border-color: rgba(26,43,69,0.2); }
+.consulta-tablero .bl-scroll-nav-texto > i,
+.consulta-tablero .bl-scroll-nav-ocultas { color: var(--navy); }
+.consulta-tablero .bl-scroll-nav-btn:not(:disabled) { background: var(--navy); }
+/* Celular: texto y flechas en un solo renglón */
+@media (max-width: 768px) {
+    .consulta-tablero .bl-scroll-nav { flex-wrap: nowrap; gap: 8px; margin: 8px 8px 6px; padding: 6px 6px 6px 10px; font-size: 12px; }
+    .consulta-tablero .bl-scroll-nav-texto { min-width: 0; align-items: baseline; gap: 6px; line-height: 1.35; }
+    .consulta-tablero .bl-scroll-nav-texto > i { display: none; }
+    .consulta-tablero .bl-scroll-nav-botones { flex-shrink: 0; gap: 4px; }
+    .consulta-tablero .bl-scroll-nav-btn { width: 30px; height: 28px; }
+}
+
+/* Ventana de días del gráfico temporal: flechas, barra para desplazarse y rango visible */
+.ct-tiempo-nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+.ct-tiempo-nav[hidden] { display: none; }
+.ct-tiempo-nav input[type="range"] { flex: 1 1 180px; min-width: 120px; accent-color: #243B63; cursor: pointer; }
+.ct-tiempo-nav .bl-btn[disabled] { opacity: .4; cursor: default; }
+.ct-tiempo-rango { font-size: 13px; color: #5b6b80; white-space: nowrap; }
+@media (max-width: 600px) {
+    .ct-tiempo-rango { flex: 1 1 100%; text-align: center; order: 4; white-space: normal; }
 }

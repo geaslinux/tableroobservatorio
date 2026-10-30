@@ -64,6 +64,9 @@ if (! function_exists('navegacion_mapa')) {
             // ── Laboratorio ──
             'laboratorio_list' => ['Red de laboratorios', 'laboratorio_list', 'laboratorio'],
 
+            // ── Atenciones de consulta ──
+            'consulta_tablero' => ['Atenciones de consulta', 'consulta_tablero', null],
+
             // ── Catálogos ──
             'efector_list'        => ['Efectores',              'efector_list',        'catalogos'],
             'operativo_list'      => ['Operativos',             'operativo_list',      'catalogos'],
