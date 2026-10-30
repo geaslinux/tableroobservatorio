@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -13,8 +15,14 @@ namespace CodeIgniter\Test;
 
 trait IniTestTrait
 {
+    /**
+     * @var array<string, false|string>
+     */
     private array $iniSettings = [];
 
+    /**
+     * @param list<string> $keys
+     */
     private function backupIniValues(array $keys): void
     {
         foreach ($keys as $key) {

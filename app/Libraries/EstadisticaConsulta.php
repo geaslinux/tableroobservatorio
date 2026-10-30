@@ -10,6 +10,10 @@ final class EstadisticaConsulta
     private array $ids;
     public array $filtros = [];
     public const FILTROS = ['efector', 'formulario', 'especialidad', 'medico', 'hospital', 'servicio', 'desde', 'hasta', 'con_procedimiento'];
+    /** Médicos con más atenciones que se dibujan como líneas en el gráfico temporal. */
+    public const MEDICOS_EN_SERIE = 10;
+    // Médicos que viajan al gráfico temporal: los primeros MEDICOS_EN_SERIE se dibujan y el resto se agrega desde un desplegable
+    public const MEDICOS_MAXIMO_SERIE = 60;
 
     public function __construct(int $usuario, array $entrada)
     {
@@ -78,9 +82,15 @@ final class EstadisticaConsulta
         if ($this->filtros['efector']) $historicos->where('f.efector_id', $this->filtros['efector']);
         if ($this->filtros['formulario']) $historicos->where('f.formulario_id', $this->filtros['formulario']);
         $salida = ['formularios' => $formularios];
-        foreach (['medico' => ['a.profesional_id', 'a.profesional_nombre_completo'], 'hospital' => ['a.hospital_origen_texto', 'a.hospital_origen_texto'], 'servicio' => ['a.servicio_origen_texto', 'a.servicio_origen_texto']] as $key => [$id, $nombre]) {
+        // Rango de fechas con atenciones: limita los años que ofrece el calendario
+        $salida['fechas'] = $this->base(false)->select('MIN(a.fecha) AS min, MAX(a.fecha) AS max')->get()->getRowArray();
+        // Médicos: una opción por profesional con el nombre del catálogo (las atenciones guardan cada variante tipeada)
+        $q = clone $historicos;
+        $salida['medico'] = $q->select('a.profesional_id AS id, p.nombre_completo AS nombre')->join('profesional_consulta p', 'p.profesional_id = a.profesional_id')
+            ->groupBy(['a.profesional_id', 'p.nombre_completo'])->orderBy('p.nombre_completo')->get()->getResultArray();
+        foreach (['hospital' => 'a.hospital_origen_texto', 'servicio' => 'a.servicio_origen_texto'] as $key => $col) {
             $q = clone $historicos;
-            $salida[$key] = $q->distinct()->select("$id AS id, $nombre AS nombre")->orderBy($nombre)->get()->getResultArray();
+            $salida[$key] = $q->distinct()->select("$col AS id, $col AS nombre")->orderBy($col)->get()->getResultArray();
         }
         return $salida;
     }
@@ -100,8 +110,36 @@ final class EstadisticaConsulta
                 $mes = $mes->modify('+1 month');
             }
         }
-        $medicos = $this->base()->select("a.profesional_id AS id, MAX(a.profesional_nombre_completo) AS nombre, COUNT(*) AS cantidad, COUNT(DISTINCT a.paciente_id) AS pacientes, SUM(NULLIF(TRIM(a.procedimiento), '') IS NOT NULL) AS procedimientos", false)->groupBy('a.profesional_id')->orderBy('cantidad', 'DESC')->orderBy('id')->get()->getResultArray();
-        return compact('kpi', 'serie', 'medicos');
+        $medicos = $this->base()->join('profesional_consulta p', 'p.profesional_id = a.profesional_id')->select("a.profesional_id AS id, MAX(p.nombre_completo) AS nombre, COUNT(*) AS cantidad, COUNT(DISTINCT a.paciente_id) AS pacientes, SUM(NULLIF(TRIM(a.procedimiento), '') IS NOT NULL) AS procedimientos", false)->groupBy('a.profesional_id')->orderBy('cantidad', 'DESC')->orderBy('id')->get()->getResultArray();
+        $serie_medicos = $this->serieMedicos($medicos, $kpi);
+        return compact('kpi', 'serie', 'medicos', 'serie_medicos');
+    }
+
+    /**
+     * Atenciones por día de los médicos con más actividad, con 0 en los días sin atenciones.
+     * ['dias' => ['2024-01-01', ...], 'series' => [['id' => 5, 'nombre' => ..., 'datos' => [3, 0, ...]], ...]]
+     */
+    private function serieMedicos(array $medicos, array $kpi): array
+    {
+        $salida = ['dias' => [], 'series' => []];
+        $top = array_slice($medicos, 0, self::MEDICOS_EN_SERIE);
+        $salida = ['dias' => [], 'series' => [], 'visibles' => self::MEDICOS_EN_SERIE];
+        $top = array_slice($medicos, 0, self::MEDICOS_MAXIMO_SERIE);
+        if (!$top || !$kpi['desde']) return $salida;
+        $filas = $this->base()->select('a.fecha AS dia, a.profesional_id AS id, COUNT(*) AS cantidad', false)
+            ->whereIn('a.profesional_id', array_column($top, 'id'))->groupBy(['a.fecha', 'a.profesional_id'])->get()->getResultArray();
+        $porMedico = [];
+        foreach ($filas as $f) $porMedico[$f['id']][$f['dia']] = (int) $f['cantidad'];
+        $dia = new \DateTimeImmutable($kpi['desde']);
+        $ultimo = new \DateTimeImmutable($kpi['hasta']);
+        while ($dia <= $ultimo) {
+            $salida['dias'][] = $dia->format('Y-m-d');
+            $dia = $dia->modify('+1 day');
+        }
+        foreach ($top as $m) {
+            $salida['series'][] = ['id' => (int) $m['id'], 'nombre' => $m['nombre'], 'datos' => array_map(static fn($d) => $porMedico[$m['id']][$d] ?? 0, $salida['dias'])];
+        }
+        return $salida;
     }
 
     public function distribuciones(): array

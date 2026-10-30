@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -17,6 +19,8 @@ use CodeIgniter\Database\Forge as BaseForge;
 
 /**
  * Forge for SQLite3
+ *
+ * @extends BaseForge<Connection>
  */
 class Forge extends BaseForge
 {
@@ -28,14 +32,9 @@ class Forge extends BaseForge
     protected $dropIndexStr = 'DROP INDEX %s';
 
     /**
-     * @var Connection
-     */
-    protected $db;
-
-    /**
      * UNSIGNED support
      *
-     * @var array|bool
+     * @var array<array-key, string>|bool
      */
     protected $_unsigned = false;
 
@@ -60,11 +59,6 @@ class Forge extends BaseForge
         }
     }
 
-    /**
-     * Create database
-     *
-     * @param bool $ifNotExists Whether to add IF NOT EXISTS condition
-     */
     public function createDatabase(string $dbName, bool $ifNotExists = false): bool
     {
         // In SQLite, a database is created when you connect to the database.
@@ -98,8 +92,8 @@ class Forge extends BaseForge
             return false;
         }
 
-        if (! empty($this->db->dataCache['db_names'])) {
-            $key = array_search(strtolower($dbName), array_map('strtolower', $this->db->dataCache['db_names']), true);
+        if (($this->db->dataCache['db_names'] ?? []) !== []) {
+            $key = array_search(strtolower($dbName), array_map(strtolower(...), $this->db->dataCache['db_names']), true);
             if ($key !== false) {
                 unset($this->db->dataCache['db_names'][$key]);
             }
@@ -109,27 +103,33 @@ class Forge extends BaseForge
     }
 
     /**
-     * @param array|string $processedFields Processed column definitions
-     *                                      or column names to DROP
+     * @param list<string>|string $columnNames
      *
-     * @return         array|string|null
-     * @return         list<string>|string|null                            SQL string or null
-     * @phpstan-return ($alterType is 'DROP' ? string : list<string>|null)
+     * @throws DatabaseException
      */
+    public function dropColumn(string $table, $columnNames): bool
+    {
+        $columns = is_array($columnNames) ? $columnNames : array_map(trim(...), explode(',', $columnNames));
+        $result  = (new Table($this->db, $this))
+            ->fromTable($this->db->DBPrefix . $table)
+            ->dropColumn($columns)
+            ->run();
+
+        if (! $result && $this->db->DBDebug) {
+            throw new DatabaseException(sprintf(
+                'Failed to drop column%s "%s" on "%s" table.',
+                count($columns) > 1 ? 's' : '',
+                implode('", "', $columns),
+                $table,
+            ));
+        }
+
+        return $result;
+    }
+
     protected function _alterTable(string $alterType, string $table, $processedFields)
     {
         switch ($alterType) {
-            case 'DROP':
-                $columnNamesToDrop = $processedFields;
-
-                $sqlTable = new Table($this->db, $this);
-
-                $sqlTable->fromTable($table)
-                    ->dropColumn($columnNamesToDrop)
-                    ->run();
-
-                return ''; // Why empty string?
-
             case 'CHANGE':
                 $fieldsToModify = [];
 
@@ -167,7 +167,7 @@ class Forge extends BaseForge
      */
     protected function _processColumn(array $processedField): string
     {
-        if ($processedField['type'] === 'TEXT' && strpos($processedField['length'], "('") === 0) {
+        if ($processedField['type'] === 'TEXT' && str_starts_with($processedField['length'], "('")) {
             $processedField['type'] .= ' CHECK(' . $this->db->escapeIdentifiers($processedField['name'])
                 . ' IN ' . $processedField['length'] . ')';
         }
@@ -208,9 +208,8 @@ class Forge extends BaseForge
     protected function _attributeAutoIncrement(array &$attributes, array &$field)
     {
         if (
-            ! empty($attributes['AUTO_INCREMENT'])
-            && $attributes['AUTO_INCREMENT'] === true
-            && stripos($field['type'], 'int') !== false
+            ($attributes['AUTO_INCREMENT'] ?? false) === true
+            && str_contains(strtolower($field['type']), 'int')
         ) {
             $field['type']           = 'INTEGER PRIMARY KEY';
             $field['default']        = '';

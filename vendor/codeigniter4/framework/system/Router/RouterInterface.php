@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -53,7 +55,7 @@ interface RouterInterface
      * during the parsing process as an array, ready to send to
      * instance->method(...$params).
      *
-     * @return array
+     * @return list<string>
      */
     public function params();
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -12,27 +14,29 @@
 namespace CodeIgniter\Database;
 
 use CodeIgniter\Database\Exceptions\DatabaseException;
-use InvalidArgumentException;
-use RuntimeException;
+use CodeIgniter\Exceptions\InvalidArgumentException;
+use CodeIgniter\Exceptions\RuntimeException;
 use Throwable;
 
 /**
  * The Forge class transforms migrations to executable
  * SQL statements.
+ *
+ * @template TDb of BaseConnection
  */
 class Forge
 {
     /**
      * The active database connection.
      *
-     * @var BaseConnection
+     * @var TDb
      */
     protected $db;
 
     /**
-     * List of fields.
+     * List of fields in the form `[name => attributes]`
      *
-     * @var array<string, array|string> [name => attributes]
+     * @var array<string, array<string, bool|string>|string>
      */
     protected $fields = [];
 
@@ -46,7 +50,7 @@ class Forge
     /**
      * List of unique keys.
      *
-     * @var array
+     * @var list<int>
      */
     protected $uniqueKeys = [];
 
@@ -60,7 +64,7 @@ class Forge
     /**
      * List of foreign keys.
      *
-     * @var array
+     * @var list<array{field: list<string>, referenceTable: string, referenceField: list<string>, onDelete: string, onUpdate: string, fkName: string}>
      */
     protected $foreignKeys = [];
 
@@ -142,7 +146,7 @@ class Forge
     /**
      * UNSIGNED support
      *
-     * @var array|bool
+     * @var array<array-key, string>|bool
      */
     protected $unsigned = true;
 
@@ -179,12 +183,14 @@ class Forge
     /**
      * Foreign Key Allowed Actions
      *
-     * @var array
+     * @var list<string>
      */
     protected $fkAllowActions = ['CASCADE', 'SET NULL', 'NO ACTION', 'RESTRICT', 'SET DEFAULT'];
 
     /**
      * Constructor.
+     *
+     * @param TDb $db
      */
     public function __construct(BaseConnection $db)
     {
@@ -227,7 +233,14 @@ class Forge
         }
 
         try {
-            if (! $this->db->query(sprintf($ifNotExists ? $this->createDatabaseIfStr : $this->createDatabaseStr, $dbName, $this->db->charset, $this->db->DBCollat))) {
+            if (! $this->db->query(
+                sprintf(
+                    $ifNotExists ? $this->createDatabaseIfStr : $this->createDatabaseStr,
+                    $this->db->escapeIdentifier($dbName),
+                    $this->db->charset,
+                    $this->db->DBCollat,
+                ),
+            )) {
                 // @codeCoverageIgnoreStart
                 if ($this->db->DBDebug) {
                     throw new DatabaseException('Unable to create the specified database.');
@@ -237,7 +250,7 @@ class Forge
                 // @codeCoverageIgnoreEnd
             }
 
-            if (! empty($this->db->dataCache['db_names'])) {
+            if (($this->db->dataCache['db_names'] ?? []) !== []) {
                 $this->db->dataCache['db_names'][] = $dbName;
             }
 
@@ -284,7 +297,9 @@ class Forge
             return false;
         }
 
-        if (! $this->db->query(sprintf($this->dropDatabaseStr, $dbName))) {
+        if (! $this->db->query(
+            sprintf($this->dropDatabaseStr, $this->db->escapeIdentifier($dbName)),
+        )) {
             if ($this->db->DBDebug) {
                 throw new DatabaseException('Unable to drop the specified database.');
             }
@@ -292,8 +307,12 @@ class Forge
             return false;
         }
 
-        if (! empty($this->db->dataCache['db_names'])) {
-            $key = array_search(strtolower($dbName), array_map('strtolower', $this->db->dataCache['db_names']), true);
+        if (($this->db->dataCache['db_names'] ?? []) !== []) {
+            $key = array_search(
+                strtolower($dbName),
+                array_map(strtolower(...), $this->db->dataCache['db_names']),
+                true,
+            );
             if ($key !== false) {
                 unset($this->db->dataCache['db_names'][$key]);
             }
@@ -305,7 +324,7 @@ class Forge
     /**
      * Add Key
      *
-     * @param array|string $key
+     * @param list<string>|string $key
      *
      * @return Forge
      */
@@ -327,7 +346,7 @@ class Forge
     /**
      * Add Primary Key
      *
-     * @param array|string $key
+     * @param list<string>|string $key
      *
      * @return Forge
      */
@@ -339,7 +358,7 @@ class Forge
     /**
      * Add Unique Key
      *
-     * @param array|string $key
+     * @param list<string>|string $key
      *
      * @return Forge
      */
@@ -351,7 +370,7 @@ class Forge
     /**
      * Add Field
      *
-     * @param array<string, array|string>|string $fields Field array or Field string
+     * @param array<array-key, array<string, mixed>|string>|string $fields Field array or Field string
      *
      * @return Forge
      */
@@ -368,7 +387,7 @@ class Forge
                 ]);
                 $this->addKey('id', true);
             } else {
-                if (strpos($fields, ' ') === false) {
+                if (! str_contains($fields, ' ')) {
                     throw new InvalidArgumentException('Field information is required for that operation.');
                 }
 
@@ -410,7 +429,7 @@ class Forge
         $tableField = '',
         string $onUpdate = '',
         string $onDelete = '',
-        string $fkName = ''
+        string $fkName = '',
     ): Forge {
         $fieldName  = (array) $fieldName;
         $tableField = (array) $tableField;
@@ -434,12 +453,12 @@ class Forge
      */
     public function dropKey(string $table, string $keyName, bool $prefixKeyName = true): bool
     {
-        $keyName = $this->db->escapeIdentifiers(($prefixKeyName === true ? $this->db->DBPrefix : '') . $keyName);
+        $keyName = $this->db->escapeIdentifiers(($prefixKeyName ? $this->db->DBPrefix : '') . $keyName);
         $table   = $this->db->escapeIdentifiers($this->db->DBPrefix . $table);
 
         $dropKeyAsConstraint = $this->dropKeyAsConstraint($table, $keyName);
 
-        if ($dropKeyAsConstraint === true) {
+        if ($dropKeyAsConstraint) {
             $sql = sprintf(
                 $this->dropConstraintStr,
                 $table,
@@ -510,7 +529,7 @@ class Forge
         $sql = sprintf(
             (string) $this->dropConstraintStr,
             $this->db->escapeIdentifiers($this->db->DBPrefix . $table),
-            $this->db->escapeIdentifiers($foreignName)
+            $this->db->escapeIdentifiers($foreignName),
         );
 
         if ($sql === '') {
@@ -525,7 +544,7 @@ class Forge
     }
 
     /**
-     * @param array $attributes Table attributes
+     * @param array<string, mixed> $attributes Table attributes
      *
      * @return bool
      *
@@ -544,7 +563,7 @@ class Forge
         }
 
         // If table exists lets stop here
-        if ($ifNotExists === true && $this->db->tableExists($table, false)) {
+        if ($ifNotExists && $this->db->tableExists($table, false)) {
             $this->reset();
 
             return true;
@@ -558,7 +577,7 @@ class Forge
             }
 
             // Most databases don't support creating indexes from within the CREATE TABLE statement
-            if (! empty($this->keys)) {
+            if ($this->keys !== []) {
                 for ($i = 0, $sqls = $this->_processIndexes($table), $c = count($sqls); $i < $c; $i++) {
                     $this->db->query($sqls[$i]);
                 }
@@ -571,7 +590,7 @@ class Forge
     }
 
     /**
-     * @param array $attributes Table attributes
+     * @param array<string, mixed> $attributes Table attributes
      *
      * @return string SQL string
      *
@@ -603,10 +622,13 @@ class Forge
             'CREATE TABLE',
             $this->db->escapeIdentifiers($table),
             $processedFields,
-            $this->_createTableAttributes($attributes)
+            $this->_createTableAttributes($attributes),
         );
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     */
     protected function _createTableAttributes(array $attributes): string
     {
         $sql = '';
@@ -635,7 +657,7 @@ class Forge
             return false;
         }
 
-        if ($this->db->DBPrefix && strpos($tableName, $this->db->DBPrefix) === 0) {
+        if ($this->db->DBPrefix !== '' && str_starts_with($tableName, $this->db->DBPrefix)) {
             $tableName = substr($tableName, strlen($this->db->DBPrefix));
         }
 
@@ -649,11 +671,11 @@ class Forge
 
         $this->db->enableForeignKeyChecks();
 
-        if ($query && ! empty($this->db->dataCache['table_names'])) {
+        if ($query && ($this->db->dataCache['table_names'] ?? []) !== []) {
             $key = array_search(
                 strtolower($this->db->DBPrefix . $tableName),
-                array_map('strtolower', $this->db->dataCache['table_names']),
-                true
+                array_map(strtolower(...), $this->db->dataCache['table_names']),
+                true,
             );
 
             if ($key !== false) {
@@ -708,14 +730,14 @@ class Forge
         $result = $this->db->query(sprintf(
             $this->renameTableStr,
             $this->db->escapeIdentifiers($this->db->DBPrefix . $tableName),
-            $this->db->escapeIdentifiers($this->db->DBPrefix . $newTableName)
+            $this->db->escapeIdentifiers($this->db->DBPrefix . $newTableName),
         ));
 
-        if ($result && ! empty($this->db->dataCache['table_names'])) {
+        if ($result && ($this->db->dataCache['table_names'] ?? []) !== []) {
             $key = array_search(
                 strtolower($this->db->DBPrefix . $tableName),
-                array_map('strtolower', $this->db->dataCache['table_names']),
-                true
+                array_map(strtolower(...), $this->db->dataCache['table_names']),
+                true,
             );
 
             if ($key !== false) {
@@ -727,7 +749,7 @@ class Forge
     }
 
     /**
-     * @param array<string, array|string>|string $fields Field array or Field string
+     * @param array<array-key, array<string, mixed>|string>|string $fields Field array or Field string
      *
      * @throws DatabaseException
      */
@@ -763,7 +785,7 @@ class Forge
     }
 
     /**
-     * @param array|string $columnNames column names to DROP
+     * @param list<string>|string $columnNames column names to DROP
      *
      * @return bool
      *
@@ -785,7 +807,7 @@ class Forge
     }
 
     /**
-     * @param array<string, array|string>|string $fields Field array or Field string
+     * @param array<array-key, array<string, mixed>|string>|string $fields Field array or Field string
      *
      * @throws DatabaseException
      */
@@ -827,12 +849,11 @@ class Forge
     }
 
     /**
-     * @param 'ADD'|'CHANGE'|'DROP' $alterType
-     * @param array|string          $processedFields Processed column definitions
-     *                                               or column names to DROP
+     * @param 'ADD'|'CHANGE'|'DROP'                          $alterType
+     * @param list<array<string, mixed>>|list<string>|string $processedFields Processed column definitions
+     *                                                                        or column names to DROP
      *
-     * @return         false|list<string>|string|null                            SQL string
-     * @phpstan-return ($alterType is 'DROP' ? string : list<string>|false|null)
+     * @return ($alterType is 'DROP' ? string : false|list<string>|null)
      */
     protected function _alterTable(string $alterType, string $table, $processedFields)
     {
@@ -846,7 +867,7 @@ class Forge
                 $columnNamesToDrop = explode(',', $columnNamesToDrop);
             }
 
-            $columnNamesToDrop = array_map(fn ($field) => 'DROP COLUMN ' . $this->db->escapeIdentifiers(trim($field)), $columnNamesToDrop);
+            $columnNamesToDrop = array_map(fn ($field): string => 'DROP COLUMN ' . $this->db->escapeIdentifiers(trim($field)), $columnNamesToDrop);
 
             return $sql . implode(', ', $columnNamesToDrop);
         }
@@ -866,6 +887,8 @@ class Forge
 
     /**
      * Returns $processedFields array from $this->fields data.
+     *
+     * @return list<array<string, mixed>>
      */
     protected function _processFields(bool $createTable = false): array
     {
@@ -880,7 +903,7 @@ class Forge
 
             $attributes = array_change_key_case($attributes, CASE_UPPER);
 
-            if ($createTable === true && empty($attributes['TYPE'])) {
+            if ($createTable && ($attributes['TYPE'] ?? '') === '') {
                 continue;
             }
 
@@ -919,7 +942,7 @@ class Forge
                 $nullString = ' ' . $this->null;
 
                 if ($attributes['NULL'] === true) {
-                    $field['null'] = empty($this->null) ? '' : $nullString;
+                    $field['null'] = $this->null === '' ? '' : $nullString;
                 } elseif ($attributes['NULL'] === $nullString) {
                     $field['null'] = $nullString;
                 } elseif ($attributes['NULL'] === '') {
@@ -927,7 +950,7 @@ class Forge
                 } else {
                     $field['null'] = ' NOT ' . $this->null;
                 }
-            } elseif ($createTable === true) {
+            } elseif ($createTable) {
                 $field['null'] = ' NOT ' . $this->null;
             }
 
@@ -938,7 +961,7 @@ class Forge
                 $field['comment'] = $this->db->escape($attributes['COMMENT']);
             }
 
-            if (isset($attributes['TYPE']) && ! empty($attributes['CONSTRAINT'])) {
+            if (isset($attributes['TYPE'], $attributes['CONSTRAINT']) && ! in_array($attributes['CONSTRAINT'], ['', '0', 0, []], true)) {
                 if (is_array($attributes['CONSTRAINT'])) {
                     $attributes['CONSTRAINT'] = $this->db->escape($attributes['CONSTRAINT']);
                     $attributes['CONSTRAINT'] = implode(',', $attributes['CONSTRAINT']);
@@ -955,6 +978,8 @@ class Forge
 
     /**
      * Converts $processedField array to field definition string.
+     *
+     * @param array<string, mixed> $processedField
      */
     protected function _processColumn(array $processedField): string
     {
@@ -969,6 +994,10 @@ class Forge
 
     /**
      * Performs a data type mapping between different databases.
+     *
+     * @param array<string, mixed> $attributes
+     *
+     * @return void
      */
     protected function _attributeType(array &$attributes)
     {
@@ -984,10 +1013,15 @@ class Forge
      *        if $attributes['TYPE'] is found in the array
      *    - array(TYPE => UTYPE) will change $field['type'],
      *        from TYPE to UTYPE in case of a match
+     *
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $field
+     *
+     * @return void
      */
     protected function _attributeUnsigned(array &$attributes, array &$field)
     {
-        if (empty($attributes['UNSIGNED']) || $attributes['UNSIGNED'] !== true) {
+        if (($attributes['UNSIGNED'] ?? false) !== true) {
             return;
         }
 
@@ -1015,6 +1049,12 @@ class Forge
         $field['unsigned'] = ($this->unsigned === true) ? ' UNSIGNED' : '';
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $field
+     *
+     * @return void
+     */
     protected function _attributeDefault(array &$attributes, array &$field)
     {
         if ($this->default === false) {
@@ -1023,11 +1063,11 @@ class Forge
 
         if (array_key_exists('DEFAULT', $attributes)) {
             if ($attributes['DEFAULT'] === null) {
-                $field['default'] = empty($this->null) ? '' : $this->default . $this->null;
+                $field['default'] = $this->null === '' ? '' : $this->default . $this->null;
 
                 // Override the NULL attribute if that's our default
                 $attributes['NULL'] = true;
-                $field['null']      = empty($this->null) ? '' : ' ' . $this->null;
+                $field['null']      = $this->null === '' ? '' : ' ' . $this->null;
             } elseif ($attributes['DEFAULT'] instanceof RawSql) {
                 $field['default'] = $this->default . $attributes['DEFAULT'];
             } else {
@@ -1036,17 +1076,29 @@ class Forge
         }
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $field
+     *
+     * @return void
+     */
     protected function _attributeUnique(array &$attributes, array &$field)
     {
-        if (! empty($attributes['UNIQUE']) && $attributes['UNIQUE'] === true) {
+        if (($attributes['UNIQUE'] ?? false) === true) {
             $field['unique'] = ' UNIQUE';
         }
     }
 
+    /**
+     * @param array<string, mixed> $attributes
+     * @param array<string, mixed> $field
+     *
+     * @return void
+     */
     protected function _attributeAutoIncrement(array &$attributes, array &$field)
     {
-        if (! empty($attributes['AUTO_INCREMENT']) && $attributes['AUTO_INCREMENT'] === true
-            && stripos($field['type'], 'int') !== false
+        if (($attributes['AUTO_INCREMENT'] ?? false) === true
+            && str_contains(strtolower($field['type']), 'int')
         ) {
             $field['auto_increment'] = ' AUTO_INCREMENT';
         }
@@ -1070,7 +1122,7 @@ class Forge
         }
 
         if (isset($this->primaryKeys['fields']) && $this->primaryKeys['fields'] !== []) {
-            if ($asQuery === true) {
+            if ($asQuery) {
                 $sql .= 'ALTER TABLE ' . $this->db->escapeIdentifiers($this->db->DBPrefix . $table) . ' ADD ';
             } else {
                 $sql .= ",\n\t";
@@ -1093,10 +1145,12 @@ class Forge
         $fk   = $this->foreignKeys;
 
         if ($this->fields === []) {
-            $this->fields = array_flip(array_map(
-                static fn ($columnName) => $columnName->name,
-                $this->db->getFieldData($this->db->DBPrefix . $table)
-            ));
+            $fieldData = $this->db->getFieldData($this->db->DBPrefix . $table);
+
+            $this->fields = array_combine(
+                array_map(static fn ($columnName) => $columnName->name, $fieldData),
+                array_fill(0, count($fieldData), []),
+            );
         }
 
         $fields = $this->fields;
@@ -1131,6 +1185,8 @@ class Forge
      * Generates SQL to add indexes
      *
      * @param bool $asQuery When true returns stand alone SQL, else partial SQL used with CREATE TABLE
+     *
+     * @return list<string>
      */
     protected function _processIndexes(string $table, bool $asQuery = false): array
     {
@@ -1177,9 +1233,15 @@ class Forge
      * Generates SQL to add foreign keys
      *
      * @param bool $asQuery When true returns stand alone SQL, else partial SQL used with CREATE TABLE
+     *
+     * @return list<string>
      */
     protected function _processForeignKeys(string $table, bool $asQuery = false): array
     {
+        if ($this->foreignKeys === []) {
+            return [''];
+        }
+
         $errorNames = [];
 
         foreach ($this->foreignKeys as $fkeyInfo) {
@@ -1196,40 +1258,43 @@ class Forge
             throw new DatabaseException(lang('Database.fieldNotExists', $errorNames));
         }
 
-        $sqls = [''];
+        $sqls     = [''];
+        $isOci8   = $this->db->DBDriver === 'OCI8';
+        $dbPrefix = $this->db->DBPrefix;
+        $fkSuffix = $isOci8 ? '_fk' : '_foreign';
+
+        $prefixSql = $asQuery
+            ? 'ALTER TABLE ' . $this->db->escapeIdentifiers($dbPrefix . $table) . ' ADD '
+            : ",\n\t";
 
         foreach ($this->foreignKeys as $index => $fkey) {
-            if ($asQuery === false) {
-                $index = 0;
-            } else {
-                $sqls[$index] = '';
+            $idx = $asQuery ? $index : 0;
+
+            if ($asQuery) {
+                $sqls[$idx] = '';
             }
 
-            $nameIndex = $fkey['fkName'] !== '' ?
-            $fkey['fkName'] :
-            $table . '_' . implode('_', $fkey['field']) . ($this->db->DBDriver === 'OCI8' ? '_fk' : '_foreign');
+            $nameIndex = $fkey['fkName'] !== ''
+                ? $fkey['fkName']
+                : $table . '_' . implode('_', $fkey['field']) . $fkSuffix;
 
-            $nameIndexFilled      = $this->db->escapeIdentifiers($nameIndex);
-            $foreignKeyFilled     = implode(', ', $this->db->escapeIdentifiers($fkey['field']));
-            $referenceTableFilled = $this->db->escapeIdentifiers($this->db->DBPrefix . $fkey['referenceTable']);
-            $referenceFieldFilled = implode(', ', $this->db->escapeIdentifiers($fkey['referenceField']));
-
-            if ($asQuery === true) {
-                $sqls[$index] .= 'ALTER TABLE ' . $this->db->escapeIdentifiers($this->db->DBPrefix . $table) . ' ADD ';
-            } else {
-                $sqls[$index] .= ",\n\t";
-            }
-
-            $formatSql = 'CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)';
-            $sqls[$index] .= sprintf($formatSql, $nameIndexFilled, $foreignKeyFilled, $referenceTableFilled, $referenceFieldFilled);
+            $sql = $prefixSql . sprintf(
+                'CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s(%s)',
+                $this->db->escapeIdentifiers($nameIndex),
+                implode(', ', $this->db->escapeIdentifiers($fkey['field'])),
+                $this->db->escapeIdentifiers($dbPrefix . $fkey['referenceTable']),
+                implode(', ', $this->db->escapeIdentifiers($fkey['referenceField'])),
+            );
 
             if ($fkey['onDelete'] !== false && in_array($fkey['onDelete'], $this->fkAllowActions, true)) {
-                $sqls[$index] .= ' ON DELETE ' . $fkey['onDelete'];
+                $sql .= ' ON DELETE ' . $fkey['onDelete'];
             }
 
-            if ($this->db->DBDriver !== 'OCI8' && $fkey['onUpdate'] !== false && in_array($fkey['onUpdate'], $this->fkAllowActions, true)) {
-                $sqls[$index] .= ' ON UPDATE ' . $fkey['onUpdate'];
+            if (! $isOci8 && $fkey['onUpdate'] !== false && in_array($fkey['onUpdate'], $this->fkAllowActions, true)) {
+                $sql .= ' ON UPDATE ' . $fkey['onUpdate'];
             }
+
+            $sqls[$idx] .= $sql;
         }
 
         return $sqls;
@@ -1237,6 +1302,8 @@ class Forge
 
     /**
      * Resets table creation vars
+     *
+     * @return void
      */
     public function reset()
     {

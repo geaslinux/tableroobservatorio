@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * This file is part of CodeIgniter 4 framework.
  *
@@ -11,8 +13,8 @@
 
 namespace CodeIgniter\HTTP\Files;
 
-use InvalidArgumentException;
-use RuntimeException;
+use CodeIgniter\Exceptions\InvalidArgumentException;
+use CodeIgniter\Exceptions\RuntimeException;
 
 /**
  * Value object representing a single file uploaded through an
@@ -30,7 +32,7 @@ interface UploadedFileInterface
      * @param string      $originalName The client-provided filename.
      * @param string|null $mimeType     The type of file as provided by PHP
      * @param int|null    $size         The size of the file, in bytes
-     * @param int|null    $error        The error constant of the upload (one of PHP's UPLOADERRXXX constants)
+     * @param int|null    $error        The error constant of the upload (one of PHP's UPLOAD_ERR_XXX constants)
      * @param string|null $clientPath   The webkit relative path of the uploaded file.
      */
     public function __construct(string $path, string $originalName, ?string $mimeType = null, ?int $size = null, ?int $error = null, ?string $clientPath = null);
