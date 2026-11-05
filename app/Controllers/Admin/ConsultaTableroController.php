@@ -45,6 +45,7 @@ class ConsultaTableroController extends BaseController
             $catalogos = $consulta->catalogos();
             $datos = $consulta->resumen();
             $datos['distribuciones'] = $consulta->distribuciones();
+            $datos['cruce'] = $consulta->cruce();
             $pagina = min($pagina, max(1, (int) ceil((int) $datos['kpi']['atenciones'] / 25)));
             $datos['detalle'] = $consulta->detalle($pagina);
         } catch (\InvalidArgumentException $e) {

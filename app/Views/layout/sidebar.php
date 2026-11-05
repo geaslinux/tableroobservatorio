@@ -311,6 +311,10 @@ $userAvatarColor = generateColorFromString($userName);
 
     .nav-item i { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; opacity: 0.8; }
 
+    /* Ítems con texto largo: letra un poco más chica para que entren en una sola fila */
+    .sidebar .nav-item.nav-item-largo { gap: 9px; }
+    .sidebar .nav-item.nav-item-largo span { font-size: 0.92em; letter-spacing: 0; }
+
     .nav-item.active i,
     .nav-item:hover i {
         opacity: 1;
@@ -713,6 +717,8 @@ $userAvatarColor = generateColorFromString($userName);
         <?php if (has_permission('LISTADO PERSONA')): ?>
         <a href="<?= base_url(route_to('consulta_tablero')) ?>" class="nav-item" title="Atenciones de consulta">
             <i class="fas fa-notes-medical" aria-hidden="true"></i><span>Atenciones de consulta</span>
+        <a href="<?= base_url(route_to('consulta_tablero')) ?>" class="nav-item nav-item-largo" title="Atenciones de guardias pasivas">
+            <i class="fas fa-notes-medical" aria-hidden="true"></i><span>Atenciones de guardias pasivas</span>
         </a>
         <?php endif ?>
 

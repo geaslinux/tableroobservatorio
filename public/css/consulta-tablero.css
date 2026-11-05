@@ -138,6 +138,27 @@
 .ct-dist-cuenta { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--navy); white-space: nowrap; }
 .ct-dist .consulta-chart { height: 300px; }
 
+/* Filtro cruzado: categorías quitadas desde un gráfico */
+.ct-cruce {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    margin: 0 0 14px; padding: 10px 12px;
+    background: var(--teal-bg); border: 0.5px solid var(--teal); border-radius: 8px;
+    font-size: 12.5px; color: var(--navy);
+}
+.ct-cruce[hidden] { display: none; }
+.ct-cruce-titulo { font-weight: 600; white-space: nowrap; }
+.ct-cruce-lista { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto; min-width: 0; }
+.ct-cruce-chip {
+    display: inline-flex; align-items: center; gap: 6px; max-width: 100%;
+    padding: 3px 10px; border: 0.5px solid var(--border); border-radius: 999px;
+    background: var(--white); color: var(--navy); font-size: 12px; cursor: pointer;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ct-cruce-chip:hover { border-color: var(--danger); color: var(--danger); }
+.ct-cruce-chip i { font-size: 11px; }
+.ct-cruce-fuera td { color: var(--text-muted); }
+.ct-cruce-fuera td:first-child { text-decoration: line-through; }
+
 /* Porcentaje con barra */
 .ct-pct { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .ct-pct-barra { flex: 1 1 60px; min-width: 60px; height: 6px; border-radius: 3px; background: #eef0f3; overflow: hidden; }
