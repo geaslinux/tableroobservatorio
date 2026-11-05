@@ -571,20 +571,130 @@
         aplicar(tiempo.dias.length > 400 ? 'semana' : 'dia');
     }
 
+    // Filtro cruzado de las distribuciones: quitar una categoría en un gráfico recalcula los demás.
+    // cruce.filas: una fila por combinación con el índice de categoría de cada dimensión y, al final, la cantidad.
+    // Cada gráfico se calcula sin sus propias exclusiones, así la categoría quitada sigue a la vista (tachada o
+    // atenuada) y se puede volver a incluir.
+    const cruce = JSON.parse(document.getElementById('consulta-cruce')?.textContent || 'null');
+    const graficosCruce = new Map();   // dimensión → { def, grafico }
+    const excluidosCruce = new Map();  // dimensión → Set de índices de categoría
+    const COLOR_EXCLUIDO = '#d5dbe3';
+
+    function alternarCruce(dimension, categoria) {
+        const set = excluidosCruce.get(dimension) || new Set();
+        if (set.has(categoria)) set.delete(categoria); else set.add(categoria);
+        if (set.size) excluidosCruce.set(dimension, set); else excluidosCruce.delete(dimension);
+        recalcularCruce();
+    }
+
+    function recalcularCruce() {
+        const dims = cruce.dimensiones.length;
+        const conteos = Array.from({ length: dims }, () => []);
+        const activos = Array.from(excluidosCruce.entries());
+        let total = 0;
+        cruce.filas.forEach(fila => {
+            const n = fila[dims];
+            let fuera = -1, varias = false;
+            for (const [d, set] of activos) {
+                if (!set.has(fila[d])) continue;
+                if (fuera >= 0) { varias = true; break; }
+                fuera = d;
+            }
+            if (varias) return;
+            if (fuera >= 0) {
+                // Solo la excluye su propia dimensión: cuenta para ese gráfico (categoría quitada a la vista)
+                conteos[fuera][fila[fuera]] = (conteos[fuera][fila[fuera]] || 0) + n;
+                return;
+            }
+            total += n;
+            for (let d = 0; d < dims; d++) conteos[d][fila[d]] = (conteos[d][fila[d]] || 0) + n;
+        });
+
+        graficosCruce.forEach(({ def, grafico }, d) => {
+            const excluidos = excluidosCruce.get(d) || new Set();
+            const datos = grafico.data.datasets[0];
+            datos.data = def.filas.map((_, i) => conteos[d][i] || 0);
+            if (def.tipo === 'doughnut') {
+                def.filas.forEach((_, i) => {
+                    if (grafico.getDataVisibility(i) === excluidos.has(i)) grafico.toggleDataVisibility(i);
+                });
+            } else {
+                if (!def.colores) def.colores = datos.backgroundColor.slice();
+                datos.backgroundColor = def.colores.map((c, i) => excluidos.has(i) ? COLOR_EXCLUIDO : c);
+            }
+            grafico.update();
+        });
+
+        // Tablas completas: cantidad y porcentaje sobre el total que queda; las categorías quitadas, tachadas
+        document.querySelectorAll('#consulta-distribuciones [data-dimension]').forEach(seccion => {
+            const d = Number(seccion.dataset.dimension);
+            const excluidos = excluidosCruce.get(d) || new Set();
+            let presentes = 0;
+            seccion.querySelectorAll('tr[data-categoria]').forEach(tr => {
+                const i = Number(tr.dataset.categoria);
+                const cantidad = conteos[d][i] || 0;
+                const fuera = excluidos.has(i);
+                if (cantidad && !fuera) presentes++;
+                tr.classList.toggle('ct-cruce-fuera', fuera);
+                tr.querySelector('[data-cruce-cantidad]').textContent = formato.format(cantidad);
+                const pct = !fuera && total ? 100 * cantidad / total : 0;
+                const barra = tr.querySelector('[data-cruce-barra]');
+                if (barra) barra.style.width = Math.min(100, pct).toFixed(1) + '%';
+                const texto = tr.querySelector('[data-cruce-pct]');
+                if (texto) texto.textContent = fuera ? 'sin incluir' : pct.toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+            });
+            const categorias = seccion.querySelector('[data-cruce-categorias]');
+            if (categorias) categorias.textContent = formato.format(presentes);
+        });
+        document.querySelectorAll('#consulta-distribuciones [data-cruce-total]').forEach(el => { el.textContent = formato.format(total); });
+
+        // Aviso con lo que se quitó: cada categoría se puede volver a incluir desde ahí
+        const aviso = document.querySelector('[data-cruce-aviso]');
+        if (!aviso) return;
+        const lista = aviso.querySelector('[data-cruce-lista]');
+        lista.replaceChildren();
+        excluidosCruce.forEach((set, d) => {
+            const def = graficosCruce.get(d)?.def;
+            set.forEach(i => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'ct-cruce-chip';
+                chip.title = 'Volver a incluir';
+                chip.textContent = cruce.dimensiones[d].replace(/ \(.*\)$/, '') + ': ' + (def ? def.filas[i].nombre : i) + ' ';
+                const x = document.createElement('i');
+                x.className = 'fas fa-xmark';
+                x.setAttribute('aria-hidden', 'true');
+                chip.append(x);
+                chip.addEventListener('click', () => alternarCruce(d, i));
+                lista.append(chip);
+            });
+        });
+        aviso.hidden = excluidosCruce.size === 0;
+    }
+    document.querySelector('[data-cruce-restablecer]')?.addEventListener('click', () => {
+        excluidosCruce.clear();
+        recalcularCruce();
+    });
+
     definiciones.forEach(def => {
         const canvas = document.getElementById(def.id);
         if (!canvas || !def.filas.length) return;
         const barras = def.tipo === 'bar';
         const nombres = def.filas.map(f => String(f.nombre));
         if (def.tipo === 'doughnut') {
-            const total = def.filas.reduce((s, f) => s + Number(f.cantidad), 0);
+            // Valores y porcentajes salen de lo que el gráfico muestra ahora (el filtro cruzado los recalcula)
+            const sumaVisible = chart => chart.data.datasets[0].data.reduce((s, v, i) => s + (chart.getDataVisibility(i) ? Number(v) || 0 : 0), 0);
+            const porcentaje = (chart, i) => {
+                const suma = sumaVisible(chart);
+                return chart.getDataVisibility(i) && suma ? ' (' + Math.round(chart.data.datasets[0].data[i] * 1000 / suma) / 10 + ' %)' : '';
+            };
             // Total en el centro; se dibuja antes del tooltip para que este quede encima
             const totalCentro = {
                 id: 'totalCentro',
                 afterDatasetsDraw: chart => {
                     const arco = chart.getDatasetMeta(0).data[0];
                     if (!arco) return;
-                    const visible = chart.data.datasets[0].data.reduce((s, v, i) => s + (chart.getDataVisibility(i) ? Number(v) || 0 : 0), 0);
+                    const visible = sumaVisible(chart);
                     const tamNumero = Math.round(Math.max(12, Math.min(24, arco.innerRadius * 0.34)));
                     const tamTitulo = Math.round(Math.max(10, Math.min(16, arco.innerRadius * 0.22)));
                     const ctx = chart.ctx;
@@ -600,7 +710,7 @@
                     ctx.restore();
                 }
             };
-            new Chart(canvas, {
+            const dona = new Chart(canvas, {
                 type: 'doughnut',
                 plugins: typeof ChartDataLabels !== 'undefined' ? [ChartDataLabels, totalCentro] : [totalCentro],
                 data: {
@@ -617,20 +727,24 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     cutout: '58%',
+                    // Con filtro cruzado, clic en una porción la quita o la vuelve a incluir
+                    onClick: (evento, elementos) => { if (cruce && elementos.length) alternarCruce(def.dimension, elementos[0].index); },
                     plugins: {
-                        legend: { position: canvas.parentElement.clientWidth < 560 ? 'bottom' : 'right', labels: {
+                        legend: { position: canvas.parentElement.clientWidth < 560 ? 'bottom' : 'right',
+                          // Con filtro cruzado, la leyenda quita la categoría de todos los gráficos de la sección
+                          onClick: cruce ? (evento, item) => alternarCruce(def.dimension, item.index) : Chart.overrides.doughnut.plugins.legend.onClick,
+                          labels: {
                             usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 12, boxHeight: 12, padding: 12, color: '#1a2b45',
                             // La leyenda lleva la cantidad y el porcentaje; los nombres largos se acortan
                             generateLabels: chart => Chart.overrides.doughnut.plugins.legend.labels.generateLabels(chart).map(l => {
-                                const f = def.filas[l.index];
                                 const corto = nombres[l.index].replace(/^Servicio( de)? /i, '').replace(/ - (Consultorio Externo )?Hospital /i, ' · ');
                                 const texto = corto.length > 46 ? corto.slice(0, 43) + '…' : corto;
-                                return { ...l, text: texto + ' · ' + formato.format(f.cantidad) + ' (' + (total ? Math.round(f.cantidad * 1000 / total) / 10 : 0) + ' %)' };
+                                return { ...l, text: texto + ' · ' + formato.format(chart.data.datasets[0].data[l.index]) + porcentaje(chart, l.index) };
                             })
                         } },
                         tooltip: { callbacks: {
                             title: items => nombres[items[0].dataIndex],
-                            label: item => formato.format(def.filas[item.dataIndex].cantidad) + ' atenciones (' + (total ? Math.round(def.filas[item.dataIndex].cantidad * 1000 / total) / 10 : 0) + ' %)'
+                            label: item => formato.format(item.raw) + ' atenciones' + porcentaje(item.chart, item.dataIndex)
                         } },
                         // Porcentaje dentro de cada porción; en las muy chicas no entra y queda en la leyenda
                         datalabels: {
@@ -645,6 +759,7 @@
                     }
                 }
             });
+            if (def.dimension !== undefined) graficosCruce.set(def.dimension, { def, grafico: dona });
             return;
         }
         // Rótulos legibles:
@@ -719,11 +834,15 @@
                 indexAxis: barras ? 'y' : 'x',
                 // Al cambiar el ancho (celular ↔ escritorio) cambian los renglones de los nombres y con ellos el alto
                 onResize: chart => ajustarAlto(chart),
+                // Con filtro cruzado, clic en una barra la quita o la vuelve a incluir
+                onClick: (evento, elementos) => { if (cruce && def.dimension !== undefined && elementos.length) alternarCruce(def.dimension, elementos[0].index); },
+                onHover: (evento, elementos) => { if (cruce && def.dimension !== undefined) evento.native.target.style.cursor = elementos.length ? 'pointer' : ''; },
                 plugins: {
                     legend: { display: false },
                     tooltip: { callbacks: {
                         title: items => completo(filas[items[0].dataIndex]),
-                        label: item => formato.format(filas[item.dataIndex].cantidad) + ' atenciones'
+                        label: item => formato.format(item.raw) + ' atenciones'
+                            + (excluidosCruce.get(def.dimension)?.has(item.dataIndex) ? ' · sin incluir (clic para incluir)' : '')
                     } }
                 },
                 scales: {
@@ -737,6 +856,7 @@
             }
         });
         ajustarAlto(grafico);
+        if (def.dimension !== undefined) graficosCruce.set(def.dimension, { def, grafico });
         const restantes = def.iniciales ? def.filas.length - def.iniciales : 0;
         if (restantes > 0) {
             const contenedor = canvas.parentElement;

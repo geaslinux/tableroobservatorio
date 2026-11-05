@@ -66,6 +66,7 @@ if (! function_exists('navegacion_mapa')) {
 
             // ── Atenciones de consulta ──
             'consulta_tablero' => ['Atenciones de consulta', 'consulta_tablero', null],
+            'consulta_tablero' => ['Atenciones de guardias pasivas', 'consulta_tablero', null],
 
             // ── Catálogos ──
             'efector_list'        => ['Efectores',              'efector_list',        'catalogos'],

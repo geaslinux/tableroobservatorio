@@ -142,18 +142,72 @@ final class EstadisticaConsulta
         return $salida;
     }
 
+    /** Combinaciones distintas que viajan al navegador para el filtro cruzado; por encima, el tablero no lo ofrece. */
+    public const CRUCE_MAXIMO = 20000;
+
+    /** Tabla cruzada de la última llamada a distribuciones() (ver cruce()). */
+    private ?array $cruce = null;
+
     public function distribuciones(): array
     {
-        $resultado = [];
-        foreach (['Efector de atención' => 'e.nombre', 'Servicio/formulario de atención' => 'f.titulo', 'Especialidad' => 'ec.nombre', 'Hospital de origen' => 'a.hospital_origen_texto', 'Servicio de origen' => 'a.servicio_origen_texto', 'Diagnósticos registrados' => 'a.diagnostico', 'Procedimientos registrados' => 'a.procedimiento', 'Localidades' => "COALESCE(NULLIF(a.localidad_otra,''),l.nombre)", 'Día de la semana (1=lunes, 7=domingo)' => 'WEEKDAY(a.fecha)+1', 'Franja horaria (hora de inicio)' => "CONCAT(LPAD(HOUR(a.hora),2,'0'), ':00–', LPAD(HOUR(a.hora),2,'0'), ':59')"] as $titulo => $col) {
+        $dimensiones = ['Efector de atención' => 'e.nombre', 'Servicio/formulario de atención' => 'f.titulo', 'Especialidad' => 'ec.nombre', 'Hospital de origen' => 'a.hospital_origen_texto', 'Servicio de origen' => 'a.servicio_origen_texto', 'Diagnósticos registrados' => 'a.diagnostico', 'Procedimientos registrados' => 'a.procedimiento', 'Localidades' => "COALESCE(NULLIF(a.localidad_otra,''),l.nombre)", 'Día de la semana (1=lunes, 7=domingo)' => 'WEEKDAY(a.fecha)+1', 'Franja horaria (hora de inicio)' => "CONCAT(LPAD(HOUR(a.hora),2,'0'), ':00–', LPAD(HOUR(a.hora),2,'0'), ':59')"];
+        $columnas = [];
+        foreach (array_keys($dimensiones) as $i => $titulo) {
             // El formulario define cuándo un campo no aplica; vacío visible es sin informar.
             $campo = match ($titulo) { 'Hospital de origen' => 'hospital_origen', 'Servicio de origen' => 'servicio_origen', 'Procedimientos registrados' => 'procedimiento', 'Localidades' => 'localidad', default => null };
             $vacio = "'Sin informar'";
             if ($campo) $vacio = "CASE WHEN EXISTS (SELECT 1 FROM formulario_campo_consulta fc WHERE fc.formulario_id=f.formulario_id AND fc.campo='$campo' AND fc.modo='oculto') THEN 'No aplica' ELSE 'Sin informar' END";
-            $expr = "COALESCE(NULLIF(TRIM($col),''), $vacio)";
-            $resultado[$titulo] = $this->base()->select("$expr AS nombre, COUNT(*) AS cantidad", false)->groupBy('nombre')->orderBy('cantidad', 'DESC')->orderBy('nombre')->get()->getResultArray();
+            $columnas[] = "COALESCE(NULLIF(TRIM({$dimensiones[$titulo]}),''), $vacio) AS d$i";
+        }
+        // Una sola consulta agrupada por todas las dimensiones: de ella salen las distribuciones y el filtro cruzado
+        $alias = array_map(static fn($i) => "d$i", array_keys($columnas));
+        $combinaciones = $this->base()->select(implode(', ', $columnas) . ', COUNT(*) AS n', false)->groupBy($alias)->get()->getResultArray();
+
+        $resultado = [];
+        $indices = [];
+        foreach (array_keys($dimensiones) as $i => $titulo) {
+            // Agrupa como MySQL (sin distinguir mayúsculas ni tildes: "Consulta" = "consulta") y muestra el primer texto
+            $cuenta = []; $nombres = [];
+            foreach ($combinaciones as $c) {
+                $clave = self::clave($c["d$i"]);
+                $nombres[$clave] ??= (string) $c["d$i"];
+                $cuenta[$clave] = ($cuenta[$clave] ?? 0) + (int) $c['n'];
+            }
+            // Mismo orden que antes: más atenciones primero y, a igual cantidad, por nombre
+            uksort($cuenta, static fn($a, $b) => [$cuenta[$b], (string) $a] <=> [$cuenta[$a], (string) $b]);
+            $resultado[$titulo] = [];
+            foreach ($cuenta as $clave => $cantidad) $resultado[$titulo][] = ['nombre' => $nombres[$clave], 'cantidad' => $cantidad];
+            $indices[$i] = array_flip(array_map('strval', array_keys($cuenta)));
+        }
+
+        // Filtro cruzado: cada combinación como índices de categoría (en el orden de arriba) y su cantidad
+        $this->cruce = null;
+        if (count($combinaciones) <= self::CRUCE_MAXIMO) {
+            $filas = [];
+            foreach ($combinaciones as $c) {
+                $fila = [];
+                foreach ($indices as $i => $mapa) $fila[] = $mapa[self::clave($c["d$i"])];
+                $fila[] = (int) $c['n'];
+                $filas[] = $fila;
+            }
+            $this->cruce = ['dimensiones' => array_keys($dimensiones), 'filas' => $filas];
         }
         return $resultado;
+    }
+
+    /** Clave de agrupación equivalente a la intercalación de la BD (utf8mb4_0900_ai_ci): sin mayúsculas ni tildes. */
+    private static function clave($texto): string
+    {
+        $texto = mb_strtolower((string) $texto);
+        return strtr($texto, ['á' => 'a', 'à' => 'a', 'ä' => 'a', 'â' => 'a', 'é' => 'e', 'è' => 'e', 'ë' => 'e', 'ê' => 'e',
+            'í' => 'i', 'ì' => 'i', 'ï' => 'i', 'î' => 'i', 'ó' => 'o', 'ò' => 'o', 'ö' => 'o', 'ô' => 'o',
+            'ú' => 'u', 'ù' => 'u', 'ü' => 'u', 'û' => 'u', 'ñ' => 'n', 'ç' => 'c']);
+    }
+
+    /** Combinaciones de la última distribuciones(): ['dimensiones' => [títulos], 'filas' => [[índice por dimensión…, cantidad]]], o null. */
+    public function cruce(): ?array
+    {
+        return $this->cruce;
     }
 
     public function detalle(int $pagina = 1, ?int $id = null): array

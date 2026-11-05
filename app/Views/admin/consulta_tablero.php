@@ -1,5 +1,5 @@
 <?= $this->extend('layout/main') ?>
-<?= $this->section('title') ?>Atenciones de consulta · Ministerio de Salud<?= $this->endSection() ?>
+<?= $this->section('title') ?>Atenciones de guardias pasivas · Ministerio de Salud<?= $this->endSection() ?>
 <?= $this->section('css') ?>
 <link rel="stylesheet" href="<?= base_url('css/panel.css') ?>">
 <link rel="stylesheet" href="<?= base_url('css/consulta-tablero.css') ?>?v=<?= @filemtime(FCPATH . 'css/consulta-tablero.css') ?: '1' ?>">
@@ -40,7 +40,7 @@ $graficos = [];
     <header class="ct-hero">
         <div class="ct-hero-icon" aria-hidden="true"><i class="fas fa-notes-medical"></i></div>
         <div class="ct-hero-texto">
-            <h1>Atenciones de consulta</h1>
+            <h1>Atenciones de guardias pasivas</h1>
             <p>Actividad asistencial por efector y servicio/formulario de atención.</p>
         </div>
         <?php if ($datos !== null): ?>
@@ -289,7 +289,7 @@ $graficos = [];
         <!-- DISTRIBUCIONES -->
         <section class="bl-panel" id="consulta-distribuciones" aria-labelledby="titulo-distribuciones">
             <div class="bl-panel-header">
-                <h2 class="bl-panel-title" id="titulo-distribuciones"><i class="fas fa-chart-bar" aria-hidden="true"></i> Distribuciones de las atenciones</h2>
+                <h2 class="bl-panel-title" id="titulo-distribuciones"><i class="fas fa-chart-bar" aria-hidden="true"></i> Distribuciones de las atenciones de guardias pasivas</h2>
                 <div class="ct-panel-acciones">
                     <button type="button" class="bl-btn ghost sm" data-ocultar-panel="gráficos" title="Mostrar/ocultar gráficos" aria-expanded="true">
                         <i class="fas fa-eye-slash" aria-hidden="true"></i> <span>Ocultar gráficos</span>
@@ -297,11 +297,18 @@ $graficos = [];
                 </div>
             </div>
             <div class="bl-panel-body">
-                <p class="ct-intro">Diagnósticos y procedimientos son textos registrados, sin clasificación clínica normalizada. Porcentajes sobre <?= $numero($total) ?> atenciones filtradas.</p>
+                <p class="ct-intro">Diagnósticos y procedimientos son textos registrados, sin clasificación clínica normalizada. Porcentajes sobre <span data-cruce-total><?= $numero($total) ?></span> atenciones filtradas.<?php if (!empty($datos['cruce'])): ?> Quitá una categoría desde la leyenda o haciendo clic en su barra: los demás gráficos de esta sección se recalculan sin ella.<?php endif ?></p>
+                <?php if (!empty($datos['cruce'])): ?>
+                    <div class="ct-cruce" data-cruce-aviso hidden>
+                        <span class="ct-cruce-titulo"><i class="fas fa-filter" aria-hidden="true"></i> Sin incluir:</span>
+                        <span class="ct-cruce-lista" data-cruce-lista></span>
+                        <button type="button" class="bl-btn ghost sm" data-cruce-restablecer><i class="fas fa-rotate-left" aria-hidden="true"></i> Incluir todo</button>
+                    </div>
+                <?php endif ?>
                 <div class="bl-grid-2">
-                <?php $indice = 0; foreach ($datos['distribuciones'] as $titulo => $filas): $id = 'consulta-distribucion-' . $indice++; $graficos[] = ['id' => $id, 'tipo' => in_array($titulo, ['Efector de atención', 'Servicio/formulario de atención'], true) ? 'doughnut' : 'bar', 'filas' => array_slice($filas, 0, 10)]; ?>
-                    <section class="ct-dist" aria-labelledby="<?= $id ?>-titulo">
-                        <h3 class="bl-section-header" id="<?= $id ?>-titulo"><span><?= esc($titulo) ?></span><span class="ct-dist-cuenta"><?= count($filas) ?> categorías</span></h3>
+                <?php $indice = 0; foreach ($datos['distribuciones'] as $titulo => $filas): $dimension = $indice; $id = 'consulta-distribucion-' . $indice++; $graficos[] = ['id' => $id, 'dimension' => $dimension, 'titulo' => $titulo, 'tipo' => in_array($titulo, ['Efector de atención', 'Servicio/formulario de atención'], true) ? 'doughnut' : 'bar', 'filas' => array_slice($filas, 0, 10)]; ?>
+                    <section class="ct-dist" aria-labelledby="<?= $id ?>-titulo" data-dimension="<?= $dimension ?>">
+                        <h3 class="bl-section-header" id="<?= $id ?>-titulo"><span><?= esc($titulo) ?></span><span class="ct-dist-cuenta"><span data-cruce-categorias><?= count($filas) ?></span> categorías</span></h3>
                         <div class="bl-section-body">
                             <?php if ($filas): ?>
                                 <p class="ct-intro">Primeras <?= min(10, count($filas)) ?> de <?= count($filas) ?> categorías.</p>
@@ -314,15 +321,15 @@ $graficos = [];
                                 <div class="bl-table-wrap">
                                     <table class="bl-table ct-paginada">
                                         <caption class="ct-sr"><?= esc($titulo) ?></caption>
-                                        <thead><tr><th scope="col">Categoría</th><th scope="col" class="num">Atenciones</th><th scope="col">% de <?= $numero($total) ?> atenciones</th></tr></thead>
+                                        <thead><tr><th scope="col">Categoría</th><th scope="col" class="num">Atenciones</th><th scope="col">% de <span data-cruce-total><?= $numero($total) ?></span> atenciones</th></tr></thead>
                                         <tbody>
-                                            <?php foreach ($filas as $fila): $pct = $total ? 100 * $fila['cantidad'] / $total : null; ?>
-                                                <tr>
+                                            <?php foreach ($filas as $categoria => $fila): $pct = $total ? 100 * $fila['cantidad'] / $total : null; ?>
+                                                <tr data-categoria="<?= $categoria ?>">
                                                     <td><?= esc($fila['nombre']) ?></td>
-                                                    <td class="num"><?= $numero($fila['cantidad']) ?></td>
+                                                    <td class="num" data-cruce-cantidad><?= $numero($fila['cantidad']) ?></td>
                                                     <td>
                                                         <?php if ($pct === null): ?>No aplica<?php else: ?>
-                                                            <div class="ct-pct"><span class="ct-pct-barra" aria-hidden="true"><span style="width: <?= number_format(min(100, $pct), 1, '.', '') ?>%"></span></span><?= number_format($pct, 1, ',', '.') ?>%</div>
+                                                            <div class="ct-pct"><span class="ct-pct-barra" aria-hidden="true"><span data-cruce-barra style="width: <?= number_format(min(100, $pct), 1, '.', '') ?>%"></span></span><span data-cruce-pct><?= number_format($pct, 1, ',', '.') ?>%</span></div>
                                                         <?php endif ?>
                                                     </td>
                                                 </tr>
@@ -343,7 +350,7 @@ $graficos = [];
         <?php $paginas = max(1, (int) ceil($total / 25)); ?>
         <section class="bl-panel" id="consulta-detalle" aria-labelledby="titulo-detalle">
             <div class="bl-panel-header">
-                <h2 class="bl-panel-title" id="titulo-detalle"><i class="fas fa-list" aria-hidden="true"></i> Detalle verificable de atenciones</h2>
+                <h2 class="bl-panel-title" id="titulo-detalle"><i class="fas fa-list" aria-hidden="true"></i> Detalle verificable de atenciones de guardias pasivas</h2>
                 <span class="bl-panel-meta"><?= $numero($total) ?> atenciones · 25 por página</span>
             </div>
             <div class="bl-panel-body">
@@ -445,6 +452,7 @@ $graficos = [];
     <?php endif ?>
 </div>
 <script type="application/json" id="consulta-graficos"><?= json_encode($graficos, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
+<script type="application/json" id="consulta-cruce"><?= json_encode($datos['cruce'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
 <script type="application/json" id="consulta-medicos-tiempo-datos"><?= json_encode($datos['serie_medicos'] ?? null, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
 <script type="application/json" id="consulta-formularios"><?= json_encode($catalogos['formularios'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
 <?= $this->endSection() ?>
