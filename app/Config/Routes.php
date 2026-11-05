@@ -7,6 +7,11 @@ use CodeIgniter\Router\RouteCollection;
 
  */
 $routes->get('/', '\Myth\Auth\Controllers\AuthController::login');
+
+// Registro solo para administradores: pisa las rutas abiertas de myth/auth (las de app/Config/Routes.php tienen prioridad).
+// Usa el filtro 'permission' de Myth porque corta el pedido; 'permiso' no frena la ejecución del controller.
+$routes->get('register', '\Myth\Auth\Controllers\AuthController::register', ['as' => 'register', 'filter' => 'permission:Admin']);
+$routes->post('register', '\Myth\Auth\Controllers\AuthController::attemptRegister', ['filter' => 'permission:Admin']);
 $routes->get('home', 'Home::index', ['as' => 'home']);
 
 $routes->group('/admin',['filter' => 'login', 'namespace'=>'App\Controllers\Admin'], function($routes){
@@ -335,7 +340,6 @@ $routes->get('manual/(:alpha)/(:num)/pdf', 'ManualController::pdfPagina/$1/$2', 
 // Capturas: están en la carpeta de sistemabasec (Config\Manual), se entregan desde acá
 $routes->get('manual-imagen/(:num)',    'ManualController::imagen/$1',      ['as' => 'manual_imagen',         'filter' => 'permiso: LISTADO PERSONA']);
 });
-
 
 
 

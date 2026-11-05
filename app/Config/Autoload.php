@@ -65,7 +65,10 @@ class Autoload extends AutoloadConfig
      *
      * @var array<string, string>
      */
-    public $classmap = [];
+    public $classmap = [
+        // Compatibilidad con myth/auth (ver el archivo)
+        'CodeIgniter\Entity' => APPPATH . 'ThirdParty/EntityMythAuth.php',
+    ];
 
     /**
      * -------------------------------------------------------------------
