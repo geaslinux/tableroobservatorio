@@ -448,6 +448,10 @@
             <button type="button" class="ml-tab <?= $tab === 'mapa' ? 'is-active' : '' ?>" data-tab="mapa" role="tab">
                 <i class="fas fa-map-marked-alt"></i> Territorio y mapa
             </button>
+            <!-- EJESA tiene su propio panel (sub-pestañas y filtros de período propios) -->
+            <a href="<?= base_url(route_to('ejesa_views')); ?>" class="ml-tab" style="text-decoration:none;" title="Cortes programados, afectados y auditoría de EJESA">
+                <i class="fas fa-bolt"></i> EJESA · Cortes
+            </a>
         </div>
 
         <!-- ══════════════ PERFIL DE PACIENTES ══════════════ -->
@@ -1400,7 +1404,8 @@
             }
         }
 
-        document.querySelectorAll('.ml-tab').forEach(function (b) {
+        // Solo las pestañas internas: "EJESA · Cortes" es un enlace a su propio panel
+        document.querySelectorAll('.ml-tab[data-tab]').forEach(function (b) {
             b.addEventListener('click', function () { mostrar(b.dataset.tab); });
         });
 

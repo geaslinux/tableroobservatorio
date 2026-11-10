@@ -109,7 +109,8 @@ $isNew      = empty($eq);  // true = fila nueva desde JS
 
     </div>
 
-    <!-- Fila 2: F. Entrega · Médico Tratante · Titular del Servicio · Nº Servicio -->
+    <!-- Fila 2: F. Entrega · Médico Tratante
+         (Titular y Nº de servicio ya no van por equipo: están en "Servicio eléctrico del paciente") -->
     <div class="columns is-multiline">
 
         <div class="column is-6-mobile is-2-tablet">
@@ -135,35 +136,6 @@ $isNew      = empty($eq);  // true = fila nueva desde JS
                            placeholder="Apellido y nombre del médico"
                            value="<?= esc($eq['medico_tratante'] ?? '') ?>">
                     <span class="icon is-left is-small"><i class="fas fa-user-md"></i></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="column is-12-mobile is-3-tablet">
-            <div class="field">
-                <label class="label" style="color:white; font-size:0.83rem;">Titular del Servicio</label>
-                <div class="control has-icons-left">
-                    <input class="input is-small"
-                           type="text"
-                           name="equipos[<?= $idx ?>][titular_servicio]"
-                           maxlength="200"
-                           placeholder="Apellido y nombre del titular"
-                           value="<?= esc($eq['titular_servicio'] ?? '') ?>">
-                    <span class="icon is-left is-small"><i class="fas fa-user"></i></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="column is-6-mobile is-2-tablet">
-            <div class="field">
-                <label class="label" style="color:white; font-size:0.83rem;">Nº Servicio</label>
-                <div class="control">
-                    <input class="input is-small"
-                           type="text"
-                           name="equipos[<?= $idx ?>][nro_servicio]"
-                           maxlength="50"
-                           placeholder="Ej: 109265"
-                           value="<?= esc($eq['nro_servicio'] ?? '') ?>">
                 </div>
             </div>
         </div>

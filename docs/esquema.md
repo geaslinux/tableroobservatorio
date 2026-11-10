@@ -101,11 +101,23 @@ Los campos de período se repiten en muchas tablas: `ejercicio` (año), `mes` (n
 ### Salud mental
 | Tabla | Campos principales |
 |---|---|
-| `electrodependiente` (ts) | paciente, dni, fecha_nacimiento, edad, tipo, contacto, domicilio, coordenadas, localidad_id, efector_id, obra_social_id, cud, diagnostico_id, dx_complementario, factor_riesgo, seguimiento, estado |
-| `electrodependiente_equipamiento` (ts), PK equipamiento_id | electrodependiente_id, equipamiento, marca, serie, modelo, fecha_entrega, tiempo_uso, medico_tratante, titular / nro_servicio, fechas, estado |
+| `electrodependiente` (ts) | paciente, dni, fecha_nacimiento, edad, tipo, contacto, domicilio, coordenadas, localidad_id, efector_id, obra_social_id, cud, diagnostico_id, dx_complementario, factor_riesgo, seguimiento, estado, estado_vital. **Servicio eléctrico (del paciente):** servicio_empresa, nro_servicio (texto, conserva ceros; no es único), titular_servicio, titular_servicio_dni, servicio_verificado (+ _at UTC, _por), servicio_origen (`EXCEL_PROVINCIAL` · `MIGRACION_EQUIPO` · `CARGA_FICHA`) |
+| `electrodependiente_equipamiento` (ts), PK equipamiento_id | electrodependiente_id, equipamiento, marca, serie, modelo, fecha_entrega, tiempo_uso, medico_tratante, fechas, estado. Las columnas viejas `titular_servicio` / `nro_servicio` quedan solo como historia: **no se leen ni se escriben** |
 | `electrodependiente_historial`, PK historial_id | electrodependiente_id, campo_modificado, valor_anterior, valor_nuevo, modificado_por, created_at |
 | `equipamiento_historial`, PK historial_id | equipamiento_id, electrodependiente_id, accion, datos_anteriores, datos_nuevos, modificado_por |
 | `salud_mental_camas` | efector_id, modalidad, tipo, cb_adultos, cb_pediatricos, total_basicas |
+
+### EJESA (las genera **sistemabasec**; este sistema solo las lee)
+Estructura: `docs/ejesa_visor/scriptoelectrodp.sql`. Reglas: `docs/ejesa_visor/SKILL.md`. Hora local de Jujuy en `inicio_at` / `fin_estimado_at`; el resto de las fechas en **UTC**.
+
+| Tabla | Uso en el panel EJESA |
+|---|---|
+| `ejesa_corte`, PK corte_id | Corte programado: referencia, motivo, inicio_at, fin_estimado_at, localidad_id, zona_descripcion, geometria (GeoJSON), estado (`BORRADOR` · `PROGRAMADO` · `EN_CURSO` · `FINALIZADO` · `CANCELADO`), version, publicado_at, cancelado_at, baja_at. Filtro base: `empresa='EJESA' AND baja_at IS NULL AND estado<>'BORRADOR'` |
+| `ejesa_corte_historial` | Cada cambio del corte: accion, cambios (JSON), actor_id → users, registrado_at |
+| `ejesa_corte_afectado` | Afectados guardados al activar el protocolo: electrodependiente_id, riesgo_snapshot (NULL = PENDIENTE), estado_vinculo (contar solo `VIGENTE`) |
+| `contingencia_incidencia` | Protocolo del corte (`tipo='CORTE_PROGRAMADO'`), ambito JSON `{en_zona, a_revisar, revision}` |
+| `ejesa_consulta` | Auditoría de lo que consulta EJESA: usuario, consultado_at, modalidad, resultado, cantidad_personas, nro_servicio_consultado (se muestra enmascarado), corte_id, ip |
+| `ejesa_consulta_persona` | **No se lee** (nombres de pacientes vistos por EJESA: quedan solo en sistemabasec) |
 
 ### Sistema
 | Tabla | Campos |
@@ -156,7 +168,12 @@ Auditoría: `ElectrodependienteModel::update()` compara el registro anterior con
  │    ├─ Internación     /admin/internacionv → capacidad_camas, gestión camas, rendimiento, rendimiento UTI, rh_materno, salud_mental_camas
  │    └─ Quirófano       (QuirofanoVController → lista_espera, produccion_quirofano, produccion_quirofano_hosp)
  └─ Salud mental    /admin/saludmental    SaludMentalController  → electrodependiente
+      └─ EJESA · Cortes  /admin/ejesa     EjesaVController       → ejesa_* (solo lectura, conexión 'ejesa')
+           sub-pestañas: Resumen · Próximos cortes · Historial de cortes · Impacto · Auditoría
+           detalle /admin/ejesa/corte/(:num) · Excel /admin/ejesa-export
 ```
+
+Panel EJESA: `app/Libraries/Ejesa/Lectura.php` (solo SELECT, SQL portable), `app/Libraries/Ejesa/Calculo.php` (cálculos §4 del skill, tests en `tests/unit/EjesaCalculoTest.php`). `php spark ejesa:solo-lectura` comprueba que la conexión `ejesa` no pueda escribir.
 
 `BaseVController` y `PacienteVController` arman dashboards con agregados por ejercicio y rango de meses (filtros GET `ejercicio`, `mes_desde`, `mes_hasta`).
 
@@ -182,7 +199,8 @@ Auditoría: `ElectrodependienteModel::update()` compara el registro anterior con
 | Gestión de camas | GestionCamaController | `gestion_cama` | Camas de cuidados básicos por efector |
 | Gestión de pacientes hospitalarios | GestionPacienteHospitalController | `gestion_paciente_hospital` | Pacientes por zona, riesgo y tipo de cama |
 | Efectores | EfectorABMController | `efector` | ABM de efectores (hospitales y centros) |
-| Electrodependientes | ElectrodependienteController | `electrodependiente` | Padrón de pacientes electrodependientes con sus equipos e historial de cambios (`/(:num)/historial`) |
+| Electrodependientes | ElectrodependienteController | `electrodependiente` | Padrón de pacientes electrodependientes con sus equipos e historial de cambios (`/(:num)/historial`). El Nº de servicio y el titular se cargan en la ficha del paciente (`helper('servicio')`) |
+| EJESA | EjesaVController | `ejesa`, `ejesa/corte`, `ejesa-export` | Panel de solo lectura: cortes programados, horas sin luz, afectados (quiénes y cuántos por riesgo) y auditoría de consultas de EJESA |
 | Capacidad de camas | CapacidadCamasController | — | Capacidad por tipo de cama y efector |
 | Rendimiento hospitalario | RendimientoHospitalarioController (+ `Uti`) | — | Indicadores semestrales. Valida que no se repita efector + ejercicio + semestre |
 | RH materno | RhMaternoController | — | Rendimiento materno por servicio y sector |

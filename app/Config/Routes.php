@@ -108,6 +108,10 @@ $routes->get('electrodependiente/(:num)/historial', 'ElectrodependienteControlle
 $routes->get('electrodependiente/(:any)',      'ElectrodependienteController::show/$1',     ['as' => 'electrodependiente_show',    'filter' => 'permiso: LISTADO PERSONA']);
 $routes->put('electrodependiente',             'ElectrodependienteController::update',      ['as' => 'electrodependiente_update',  'filter' => 'permiso: EDITAR PERSONA']);
 $routes->delete('electrodependiente',          'ElectrodependienteController::destroy',     ['as' => 'electrodependiente_destroy', 'filter' => 'permiso: ELIMINAR PERSONA']);
+// ── EJESA (dentro de Electrodependientes): panel de solo lectura de cortes, afectados y auditoría ──
+$routes->get('ejesa',                'EjesaVController::index',    ['as' => 'ejesa_views',  'filter' => 'permiso: LISTADO PERSONA']);
+$routes->get('ejesa/corte/(:num)',   'EjesaVController::corte/$1', ['as' => 'ejesa_corte',  'filter' => 'permiso: LISTADO PERSONA']);
+$routes->get('ejesa-export',         'EjesaVController::export',   ['as' => 'ejesa_export', 'filter' => 'permiso: LISTADO PERSONA']);
 // ── Efector ABM ───────────────────────────────────────────────────────────
 $routes->get('efector',               'EfectorABMController::index',        ['as' => 'efector_list',        'filter' => 'permiso: LISTADO PERSONA']);
 $routes->get('efector-create',        'EfectorABMController::create',       ['as' => 'efector_create',      'filter' => 'permiso: GUARDAR PERSONA']);
