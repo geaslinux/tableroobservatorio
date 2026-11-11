@@ -73,6 +73,37 @@ class Database extends Config
     ];
 
     /**
+     * Lectura de los datos de EJESA (pestaña EJESA, app/Libraries/Ejesa/Lectura.php).
+     * Debe apuntar a un usuario MySQL de SOLO SELECT. Se configura en .env sin tocar este archivo:
+     *   database.ejesa.username = ejesa_lector
+     *   database.ejesa.password = ...
+     * Mientras no se configure, usa los mismos datos que 'default' (ver el constructor).
+     * Comprobar con: php spark ejesa:solo-lectura
+     *
+     * @var array<string, mixed>
+     */
+    public array $ejesa = [
+        'DSN'          => '',
+        'hostname'     => '',
+        'username'     => '',
+        'password'     => '',
+        'database'     => '',
+        'DBDriver'     => 'MySQLi',
+        'DBPrefix'     => '',
+        'pConnect'     => false,
+        'DBDebug'      => true,
+        'charset'      => 'utf8',
+        'DBCollat'     => 'utf8_general_ci',
+        'swapPre'      => '',
+        'encrypt'      => false,
+        'compress'     => false,
+        'strictOn'     => false,
+        'failover'     => [],
+        'port'         => 3306,
+        'numberNative' => false,
+    ];
+
+    /**
      * This database connection is used when
      * running PHPUnit database tests.
      *
@@ -103,6 +134,17 @@ class Database extends Config
     public function __construct()
     {
         parent::__construct();
+
+        // Conexión de EJESA: lo que no se configuró en .env (database.ejesa.*) se toma de 'default'
+        foreach (['hostname', 'username', 'password', 'database', 'DBDriver', 'port', 'charset', 'DBCollat'] as $clave) {
+            if (($this->ejesa[$clave] ?? '') === '' && isset($this->default[$clave])) {
+                $this->ejesa[$clave] = $this->default[$clave];
+            }
+        }
+        // Sin usuario propio, la contraseña también es la de 'default'
+        if (($this->ejesa['username'] ?? '') === ($this->default['username'] ?? null)) {
+            $this->ejesa['password'] = $this->default['password'];
+        }
 
         // Ensure that we always set the database group to 'tests' if
         // we are currently running an automated test suite, so that

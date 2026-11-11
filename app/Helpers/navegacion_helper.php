@@ -55,6 +55,7 @@ if (! function_exists('navegacion_mapa')) {
 
             // ── Salud mental ──
             'electrodependiente_list' => ['Electrodependientes', 'electrodependiente_list', 'salud_mental'],
+            'ejesa_views'             => ['EJESA · Cortes',      'ejesa_views',             'salud_mental'],
 
             // ── Servicios transversales ──
             'cantidad_operativo_list' => ['Cantidad de operativos', 'cantidad_operativo_list', 'servicios'],

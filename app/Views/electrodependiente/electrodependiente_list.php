@@ -222,6 +222,9 @@
         ]) ?>">
             <span class="icon"><i class="fas fa-file-excel"></i></span><span>Excel</span>
         </a>
+        <a class="button is-danger is-small" href="<?= base_url(route_to('ejesa_views')) ?>" title="Cortes programados, afectados y auditoría de EJESA">
+            <span class="icon"><i class="fas fa-bolt"></i></span><span>EJESA</span>
+        </a>
         <button class="button is-light is-small" id="btnToggleMapa">
             <span class="icon"><i class="fas fa-map-marked-alt"></i></span>
             <span id="lblToggleMapa">Mostrar Mapa</span>
@@ -232,9 +235,9 @@
         <div class="columns is-multiline is-vcentered is-mobile" style="margin-bottom:0;">
             <div class="column is-12-mobile is-3-tablet">
                 <div class="field">
-                    <label class="label" style="color:white; font-size:0.85rem;">Buscar paciente / DNI</label>
+                    <label class="label" style="color:white; font-size:0.85rem;">Buscar paciente / DNI / Nº servicio</label>
                     <div class="control has-icons-left">
-                        <input class="input is-small" type="text" name="buscar" placeholder="Nombre o DNI..." value="<?= esc($filtro_buscar) ?>">
+                        <input class="input is-small" type="text" name="buscar" placeholder="Nombre, DNI o Nº servicio..." value="<?= esc($filtro_buscar) ?>">
                         <span class="icon is-left is-small"><i class="fas fa-search"></i></span>
                     </div>
                 </div>
@@ -308,13 +311,13 @@
             <table class="table is-fullwidth is-hoverable is-bordered tabla-electro" style="font-size:0.80rem;">
                 <thead>
                     <tr style="background-color:#c8d8f0;">
-                        <th colspan="13" style="text-align:center; background:#e8f0fe; color:#13304d; font-size:0.75rem; letter-spacing:0.05em;">📋 DATOS DEL PACIENTE</th>
-                        <th colspan="9" class="th-equipo-group">🔌 EQUIPAMIENTO</th>
+                        <th colspan="14" style="text-align:center; background:#e8f0fe; color:#13304d; font-size:0.75rem; letter-spacing:0.05em;">📋 DATOS DEL PACIENTE</th>
+                        <th colspan="7" class="th-equipo-group">🔌 EQUIPAMIENTO</th>
                         <th colspan="4" style="text-align:center; background:#e8f0fe; color:#13304d; font-size:0.75rem; letter-spacing:0.05em;">ACCIONES</th>
                     </tr>
                     <tr style="background-color:#e8f0fe;">
-                        <th>#</th><th>Paciente</th><th>DNI</th><th>Edad</th><th>Tipo</th><th>Localidad</th><th>Hospital</th><th>Obra Social</th><th>CUD</th><th>Diagnóstico</th><th>Riesgo</th><th>Seguimiento</th><th>Estado</th>
-                        <th class="th-equipo">Equipo</th><th class="th-equipo">Marca</th><th class="th-equipo">Serie</th><th class="th-equipo">Modelo</th><th class="th-equipo">F. Entrega</th><th class="th-equipo">Tiempo Uso</th><th class="th-equipo">Médico Tratante</th><th class="th-equipo">Titular Servicio</th><th class="th-equipo">Nro Servicio</th>
+                        <th>#</th><th>Paciente</th><th>DNI</th><th>Edad</th><th>Tipo</th><th>Localidad</th><th>Hospital</th><th>Obra Social</th><th>CUD</th><th>Diagnóstico</th><th>Riesgo</th><th>Seguimiento</th><th>Estado</th><th>Nº Servicio</th>
+                        <th class="th-equipo">Equipo</th><th class="th-equipo">Marca</th><th class="th-equipo">Serie</th><th class="th-equipo">Modelo</th><th class="th-equipo">F. Entrega</th><th class="th-equipo">Tiempo Uso</th><th class="th-equipo">Médico Tratante</th>
                         <th>📍</th><th>Editar</th><th>Eliminar</th><th>Historial</th>
                     </tr>
                 </thead>
@@ -324,7 +327,7 @@
                     $esModificado = ($r->updated_at > $ultimaVista) && ($r->updated_at != $r->created_at);
                     $tieneGeo     = !empty($r->coordenadas);
                     $equipos = $r->equipos ?? [];
-                    $eqNombres = []; $eqMarcas = []; $eqSeries = []; $eqModelos = []; $eqFEntrega = []; $eqTiempoUso = []; $eqMedicos = []; $eqTitulares = []; $eqNroServ = [];
+                    $eqNombres = []; $eqMarcas = []; $eqSeries = []; $eqModelos = []; $eqFEntrega = []; $eqTiempoUso = []; $eqMedicos = [];
                     foreach ($equipos as $eq) {
                         $eqNombres[]  = $eq['equipamiento'] ?? '—';
                         $eqMarcas[]   = $eq['marca'] ?? '—';
@@ -333,11 +336,9 @@
                         $eqFEntrega[] = $eq['fecha_entrega'] ?? '—';
                         $eqTiempoUso[] = $eq['tiempo_uso'] ?? '—';
                         $eqMedicos[]  = $eq['medico_tratante'] ?? '—';
-                        $eqTitulares[] = $eq['titular_servicio'] ?? '—';
-                        $eqNroServ[]  = $eq['nro_servicio'] ?? '—';
                     }
                     if (empty($equipos)) {
-                        $eqNombres = $eqMarcas = $eqSeries = $eqModelos = $eqFEntrega = $eqTiempoUso = $eqMedicos = $eqTitulares = $eqNroServ = ['—'];
+                        $eqNombres = $eqMarcas = $eqSeries = $eqModelos = $eqFEntrega = $eqTiempoUso = $eqMedicos = ['—'];
                     }
                     $sep = '<span class="equipo-sep"></span>';
                 ?>
@@ -355,6 +356,13 @@
                         <td><span class="tag <?php switch($r->factor_riesgo){ case 'ALTO': echo 'is-danger'; break; case 'MEDIANO': echo 'is-warning'; break; case 'BAJO': echo 'is-success'; break; default: echo 'is-light'; } ?>"><?= esc($r->factor_riesgo??'—') ?></span></td>
                         <td><?= esc($r->seguimiento ?? '—') ?></td>
                         <td><?= $r->estado=='activo' ? '<span class="tag is-success">Activo</span>' : '<span class="tag is-danger">Desactivado</span>' ?></td>
+                        <td style="white-space:nowrap;">
+                            <?php if (!empty($r->nro_servicio)): ?>
+                                <?= esc($r->nro_servicio) ?>
+                                <?= !empty($r->servicio_verificado) ? '<span class="tag is-success is-light" title="Servicio verificado para EJESA">✔</span>' : '<span class="tag is-warning is-light" title="Sin verificar: EJESA no lo encuentra por número">s/verif.</span>' ?>
+                                <?php if (!empty($r->titular_servicio)): ?><br><small>Tit.: <?= esc($r->titular_servicio) ?></small><?php endif; ?>
+                            <?php else: ?>—<?php endif; ?>
+                        </td>
                         <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqNombres)) ?></td>
                         <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqMarcas)) ?></td>
                         <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqSeries)) ?></td>
@@ -362,15 +370,13 @@
                         <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqFEntrega)) ?></td>
                         <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqTiempoUso)) ?></td>
                         <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqMedicos)) ?></td>
-                        <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqTitulares)) ?></td>
-                        <td class="celda-equipo"><?= implode($sep, array_map('esc', $eqNroServ)) ?></td>
                         <td class="has-text-centered"><?php if ($tieneGeo): ?><button class="button is-small is-link is-outlined btn-ir-mapa" data-id="<?= $r->electrodependiente_id ?>" title="Ver en mapa"><span class="icon"><i class="fas fa-map-pin"></i></span></button><?php else: ?><span class="sin-geo">—</span><?php endif; ?></td>
                         <td><?= $r->getEditLink() ?></td>
                         <td><?= $r->getDeleteLink() ?></td>
                         <td><a href="<?= base_url(route_to('electrodependiente_historial', $r->electrodependiente_id)) ?>" class="button is-small is-info is-outlined"><span class="icon"><i class="fas fa-history"></i></span><span>Historial</span></a></td>
                     </tr>
                 <?php endforeach; ?>
-                <?php if (empty($registros)): ?><tr><td colspan="27" class="has-text-centered">Sin pacientes electrodependientes para los filtros elegidos</td></tr><?php endif; ?>
+                <?php if (empty($registros)): ?><tr><td colspan="25" class="has-text-centered">Sin pacientes electrodependientes para los filtros elegidos</td></tr><?php endif; ?>
                 </tbody>
             </table>
         </div>
@@ -396,6 +402,12 @@
                     <div class="full"><div class="lbl">Diagnóstico</div><div><?= esc($r->diagnostico_nombre??'—') ?></div></div>
                     <div><div class="lbl">Riesgo</div><span class="tag is-small <?php switch($r->factor_riesgo){ case 'ALTO': echo 'is-danger'; break; case 'MEDIANO': echo 'is-warning'; break; case 'BAJO': echo 'is-success'; break; default: echo 'is-light'; } ?>"><?= esc($r->factor_riesgo??'—') ?></span></div>
                     <div><div class="lbl">Seguimiento</div><div style="font-size:0.76rem;"><?= esc($r->seguimiento??'—') ?></div></div>
+                    <div class="full"><div class="lbl">⚡ Servicio eléctrico</div><div style="font-size:0.78rem;">
+                        <?php if (!empty($r->nro_servicio)): ?>
+                            Nº <?= esc($r->nro_servicio) ?> <?= !empty($r->servicio_verificado) ? '(verificado)' : '(sin verificar)' ?>
+                            <?php if (!empty($r->titular_servicio)): ?> · Titular: <?= esc($r->titular_servicio) ?><?php endif; ?>
+                        <?php else: ?>Sin número cargado<?php endif; ?>
+                    </div></div>
                     <?php if (!empty($equipos)): ?>
                     <div class="full" style="margin-top:6px;">
                         <div class="lbl" style="margin-bottom:4px;">🔌 Equipamiento (<?= count($equipos) ?>)</div>
@@ -405,8 +417,6 @@
                             <?php if (!empty($eq['marca']) || !empty($eq['modelo'])): ?><span class="eq-fila"> · <?= esc($eq['marca']??'') ?><?= !empty($eq['modelo']) ? ' / '.esc($eq['modelo']) : '' ?></span><?php endif; ?>
                             <?php if (!empty($eq['serie'])): ?><br><span class="eq-fila">Serie: <?= esc($eq['serie']) ?></span><?php endif; ?>
                             <?php if (!empty($eq['medico_tratante'])): ?><br><span class="eq-fila">Médico: <?= esc($eq['medico_tratante']) ?></span><?php endif; ?>
-                            <?php if (!empty($eq['titular_servicio'])): ?><br><span class="eq-fila">Titular: <?= esc($eq['titular_servicio']) ?></span><?php endif; ?>
-                            <?php if (!empty($eq['nro_servicio'])): ?><br><span class="eq-fila">Nro Serv.: <?= esc($eq['nro_servicio']) ?></span><?php endif; ?>
                             <?php if (!empty($eq['fecha_entrega'])): ?><br><span class="eq-fila">Entrega: <?= esc($eq['fecha_entrega']) ?></span><?php endif; ?>
                             <?php if (!empty($eq['tiempo_uso'])): ?><br><span class="eq-fila">Tiempo uso: <?= esc($eq['tiempo_uso']) ?></span><?php endif; ?>
                         </div>

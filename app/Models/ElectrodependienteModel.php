@@ -18,6 +18,9 @@ class ElectrodependienteModel extends Model
         'localidad_id', 'efector_id', 'obra_social_id',
         'cud', 'diagnostico_id', 'dx_complementario',
         'observacion', 'factor_riesgo', 'seguimiento', 'estado',
+        // Servicio eléctrico: dato del paciente (ya no de cada equipo)
+        'servicio_empresa', 'nro_servicio', 'titular_servicio', 'titular_servicio_dni',
+        'servicio_verificado', 'servicio_verificado_at', 'servicio_verificado_por', 'servicio_origen',
     ];
 
     protected $useTimestamps = true;
@@ -47,7 +50,15 @@ class ElectrodependienteModel extends Model
         'factor_riesgo'     => 'Factor de riesgo',
         'seguimiento'       => 'Seguimiento',
         'estado'            => 'Estado',
+        'servicio_empresa'     => 'Empresa del servicio eléctrico',
+        'nro_servicio'         => 'Nº de servicio eléctrico',
+        'titular_servicio'     => 'Titular del servicio',
+        'titular_servicio_dni' => 'DNI del titular del servicio',
+        'servicio_verificado'  => 'Servicio verificado para EJESA',
     ];
+
+    // Campos de control del servicio: no se anotan en el historial (fecha/usuario de verificación, origen)
+    private array $sinHistorial = ['servicio_verificado_at', 'servicio_verificado_por', 'servicio_origen'];
 
     // ─────────────────────────────────────────────────────────────────────
     //  UPDATE con historial automático
@@ -92,6 +103,7 @@ class ElectrodependienteModel extends Model
 
     foreach ($nuevo as $campo => $valorNuevo) {
         if (!array_key_exists($campo, $anterior)) continue;
+        if (in_array($campo, $this->sinHistorial, true)) continue;
 
         $valorAnterior = $anterior[$campo];
 
