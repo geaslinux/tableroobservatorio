@@ -21,8 +21,8 @@ class EquipamientoModel extends Model
         'fecha_entrega',
         'tiempo_uso',
         'medico_tratante',
-        'titular_servicio',
-        'nro_servicio',
+        // titular_servicio / nro_servicio ya no van acá: son datos del paciente
+        // (electrodependiente). Las columnas viejas se conservan solo como historia.
         'fecha_ingreso_recs',
         'ultima_evaluacion',
         'estado',
@@ -97,8 +97,6 @@ class EquipamientoModel extends Model
                 'fecha_entrega'         => $eq['fecha_entrega']       ?: null,
                 'tiempo_uso'            => $eq['tiempo_uso']          ?? null,
                 'medico_tratante'       => $eq['medico_tratante']     ?? null,
-                'titular_servicio'      => $eq['titular_servicio']    ?? null,
-                'nro_servicio'          => $eq['nro_servicio']        ?? null,
                 'fecha_ingreso_recs'    => $eq['fecha_ingreso_recs']  ?: null,
                 'ultima_evaluacion'     => $eq['ultima_evaluacion']   ?: null,
                 'estado'                => 'activo',

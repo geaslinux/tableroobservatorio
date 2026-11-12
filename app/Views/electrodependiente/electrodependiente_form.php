@@ -279,6 +279,99 @@
         <hr>
 
         <!-- ══════════════════════════════════════
+             SERVICIO ELÉCTRICO DEL PACIENTE
+             (antes estaba en cada equipo; ahora es un dato del paciente)
+        ══════════════════════════════════════ -->
+        <p class="bloque-titulo">
+            <span class="icon"><i class="fas fa-bolt"></i></span>
+            SERVICIO ELÉCTRICO DEL PACIENTE
+        </p>
+
+        <div class="columns is-multiline">
+
+            <div class="column is-6-mobile is-1-tablet">
+                <div class="field">
+                    <label class="label" style="color:white;">Empresa</label>
+                    <div class="control">
+                        <input class="input" type="text" value="EJESA" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="column is-6-mobile is-2-tablet">
+                <div class="field">
+                    <label class="label" style="color:white;" for="nro_servicio">Nº de servicio</label>
+                    <div class="control has-icons-left">
+                        <input class="input <?= session('errors.nro_servicio') ? 'is-danger' : '' ?>"
+                            type="text" name="nro_servicio" id="nro_servicio" maxlength="50"
+                            placeholder="Ej: 0109265"
+                            value="<?= esc($v('nro_servicio')) ?>">
+                        <span class="icon is-left"><i class="fas fa-bolt"></i></span>
+                    </div>
+                    <?php if (session('errors.nro_servicio')): ?>
+                        <p class="help is-danger"><?= esc(session('errors.nro_servicio')) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="column is-12-mobile is-4-tablet">
+                <div class="field">
+                    <label class="label" style="color:white;" for="titular_servicio">Titular del servicio</label>
+                    <div class="control has-icons-left">
+                        <input class="input <?= session('errors.titular_servicio') ? 'is-danger' : '' ?>"
+                            type="text" name="titular_servicio" id="titular_servicio" maxlength="200"
+                            placeholder="Apellido y nombre del titular"
+                            value="<?= esc($v('titular_servicio')) ?>">
+                        <span class="icon is-left"><i class="fas fa-user"></i></span>
+                    </div>
+                    <?php if (session('errors.titular_servicio')): ?>
+                        <p class="help is-danger"><?= esc(session('errors.titular_servicio')) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="column is-6-mobile is-2-tablet">
+                <div class="field">
+                    <label class="label" style="color:white;" for="titular_servicio_dni">DNI del titular</label>
+                    <div class="control has-icons-left">
+                        <input class="input <?= session('errors.titular_servicio_dni') ? 'is-danger' : '' ?>"
+                            type="text" name="titular_servicio_dni" id="titular_servicio_dni" maxlength="20"
+                            inputmode="numeric" placeholder="Opcional"
+                            value="<?= esc($v('titular_servicio_dni')) ?>">
+                        <span class="icon is-left"><i class="fas fa-id-card"></i></span>
+                    </div>
+                    <?php if (session('errors.titular_servicio_dni')): ?>
+                        <p class="help is-danger"><?= esc(session('errors.titular_servicio_dni')) ?></p>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <div class="column is-12-mobile is-3-tablet">
+                <div class="field">
+                    <label class="label" style="color:white;">Verificación</label>
+                    <label class="checkbox" style="color:white; min-height:44px; display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="servicio_verificado" id="servicio_verificado" value="1"
+                            <?= $v('servicio_verificado', 0) ? 'checked' : '' ?>>
+                        Servicio comprobado para consulta EJESA
+                    </label>
+                </div>
+            </div>
+
+            <div class="column is-12">
+                <p class="help" style="color:#ffe08a;">
+                    <i class="fas fa-info-circle"></i>
+                    El número de servicio y el titular son del <strong style="color:#ffe08a;">paciente</strong>, no de cada equipo.
+                    Son opcionales y se guardan aunque no tenga equipos. EJESA solo encuentra al paciente por su número
+                    si el servicio está verificado: si cambiás estos datos, volvé a marcar la verificación cuando los compruebes.
+                    El DNI del titular es de uso interno y no se muestra a EJESA.
+                </p>
+            </div>
+
+        </div>
+
+        <hr>
+
+        <!-- ══════════════════════════════════════
              DATOS MÉDICOS
         ══════════════════════════════════════ -->
         <p class="bloque-titulo">DATOS MÉDICOS</p>
@@ -642,6 +735,18 @@ document.getElementById('btn-agregar-equipo').addEventListener('click', function
 listaEquipos.addEventListener('click', function(e) {
     var btn = e.target.closest('.btn-quitar-equipo');
     if (btn) quitarEquipo(btn);
+});
+
+// ══════════════════════════════════════════════════════
+//  SERVICIO ELÉCTRICO: si cambian los datos, la verificación se pierde
+// ══════════════════════════════════════════════════════
+['nro_servicio', 'titular_servicio', 'titular_servicio_dni'].forEach(function (id) {
+    var campo = document.getElementById(id);
+    if (!campo) return;
+    campo.addEventListener('input', function () {
+        var verificacion = document.getElementById('servicio_verificado');
+        if (verificacion) verificacion.checked = false;
+    });
 });
 </script>
 

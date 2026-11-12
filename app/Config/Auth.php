@@ -19,6 +19,7 @@ class Auth extends AuthBase
         parent::__construct();
 
         $this->views = array_merge($this->views, [
+            'login'             => 'auth/login',
             'listUsers'         => 'auth/list_users',
             'listPermisosUser'  => 'auth/list_permisos_user',
             'listGroupUser'     => 'auth/list_group_user',
