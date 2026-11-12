@@ -61,9 +61,10 @@ class EjesaVController extends BaseController
 
         $ahora = $datos['ahora'];
 
-        // Próximos (independiente del período) y vencidos sin finalizar (siempre visibles)
+        // Próximos (independiente del período) y vencidos sin finalizar (siempre visibles),
+        // los dos de la localidad elegida
         $proximos = $this->enriquecer($lectura, $lectura->proximos($ahora, $f['localidad']), $ahora);
-        $vencidos = $this->enriquecer($lectura, $lectura->vencidos($ahora), $ahora);
+        $vencidos = $this->enriquecer($lectura, $lectura->vencidos($ahora, $f['localidad']), $ahora);
         $enCurso  = array_values(array_filter($proximos, static fn ($c) => $c['estado_visible'] === 'EN_CURSO'));
         $futuros  = array_values(array_filter($proximos, static fn ($c) => $c['estado_visible'] === 'PROGRAMADO'));
 
@@ -323,6 +324,8 @@ class EjesaVController extends BaseController
             'kpis'       => Calculo::kpis($cortes, $distintas),
             'serie'      => Calculo::serieMensual($cortes, $f['desde'], $f['hasta_excl']),
             'localidadesTop' => Calculo::porLocalidad($cortes),
+            'porEstado'  => Calculo::porEstado($cortes),
+            'equipos'    => Calculo::equiposResumen($personas),
             'acumulado'  => $acumulado,
             'personas'   => $personas,
         ];

@@ -16,7 +16,8 @@ class ElectrodependienteController extends BaseController
     private $tiemposUso     = ['parcial', 'permanente'];
 
     // ─── Filtros ─────────────────────────────────────────────────────────
-    private function aplicarFiltros($model)
+    // $conBuscar = false: el mapa recibe a todos y filtra el texto del buscador en el navegador
+    private function aplicarFiltros($model, bool $conBuscar = true)
     {
         $filtro_tipo        = $this->request->getGet('tipo')          ?? '';
         $filtro_localidad   = $this->request->getGet('localidad')     ?? '';
@@ -34,10 +35,15 @@ class ElectrodependienteController extends BaseController
         if ($filtro_efector)     $model->where('electrodependiente.efector_id',     $filtro_efector);
         if ($filtro_obra_social) $model->where('electrodependiente.obra_social_id', $filtro_obra_social);
         if ($filtro_diagnostico) $model->where('electrodependiente.diagnostico_id', $filtro_diagnostico);
-        if ($filtro_factor)      $model->where('electrodependiente.factor_riesgo',  $filtro_factor);
+        if ($filtro_factor === 'SIN_DATO') {
+            // Sin riesgo cargado: vacío o con un valor que no es ALTO, MEDIANO ni BAJO (igual que el mapa)
+            $model->where("(electrodependiente.factor_riesgo IS NULL OR UPPER(electrodependiente.factor_riesgo) NOT IN ('ALTO','MEDIANO','BAJO'))", null, false);
+        } elseif ($filtro_factor) {
+            $model->where('electrodependiente.factor_riesgo', $filtro_factor);
+        }
         if ($filtro_seguimiento) $model->where('electrodependiente.seguimiento',    $filtro_seguimiento);
         if ($filtro_cud)         $model->where('electrodependiente.cud',            $filtro_cud);
-        if ($filtro_buscar)      $model->groupStart()
+        if ($filtro_buscar && $conBuscar) $model->groupStart()
                                        ->like('electrodependiente.paciente', $filtro_buscar)
                                        ->orLike('electrodependiente.dni',    $filtro_buscar)
                                        ->orLike('electrodependiente.nro_servicio', $filtro_buscar)
@@ -54,6 +60,52 @@ class ElectrodependienteController extends BaseController
             'filtro_obra_social', 'filtro_diagnostico', 'filtro_factor',
             'filtro_seguimiento', 'filtro_cud', 'filtro_estado', 'filtro_buscar'
         );
+    }
+
+    // ─── Filtro de la leyenda del mapa (riesgo y estado, con varios valores) ──
+    // Llega como ?m_riesgo=ALTO,MEDIANO&m_estado=desactivado. Dentro de un grupo vale cualquiera
+    // de los valores; entre grupos tienen que cumplirse los dos. Se aplica a la tabla, los
+    // indicadores y el Excel; el mapa los recibe sin este filtro para poder mostrar los conteos.
+    private function seleccionMapa(): array
+    {
+        $leer = function (string $clave, array $validos): array {
+            $v = array_map('trim', explode(',', (string) ($this->request->getGet($clave) ?? '')));
+
+            return array_values(array_intersect($validos, $v));
+        };
+
+        return [
+            'riesgo' => $leer('m_riesgo', ['ALTO', 'MEDIANO', 'BAJO', 'SD']),
+            'estado' => $leer('m_estado', ['activo', 'fallecido', 'desactivado']),
+        ];
+    }
+
+    private function aplicarSeleccionMapa($model, array $sel): void
+    {
+        $db = \Config\Database::connect();
+        $condRiesgo = [];
+        foreach ($sel['riesgo'] as $r) {
+            $condRiesgo[] = $r === 'SD'
+                ? "(electrodependiente.factor_riesgo IS NULL OR UPPER(electrodependiente.factor_riesgo) NOT IN ('ALTO','MEDIANO','BAJO'))"
+                : 'UPPER(electrodependiente.factor_riesgo) = ' . $db->escape($r);
+        }
+        if ($condRiesgo) {
+            $model->where('(' . implode(' OR ', $condRiesgo) . ')', null, false);
+        }
+
+        // Un fallecido cuenta solo como fallecido, aunque también esté desactivado (igual que el mapa)
+        $vivo = "(electrodependiente.estado_vital IS NULL OR electrodependiente.estado_vital <> 'fallecido')";
+        $condEstado = [];
+        foreach ($sel['estado'] as $e) {
+            $condEstado[] = match ($e) {
+                'fallecido'   => "electrodependiente.estado_vital = 'fallecido'",
+                'desactivado' => "($vivo AND electrodependiente.estado <> 'activo')",
+                default       => "($vivo AND electrodependiente.estado = 'activo')",
+            };
+        }
+        if ($condEstado) {
+            $model->where('(' . implode(' OR ', $condEstado) . ')', null, false);
+        }
     }
 
     // ─── Index ───────────────────────────────────────────────────────────
@@ -82,6 +134,36 @@ class ElectrodependienteController extends BaseController
 
         $model   = model('ElectrodependienteModel')->conRelaciones();
         $filtros = $this->aplicarFiltros($model);
+        $mapaSel = $this->seleccionMapa();
+        $this->aplicarSeleccionMapa($model, $mapaSel);
+
+        // ── Indicadores del listado (mismos filtros que la tabla, sin paginar) ──
+        // Instancia nueva: model() comparte la instancia y el builder de la tabla.
+        $modeloKpi = new \App\Models\ElectrodependienteModel();
+        $this->aplicarFiltros($modeloKpi);
+        $this->aplicarSeleccionMapa($modeloKpi, $mapaSel);
+        $kpis = $modeloKpi->select("COUNT(*) AS total,
+                SUM(CASE WHEN electrodependiente.estado = 'activo' THEN 1 ELSE 0 END) AS activos,
+                SUM(CASE WHEN electrodependiente.factor_riesgo = 'ALTO' THEN 1 ELSE 0 END) AS alto,
+                SUM(CASE WHEN electrodependiente.factor_riesgo IS NULL OR electrodependiente.factor_riesgo = '' THEN 1 ELSE 0 END) AS sin_riesgo,
+                SUM(CASE WHEN electrodependiente.nro_servicio IS NOT NULL AND electrodependiente.nro_servicio <> '' THEN 1 ELSE 0 END) AS con_servicio,
+                SUM(CASE WHEN electrodependiente.servicio_verificado = 1 THEN 1 ELSE 0 END) AS verificados,
+                SUM(CASE WHEN electrodependiente.coordenadas IS NOT NULL AND electrodependiente.coordenadas <> '' THEN 1 ELSE 0 END) AS con_ubicacion", false)
+            ->get()->getRowArray() ?: [];
+
+        // ── Mapa: todos los pacientes con coordenadas que cumplen los filtros (no solo la página) ──
+        $modeloMapa = (new \App\Models\ElectrodependienteModel())->conRelaciones();
+        $this->aplicarFiltros($modeloMapa, false);
+        $pacientesMapa = $modeloMapa
+            ->select('electrodependiente.electrodependiente_id AS id, electrodependiente.paciente, electrodependiente.dni, electrodependiente.edad,
+                      electrodependiente.factor_riesgo AS riesgo, electrodependiente.estado, electrodependiente.estado_vital, electrodependiente.coordenadas, electrodependiente.nro_servicio')
+            ->where('electrodependiente.coordenadas IS NOT NULL', null, false)
+            ->where('electrodependiente.coordenadas <>', '')
+            ->asArray()->findAll();
+        // Total sin la selección de la leyenda (para "N sin coordenadas cargadas" bajo el mapa)
+        $modeloTotal = new \App\Models\ElectrodependienteModel();
+        $this->aplicarFiltros($modeloTotal, false);
+        $totalMapa = $modeloTotal->countAllResults();
 
         // ── Paginar primero para obtener los registros de la página ──────
         $registros = $model->orderBy('electrodependiente.paciente', 'ASC')->paginate($perPage);
@@ -123,6 +205,10 @@ class ElectrodependienteController extends BaseController
             'nuevas'         => $nuevas,
             'modificadas'    => $modificadas,
             'ultimaVista'    => $ultimaVista,
+            'kpis'           => array_map('intval', $kpis),
+            'pacientesMapa'  => $pacientesMapa,
+            'mapaSel'        => $mapaSel,
+            'totalMapa'      => $totalMapa,
         ]));
     }
 
@@ -242,6 +328,7 @@ class ElectrodependienteController extends BaseController
 
         $model   = model('ElectrodependienteModel')->conRelaciones();
         $this->aplicarFiltros($model);
+        $this->aplicarSeleccionMapa($model, $this->seleccionMapa());
         $registros = $model->orderBy('electrodependiente.paciente', 'ASC')->findAll();
 
         // ── Cargar equipos activos en batch (un solo query) ───────────────

@@ -5,6 +5,7 @@
 <?= $this->section('content') ?>
 <link rel="stylesheet" href="/css/panel-pestanas.css">
 <link rel="stylesheet" href="/css/ejesa.css">
+<link rel="stylesheet" href="/css/ejesa.css?v=<?= @filemtime(FCPATH . 'css/ejesa.css') ?: '1' ?>">
 <?php if ($geometria): ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <?php endif; ?>
@@ -51,19 +52,19 @@ $volverUrl = base_url(route_to('ejesa_views')) . '?tab=' . urlencode(in_array($v
             <div class="ej-bloque-titulo"><span><i class="fas fa-info-circle"></i> Datos del corte</span><span class="ej-chip <?= $c['estado_visible'] ?>"><?= esc(Calculo::ESTADOS_VISIBLES[$c['estado_visible']]) ?></span></div>
             <div class="ej-bloque-body">
                 <div class="ej-ficha">
-                    <div><span>Fecha y hora</span><strong><?= esc(Calculo::rango($c['inicio_at'], $c['fin_estimado_at'])) ?></strong></div>
-                    <div><span><?= $c['estado_visible'] === 'PROGRAMADO' ? 'Faltan' : 'Inicio / fin estimado' ?></span><?= $c['estado_visible'] === 'PROGRAMADO' ? esc($c['faltan']) : esc(Calculo::fecha($c['inicio_at'])) . ' → ' . esc(Calculo::fecha($c['fin_estimado_at'])) ?></div>
-                    <div><span>Localidad</span><?= esc($c['localidad'] ?: 'Localidad sin indicar') ?></div>
-                    <div><span>Zona</span><?= esc($c['zona_descripcion'] ?: '—') ?></div>
-                    <div><span>Motivo</span><?= esc($c['motivo'] ?: '—') ?></div>
-                    <div><span>Horas programadas</span><?= Calculo::horas($h['programadas']) ?> (<?= Calculo::hhmm($h['programadas']) ?>)</div>
-                    <div><span>Horas sin luz</span><?php if ($h['cuenta']): ?><strong><?= Calculo::horas($h['sin_luz']) ?></strong> (<?= Calculo::hhmm($h['sin_luz']) ?>)<?php else: ?>0 h<?php endif; ?>
-                        <span class="ej-marca" style="text-transform:none; letter-spacing:0;"><?= esc(Calculo::MARCAS[$h['marca']]) ?></span></div>
-                    <div><span>Persona-horas</span><?= $c['persona_horas'] === null ? '—' : $num($c['persona_horas'], 1) . ' <small>(ALTO ' . $num($c['persona_horas_alto'], 1) . ')</small>' ?></div>
-                    <div><span>Publicado</span><?= esc(Calculo::fecha(Calculo::utcALocal($c['publicado_at'])) ?: '—') ?></div>
-                    <div><span>Finalizado</span><?= $c['finalizado_local'] ? esc(Calculo::fecha($c['finalizado_local'])) . ($c['finalizado_tarde'] ? ' <small>(tarde)</small>' : '') : '—' ?></div>
-                    <div><span>Reprogramaciones</span><?= (int) $c['reprogramaciones'] ?></div>
-                    <div><span>Versión</span><?= (int) $c['version'] ?></div>
+                    <div class="f-cuando"><span><i class="far fa-calendar"></i> Fecha y hora</span><strong><?= esc(Calculo::rango($c['inicio_at'], $c['fin_estimado_at'])) ?></strong></div>
+                    <div class="f-cuando"><span><i class="far fa-clock"></i> <?= $c['estado_visible'] === 'PROGRAMADO' ? 'Faltan' : 'Inicio / fin estimado' ?></span><?= $c['estado_visible'] === 'PROGRAMADO' ? esc($c['faltan']) : esc(Calculo::fecha($c['inicio_at'])) . ' → ' . esc(Calculo::fecha($c['fin_estimado_at'])) ?></div>
+                    <div class="f-donde"><span><i class="fas fa-map-marker-alt"></i> Localidad</span><?= esc($c['localidad'] ?: 'Localidad sin indicar') ?></div>
+                    <div class="f-donde"><span><i class="fas fa-draw-polygon"></i> Zona</span><?= esc($c['zona_descripcion'] ?: '—') ?></div>
+                    <div class="f-donde"><span><i class="fas fa-tools"></i> Motivo</span><?= esc($c['motivo'] ?: '—') ?></div>
+                    <div class="f-cuanto"><span><i class="fas fa-hourglass-half"></i> Horas programadas</span><?= Calculo::horas($h['programadas']) ?> (<?= Calculo::hhmm($h['programadas']) ?>)</div>
+                    <div class="f-cuanto"><span><i class="fas fa-bolt"></i> Horas sin luz</span><?php if ($h['cuenta']): ?><strong><?= Calculo::horas($h['sin_luz']) ?></strong> (<?= Calculo::hhmm($h['sin_luz']) ?>)<?php else: ?>0 h<?php endif; ?>
+                        <span class="ej-marca"><?= esc(Calculo::MARCAS[$h['marca']]) ?></span></div>
+                    <div class="f-impacto"><span><i class="fas fa-user-clock"></i> Persona-horas</span><?= $c['persona_horas'] === null ? '—' : $num($c['persona_horas'], 1) . ' <small>(ALTO ' . $num($c['persona_horas_alto'], 1) . ')</small>' ?></div>
+                    <div class="f-tramite"><span><i class="fas fa-bullhorn"></i> Publicado</span><?= esc(Calculo::fecha(Calculo::utcALocal($c['publicado_at'])) ?: '—') ?></div>
+                    <div class="f-tramite"><span><i class="fas fa-flag-checkered"></i> Finalizado</span><?= $c['finalizado_local'] ? esc(Calculo::fecha($c['finalizado_local'])) . ($c['finalizado_tarde'] ? ' <small>(tarde)</small>' : '') : '—' ?></div>
+                    <div class="f-tramite"><span><i class="fas fa-redo"></i> Reprogramaciones</span><?= (int) $c['reprogramaciones'] ?></div>
+                    <div class="f-tramite"><span><i class="fas fa-code-branch"></i> Versión</span><?= (int) $c['version'] ?></div>
                 </div>
                 <p class="ej-leyenda" style="margin-bottom:0;">No existe "inicio real": las horas sin luz se cuentan desde el inicio programado.</p>
             </div>
@@ -110,7 +111,7 @@ $volverUrl = base_url(route_to('ejesa_views')) . '?tab=' . urlencode(in_array($v
                                     elseif (($p['estado'] ?? '') !== 'activo') echo '<span class="ej-chip neutro">' . esc(ucfirst((string) $p['estado'])) . '</span>';
                                     else echo '<span class="ej-chip ok">Activo</span>';
                                 ?></td>
-                                <td data-label=""><?php if ($puedeVerFicha && isset($p['paciente'])): ?><a class="bl-btn ghost sm" href="<?= base_url(route_to('electrodependiente_show', $p['electrodependiente_id'])) ?>">Ficha</a><?php endif; ?></td>
+                                <td data-label=""><?php if ($puedeVerFicha && isset($p['paciente'])): ?><a class="bl-btn ghost sm" href="<?= base_url(route_to('electrodependiente_historial', $p['electrodependiente_id'])) ?>" title="Ver el historial del paciente (solo lectura)"><i class="fas fa-history"></i> Historial</a><?php endif; ?></td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (!$afectados): ?><tr><td colspan="8" class="ej-vacio">El protocolo se activó sin personas en la zona del corte.</td></tr><?php endif; ?>
@@ -137,9 +138,9 @@ $volverUrl = base_url(route_to('ejesa_views')) . '?tab=' . urlencode(in_array($v
                 <ul class="ej-timeline">
                     <?php foreach ($historial as $ev): ?>
                         <li class="<?= esc($ev['accion'], 'attr') ?>">
-                            <strong><?= esc($acciones[$ev['accion']] ?? $ev['accion']) ?></strong> · versión <?= (int) $ev['version'] ?>
-                            <div><?= esc(Calculo::describirCambio($ev['accion'], $ev['cambios'])) ?></div>
-                            <div class="cuando"><?= esc(Calculo::fecha(Calculo::utcALocal($ev['registrado_at']))) ?> · <?= esc($ev['username'] ?: 'usuario desconocido') ?></div>
+                            <div class="ej-ev-cab"><strong><?= esc($acciones[$ev['accion']] ?? $ev['accion']) ?></strong><span class="ej-ev-version">versión <?= (int) $ev['version'] ?></span></div>
+                            <div class="ej-ev-desc"><?= esc(Calculo::describirCambio($ev['accion'], $ev['cambios'])) ?></div>
+                            <div class="cuando"><span><i class="far fa-clock"></i> <?= esc(Calculo::fecha(Calculo::utcALocal($ev['registrado_at']))) ?></span><span><i class="far fa-user"></i> <?= esc($ev['username'] ?: 'usuario desconocido') ?></span></div>
                         </li>
                     <?php endforeach; ?>
                 </ul>

@@ -464,7 +464,7 @@ final class Calculo
         while ($mes < $fin) {
             $serie[$mes->format('Y-m')] = [
                 'ejercicio' => (int) $mes->format('Y'), 'mes' => self::MESES[(int) $mes->format('n')],
-                'cortes' => 0, 'horas' => 0.0, 'persona_horas' => 0.0,
+                'cortes' => 0, 'horas' => 0.0, 'persona_horas' => 0.0, 'persona_horas_alto' => 0.0,
                 'ALTO' => 0, 'MEDIANO' => 0, 'BAJO' => 0, 'PENDIENTE' => 0, 'sin_dato' => 0,
             ];
             $mes->modify('+1 month');
@@ -484,7 +484,8 @@ final class Calculo
                 $serie[$clave]['sin_dato']++;
                 continue;
             }
-            $serie[$clave]['persona_horas'] += (float) $c['persona_horas'];
+            $serie[$clave]['persona_horas']      += (float) $c['persona_horas'];
+            $serie[$clave]['persona_horas_alto'] += (float) $c['persona_horas_alto'];
             foreach (self::RIESGOS as $r) {
                 $serie[$clave][$r] += $c['afectados'][$r];
             }
@@ -553,6 +554,89 @@ final class Calculo
         uasort($personas, static fn ($a, $b) => [$b['horas'], $b['cortes']] <=> [$a['horas'], $a['cortes']]);
 
         return $personas;
+    }
+
+    /**
+     * Tipos de equipo de las personas afectadas, agrupados por nombre normalizado
+     * ("concentrador de oxigeno portatil" y "Concentrador de Oxígeno" cuentan como el mismo tipo).
+     * Cada persona cuenta una sola vez por tipo. Solo cantidades: sirve para gráficos y JavaScript.
+     *
+     * @param array $personas [id => ['equipos' => [['equipamiento' => ...], ...]], ...]
+     *
+     * @return list<array{tipo: string, clave: string, personas: int}> de mayor a menor
+     */
+    public static function equiposResumen(array $personas): array
+    {
+        $tipos = [];
+        $sinEquipo = 0;
+
+        foreach ($personas as $p) {
+            $vistos = [];
+            foreach ($p['equipos'] ?? [] as $eq) {
+                [$tipo, $clave] = self::tipoEquipo((string) ($eq['equipamiento'] ?? ''));
+                if ($tipo === '' || isset($vistos[$tipo])) {
+                    continue;
+                }
+                $vistos[$tipo] = true;
+                $tipos[$tipo] ??= ['tipo' => $tipo, 'clave' => $clave, 'personas' => 0];
+                $tipos[$tipo]['personas']++;
+            }
+            if (!$vistos) {
+                $sinEquipo++;
+            }
+        }
+
+        usort($tipos, static fn ($a, $b) => [$b['personas'], $a['tipo']] <=> [$a['personas'], $b['tipo']]);
+        if ($sinEquipo > 0) {
+            $tipos[] = ['tipo' => 'Sin equipo cargado', 'clave' => '', 'personas' => $sinEquipo];
+        }
+
+        return $tipos;
+    }
+
+    /** Nombre del tipo de equipo y palabra clave para buscarlo (sin tildes, en minúscula). */
+    public static function tipoEquipo(string $nombre): array
+    {
+        $txt = strtolower(strtr(trim($nombre), ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u', 'Á' => 'a', 'É' => 'e', 'Í' => 'i', 'Ó' => 'o', 'Ú' => 'u', 'ñ' => 'n', 'Ñ' => 'n']));
+        if ($txt === '') {
+            return ['', ''];
+        }
+
+        $tipos = [
+            'concentrador' => 'Concentrador de oxígeno',
+            'tubo'         => 'Tubo de oxígeno',
+            'bipap'        => 'BiPAP',
+            'cpap'         => 'CPAP',
+            'respirador'   => 'Respirador / ventilador',
+            'ventilador'   => 'Respirador / ventilador',
+            'aspirador'    => 'Aspirador',
+            'bomba'        => 'Bomba de alimentación',
+            'nebuliz'      => 'Nebulizador',
+            'colchon'      => 'Colchón antiescaras',
+            'oximetr'      => 'Oxímetro',
+            'monitor'      => 'Monitor',
+        ];
+        foreach ($tipos as $clave => $tipo) {
+            if (str_contains($txt, $clave)) {
+                return [$tipo, $clave];
+            }
+        }
+
+        // Otro equipo: se agrupa por su primera palabra
+        $palabra = preg_split('/[\s(]+/', $txt)[0] ?? $txt;
+
+        return [ucfirst($palabra), $palabra];
+    }
+
+    /** Cantidad de cortes del período por estado visible (todos los estados, aunque sean 0). */
+    public static function porEstado(array $cortes): array
+    {
+        $estados = array_fill_keys(array_keys(self::ESTADOS_VISIBLES), 0);
+        foreach ($cortes as $c) {
+            $estados[$c['estado_visible']] = ($estados[$c['estado_visible']] ?? 0) + 1;
+        }
+
+        return $estados;
     }
 
     // ─── Auditoría de consultas de EJESA ─────────────────────────────────

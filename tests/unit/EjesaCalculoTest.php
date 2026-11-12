@@ -302,4 +302,32 @@ final class EjesaCalculoTest extends CIUnitTestCase
         $this->assertStringStartsWith('Reprogramado: inicio 05/11/2026 07:00 → 05/11/2026 08:00',
             Calculo::describirCambio('REPROGRAMAR', '{"inicio_at": {"antes": "2026-11-05 07:00:00", "despues": "2026-11-05 08:00:00"}}'));
     }
+
+    public function testEquiposAgrupaPorTipoYCuentaUnaVezPorPersona(): void
+    {
+        $personas = [
+            1 => ['equipos' => [['equipamiento' => 'concentrador de oxigeno portatil'], ['equipamiento' => 'Concentrador de Oxígeno']]],
+            2 => ['equipos' => [['equipamiento' => 'CONCENTRADOR DE OXIGENO'], ['equipamiento' => 'CPAP (parcial)']]],
+            3 => ['equipos' => [['equipamiento' => 'bipap']]],
+            4 => ['equipos' => []],
+        ];
+        $r = Calculo::equiposResumen($personas);
+
+        $this->assertSame(['tipo' => 'Concentrador de oxígeno', 'clave' => 'concentrador', 'personas' => 2], $r[0]);
+        $tipos = array_column($r, 'personas', 'tipo');
+        $this->assertSame(1, $tipos['CPAP']);
+        $this->assertSame(1, $tipos['BiPAP']); // "bipap" no se confunde con CPAP
+        $this->assertSame(1, $tipos['Sin equipo cargado']);
+        $this->assertSame('Sin equipo cargado', end($r)['tipo']); // siempre al final
+    }
+
+    public function testPorEstadoIncluyeEstadosEnCero(): void
+    {
+        $e = Calculo::porEstado([['estado_visible' => 'FINALIZADO'], ['estado_visible' => 'FINALIZADO'], ['estado_visible' => 'VENCIDO']]);
+
+        $this->assertSame(2, $e['FINALIZADO']);
+        $this->assertSame(1, $e['VENCIDO']);
+        $this->assertSame(0, $e['CANCELADO']);
+        $this->assertSame(array_keys(Calculo::ESTADOS_VISIBLES), array_keys($e));
+    }
 }

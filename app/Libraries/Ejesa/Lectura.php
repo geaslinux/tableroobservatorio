@@ -70,14 +70,17 @@ class Lectura
         return $q->orderBy('c.inicio_at', 'ASC')->get()->getResultArray();
     }
 
-    /** Publicados cuyo fin estimado ya pasó y nadie finalizó. */
-    public function vencidos(string $ahora): array
+    /** Publicados cuyo fin estimado ya pasó y nadie finalizó (de la localidad elegida, si hay). */
+    public function vencidos(string $ahora, ?int $localidadId = null): array
     {
-        return $this->cortesBase()
+        $q = $this->cortesBase()
             ->whereIn('c.estado', ['PROGRAMADO', 'EN_CURSO'])
-            ->where('c.fin_estimado_at <', $ahora)
-            ->orderBy('c.fin_estimado_at', 'ASC')
-            ->get()->getResultArray();
+            ->where('c.fin_estimado_at <', $ahora);
+        if ($localidadId) {
+            $q->where('c.localidad_id', $localidadId);
+        }
+
+        return $q->orderBy('c.fin_estimado_at', 'ASC')->get()->getResultArray();
     }
 
     public function corte(int $id): ?array
