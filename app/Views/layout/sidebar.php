@@ -715,8 +715,6 @@ $userAvatarColor = generateColorFromString($userName);
         </a>
 
         <?php if (has_permission('LISTADO PERSONA')): ?>
-        <a href="<?= base_url(route_to('consulta_tablero')) ?>" class="nav-item" title="Atenciones de consulta">
-            <i class="fas fa-notes-medical" aria-hidden="true"></i><span>Atenciones de consulta</span>
         <a href="<?= base_url(route_to('consulta_tablero')) ?>" class="nav-item nav-item-largo" title="Atenciones de guardias pasivas">
             <i class="fas fa-notes-medical" aria-hidden="true"></i><span>Atenciones de guardias pasivas</span>
         </a>

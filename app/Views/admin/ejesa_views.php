@@ -159,11 +159,19 @@ foreach ($localidades ?? [] as $l) {
                 </div>
                 <div class="ej-filtro <?= $esPeriodoDefecto ? '' : 'activo' ?>">
                     <label for="f-desde">Desde</label>
-                    <input type="date" id="f-desde" name="desde" value="<?= esc($f['desde']) ?>">
+                    <div class="ej-fecha">
+                        <input type="text" id="f-desde" value="<?= esc(date('d/m/Y', strtotime($f['desde']))) ?>" placeholder="dd/mm/aaaa" autocomplete="off" inputmode="numeric">
+                        <i class="far fa-calendar-alt" aria-hidden="true"></i>
+                    </div>
+                    <input type="hidden" name="desde" value="<?= esc($f['desde']) ?>">
                 </div>
                 <div class="ej-filtro <?= $esPeriodoDefecto ? '' : 'activo' ?>">
                     <label for="f-hasta">Hasta</label>
-                    <input type="date" id="f-hasta" name="hasta" value="<?= esc($f['hasta']) ?>">
+                    <div class="ej-fecha">
+                        <input type="text" id="f-hasta" value="<?= esc(date('d/m/Y', strtotime($f['hasta']))) ?>" placeholder="dd/mm/aaaa" autocomplete="off" inputmode="numeric">
+                        <i class="far fa-calendar-alt" aria-hidden="true"></i>
+                    </div>
+                    <input type="hidden" name="hasta" value="<?= esc($f['hasta']) ?>">
                 </div>
                 <div class="ej-filtro <?= $f['localidad'] ? 'activo' : '' ?>">
                     <label for="f-loc">Localidad</label>
@@ -930,8 +938,70 @@ foreach ($localidades ?? [] as $l) {
         var el = document.getElementById(id);
         if (el) el.addEventListener('change', function () { form.submit(); });
     });
-    // Desde > hasta: se acomodan antes de enviar
-    form.addEventListener('submit', function () {
+    // Fechas: se ven y se escriben como dd/mm/aaaa (calendario igual al de guardia pasiva)
+    // y viajan como aaaa-mm-dd en los campos ocultos desde / hasta
+    var aIso = function (texto) {
+        var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(texto).trim());
+        if (!m) return null;
+        var dt = new Date(+m[3], m[2] - 1, +m[1]);
+        if (dt.getDate() !== +m[1] || dt.getMonth() !== m[2] - 1) return null;
+        return m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0');
+    };
+    var fechas = [['f-desde', 'desde'], ['f-hasta', 'hasta']];
+    if (window.jQuery && jQuery.datepicker) {
+        var nombresMes = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        fechas.forEach(function (par) {
+            jQuery('#' + par[0]).datepicker({
+                dateFormat: 'dd/mm/yy',
+                firstDay: 1,
+                changeMonth: true,
+                changeYear: true,
+                yearRange: 'c-5:c+1',
+                showOtherMonths: true,
+                selectOtherMonths: true,
+                showButtonPanel: true,
+                currentText: 'Hoy',
+                closeText: 'Cerrar',
+                prevText: 'Anterior',
+                nextText: 'Siguiente',
+                monthNames: nombresMes,
+                monthNamesShort: nombresMes.map(function (m) { return m.slice(0, 3); }),
+                dayNames: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                dayNamesMin: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'],
+                beforeShow: function (_, inst) { inst.dpDiv.addClass('ej-calendario'); },
+                onSelect: function () { this.setCustomValidity(''); }
+            });
+        });
+    }
+    fechas.forEach(function (par) {
+        var el = document.getElementById(par[0]);
+        if (el) el.addEventListener('input', function () { el.setCustomValidity(''); });
+    });
+    // Los botones de período y los clics en gráficos cambian los ocultos: se pasan a los visibles
+    var aTexto = function (iso) { var p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; };
+    var enviarOriginal = enviar;
+    enviar = function (cambios, tab) {
+        fechas.forEach(function (par) {
+            var el = document.getElementById(par[0]);
+            if (el && cambios[par[1]] !== undefined) el.value = aTexto(cambios[par[1]]);
+        });
+        enviarOriginal(cambios, tab);
+    };
+
+    // Fechas válidas y desde > hasta: se acomodan antes de enviar
+    form.addEventListener('submit', function (e) {
+        for (var i = 0; i < fechas.length; i++) {
+            var vis = document.getElementById(fechas[i][0]);
+            if (!vis) continue;
+            var iso = vis.value.trim() === '' ? '' : aIso(vis.value);
+            if (iso === null) {
+                e.preventDefault();
+                vis.setCustomValidity('Fecha inválida: usá el formato dd/mm/aaaa.');
+                vis.reportValidity();
+                return;
+            }
+            form.elements[fechas[i][1]].value = iso;
+        }
         var d = form.elements.desde, h = form.elements.hasta;
         if (d.value && h.value && d.value > h.value) { var t = d.value; d.value = h.value; h.value = t; }
     });
