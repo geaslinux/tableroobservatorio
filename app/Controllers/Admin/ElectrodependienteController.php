@@ -142,8 +142,11 @@ class ElectrodependienteController extends BaseController
         $modeloKpi = new \App\Models\ElectrodependienteModel();
         $this->aplicarFiltros($modeloKpi);
         $this->aplicarSeleccionMapa($modeloKpi, $mapaSel);
+        // Activos, bajas y fallecidos por separado: un fallecido cuenta solo como fallecido (igual que el mapa)
         $kpis = $modeloKpi->select("COUNT(*) AS total,
-                SUM(CASE WHEN electrodependiente.estado = 'activo' THEN 1 ELSE 0 END) AS activos,
+                SUM(CASE WHEN electrodependiente.estado = 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido' THEN 1 ELSE 0 END) AS activos,
+                SUM(CASE WHEN electrodependiente.estado <> 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido' THEN 1 ELSE 0 END) AS bajas,
+                SUM(CASE WHEN electrodependiente.estado_vital = 'fallecido' THEN 1 ELSE 0 END) AS fallecidos,
                 SUM(CASE WHEN electrodependiente.factor_riesgo = 'ALTO' THEN 1 ELSE 0 END) AS alto,
                 SUM(CASE WHEN electrodependiente.factor_riesgo IS NULL OR electrodependiente.factor_riesgo = '' THEN 1 ELSE 0 END) AS sin_riesgo,
                 SUM(CASE WHEN electrodependiente.nro_servicio IS NOT NULL AND electrodependiente.nro_servicio <> '' THEN 1 ELSE 0 END) AS con_servicio,

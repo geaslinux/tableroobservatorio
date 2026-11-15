@@ -351,6 +351,7 @@ details.ej-datos .ej-tabla { margin-top: 8px; }
     .ej-filtro-acciones { grid-column: auto; }
     .ej-filtro-acciones .bl-btn { flex: 0 0 auto; padding: 0 16px; }
     .ej-kpi-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .ej-kpi-cards.de-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } /* 6 tarjetas: 2 filas parejas */
     .ej-kpi-card { padding: 12px; gap: 12px; min-height: 88px; }
     .ej-kpi-icono { width: 48px; height: 48px; font-size: 22px; }
     .ej-kpi-val { font-size: 24px; }

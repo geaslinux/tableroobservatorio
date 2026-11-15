@@ -102,6 +102,9 @@ class IndexController extends BaseController
         $sm = $db->table('electrodependiente')
             ->select("
                 COUNT(*)                                          AS pacientes,
+                SUM(estado = 'activo' AND COALESCE(estado_vital, '') <> 'fallecido')  AS activos,
+                SUM(estado <> 'activo' AND COALESCE(estado_vital, '') <> 'fallecido') AS bajas,
+                SUM(estado_vital = 'fallecido')                   AS fallecidos,
                 SUM(factor_riesgo = 'ALTO')                       AS riesgo_alto,
                 SUM(cud = 'SI')                                   AS con_cud
             ", false)

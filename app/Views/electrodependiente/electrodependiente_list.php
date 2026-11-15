@@ -210,15 +210,32 @@ $total = $k['total'] ?? 0;
         <?php endif; ?>
 
         <!-- ── Indicadores (con los filtros aplicados) ── -->
-        <div class="ej-kpi-cards" id="epKpis">
-            <div class="ej-kpi-card navy">
-                <div class="ej-kpi-icono"><i class="fas fa-plug"></i></div>
+        <div class="ej-kpi-cards de-3" id="epKpis">
+            <!-- Activos, bajas y fallecidos por separado (suman el total del padrón); cada uno filtra el listado -->
+            <a class="ej-kpi-card verde" href="<?= $urlLista . '?' . http_build_query(['m_estado' => 'activo'] + $filtros) ?>" title="Ver solo los activos">
+                <div class="ej-kpi-icono"><i class="fas fa-users"></i></div>
                 <div class="ej-kpi-contenido">
-                    <div class="ej-kpi-lbl">Pacientes</div>
-                    <div class="ej-kpi-val"><?= $num($total) ?></div>
-                    <div class="ej-kpi-sub"><?= $num($k['activos'] ?? 0) ?> activos · <?= $num($total - ($k['activos'] ?? 0)) ?> desactivados</div>
+                    <div class="ej-kpi-lbl">Activos</div>
+                    <div class="ej-kpi-val"><?= $num($k['activos'] ?? 0) ?></div>
+                    <div class="ej-kpi-sub">de <?= $num($total) ?> en el padrón</div>
                 </div>
-            </div>
+            </a>
+            <a class="ej-kpi-card ambar" href="<?= $urlLista . '?' . http_build_query(['m_estado' => 'desactivado'] + $filtros) ?>" title="Ver solo las bajas">
+                <div class="ej-kpi-icono"><i class="fas fa-user-slash"></i></div>
+                <div class="ej-kpi-contenido">
+                    <div class="ej-kpi-lbl">Bajas</div>
+                    <div class="ej-kpi-val"><?= $num($k['bajas'] ?? 0) ?></div>
+                    <div class="ej-kpi-sub">desactivados del registro</div>
+                </div>
+            </a>
+            <a class="ej-kpi-card gris" href="<?= $urlLista . '?' . http_build_query(['m_estado' => 'fallecido'] + $filtros) ?>" title="Ver solo los fallecidos">
+                <div class="ej-kpi-icono"><i class="fas fa-cross"></i></div>
+                <div class="ej-kpi-contenido">
+                    <div class="ej-kpi-lbl">Fallecidos</div>
+                    <div class="ej-kpi-val"><?= $num($k['fallecidos'] ?? 0) ?></div>
+                    <div class="ej-kpi-sub">con fallecimiento registrado</div>
+                </div>
+            </a>
             <a class="ej-kpi-card rojo" href="<?= $urlLista . '?' . http_build_query(['factor_riesgo' => 'ALTO'] + $filtros) ?>" title="Ver solo los de riesgo ALTO">
                 <div class="ej-kpi-icono"><i class="fas fa-heartbeat"></i></div>
                 <div class="ej-kpi-contenido">
