@@ -200,6 +200,80 @@
     .ml-tab-pane { display: none; }
     .ml-tab-pane.is-active { display: block; }
 
+    /* ── PERFIL: tabla paginada + visor de un gráfico a la vez ── */
+    /* La tabla toma solo el ancho que necesita; los gráficos usan el resto */
+    .ml-stats-body.perfil-col { grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+    .sm-tabla-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+        margin-bottom: 8px;
+    }
+    .sm-tabla-head .ml-chart-title { margin: 0; text-align: left; }
+    /* ── Tablas compactas (diagnóstico y localidad): ancho fijo, primera columna angosta
+          que pasa a dos o más líneas parejas, números centrados en columnas de 70px ── */
+    .sm-tabla-compacta { table-layout: fixed; font-size: 12.5px; }
+    #tablaDiagnostico { width: 520px; } /* 240 + 4 × 70 */
+    #tablaLocalidad   { width: 410px; } /* 200 + 3 × 70 */
+    #tablaDiagnostico col.col-nombre { width: 240px; }
+    #tablaLocalidad   col.col-nombre { width: 200px; }
+    .sm-tabla-compacta col.col-num { width: 70px; }
+    .sm-tabla-compacta thead th { font-size: 9.5px; padding: 8px; vertical-align: middle; line-height: 1.25; white-space: normal; }
+    .sm-tabla-compacta tbody td,
+    .sm-tabla-compacta tfoot td { padding: 7px 8px; }
+    /* Valores y cabeceras centrados (menos la primera columna) */
+    /* (.ml-stats-table.sm-tabla-compacta: gana a ".ml-stats-table thead th.num", que alinea a la derecha) */
+    .ml-stats-table.sm-tabla-compacta th:not(:first-child),
+    .ml-stats-table.sm-tabla-compacta td:not(:first-child) { text-align: center; padding-left: 2px; padding-right: 2px; }
+    .sm-tabla-compacta tbody td:first-child,
+    .sm-tabla-compacta tfoot td:first-child {
+        font-size: 12px; line-height: 1.3; overflow-wrap: break-word; word-break: normal; hyphens: none;
+        text-wrap: balance; /* reparte el texto en líneas de largo parecido */
+    }
+    .sm-pag-size { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+    .sm-pag-size select {
+        border: 1px solid var(--border); border-radius: 6px; height: 28px; padding: 0 6px;
+        font-size: 12px; color: var(--text-main); background: var(--white); outline: none;
+    }
+    .sm-pag-size select:focus { border-color: var(--teal); }
+    .sm-paginador {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+        margin-top: 10px; font-size: 11.5px; color: var(--text-muted);
+    }
+    .sm-paginador[hidden] { display: none; }
+    .sm-pag-botones { display: flex; gap: 4px; flex-wrap: wrap; }
+    .sm-pag-btn {
+        min-width: 30px; height: 30px; padding: 0 8px;
+        border: 1px solid var(--border); border-radius: 7px; background: var(--white);
+        font-size: 12px; font-weight: 600; color: var(--text-main); cursor: pointer;
+        transition: background .15s, border-color .15s;
+    }
+    .sm-pag-btn:hover:not(:disabled) { background: #f0f5f9; }
+    .sm-pag-btn.is-active { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .sm-pag-btn:disabled { opacity: .4; cursor: default; }
+
+    .sm-carrusel-nav { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; }
+    .sm-carrusel-tabs {
+        flex: 1; display: flex; gap: 4px; padding: 4px;
+        background: #f4f6f9; border: 0.5px solid var(--border); border-radius: 10px;
+    }
+    .sm-carrusel-tab {
+        flex: 1; border: 0; border-radius: 7px; background: transparent; cursor: pointer;
+        padding: 7px 6px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px;
+        color: var(--text-muted); transition: background .15s, color .15s;
+    }
+    .sm-carrusel-tab:hover { background: #e9edf2; color: var(--text-main); }
+    .sm-carrusel-tab.is-active { background: var(--navy); color: #fff; }
+    .sm-carrusel-flecha {
+        width: 32px; height: 32px; flex-shrink: 0;
+        border: 1px solid var(--border); border-radius: 50%; background: var(--white);
+        color: var(--text-muted); cursor: pointer; display: grid; place-items: center;
+    }
+    .sm-carrusel-flecha:hover { background: #f0f5f9; color: var(--text-main); }
+    .sm-slide { display: none; }
+    .sm-slide.is-active { display: block; }
+
+    @media (max-width: 1200px) {
+        .ml-stats-body.perfil-col { grid-template-columns: 1fr; }
+    }
     @media (max-width: 992px) {
         .ml-stats-body { grid-template-columns: 1fr; }
     }
@@ -320,7 +394,7 @@
     .leaflet-popup-content strong { color: #13304d; font-size: 13px; }
     .leaflet-popup-content table  { font-size: 12px; margin-top: 4px; }
     .leaflet-popup-content td     { padding: 1px 4px; vertical-align: top; }
-    .ml-stats-body.dos-col { grid-template-columns: 1.1fr 1fr; }
+    .ml-stats-body.dos-col { grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
     .ml-stats-panel.is-collapsed .ml-stats-content { display: none; }
     @media (max-width: 992px) { .ml-stats-body.dos-col { grid-template-columns: 1fr; } }
     @media (max-width: 992px) {
@@ -340,6 +414,8 @@
         'localidad'     => $filtro_localidad,
         'tipo'          => $filtro_tipo,
         'factor_riesgo' => $filtro_factor,
+        // El Excel sin "estado" incluye activos y bajas: equivale a "todos"
+        'estado'        => $filtro_estado === 'todos' ? '' : $filtro_estado,
     ], 'strlen'));
     $urlExcel = base_url(route_to('electrodependiente_export')) . ($q !== '' ? '?' . $q : '');
 
@@ -426,6 +502,14 @@
                     </select>
                 </div>
                 <div class="ml-filtro-group">
+                    <span class="ml-filtro-label">Estado</span>
+                    <select name="estado" class="ml-filtro-select">
+                        <?php foreach (['activo' => 'Activos', 'desactivado' => 'Dados de baja', 'todos' => 'Todos'] as $v => $t): ?>
+                            <option value="<?= $v ?>" <?= $filtro_estado === $v ? 'selected' : '' ?>><?= $t ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="ml-filtro-group">
                     <span class="ml-filtro-label">&nbsp;</span>
                     <div style="display:flex; gap:6px;">
                         <button type="submit" class="bl-btn teal" style="height:36px; padding:0 16px;" title="Filtrar">
@@ -489,13 +573,26 @@
 
             <div class="ml-panel ml-stats-panel" data-stats-panel>
                 <?= $headerStats('ESTADÍSTICAS DE PACIENTES') ?>
-                <div class="ml-stats-body">
-                    <!-- padding-right: separa la tabla de los gráficos -->
-                    <div class="ml-stats-table-wrap" style="padding-right:24px;">
-                        <div class="ml-chart-title" style="text-align:left;">Pacientes por diagnóstico</div>
-                        <table class="ml-stats-table">
+                <div class="ml-stats-body perfil-col">
+                    <!-- Tabla completa, paginada de a 10 o 15 filas -->
+                    <div class="ml-stats-table-wrap">
+                        <div class="sm-tabla-head">
+                            <div class="ml-chart-title">Pacientes por diagnóstico</div>
+                            <?php if (count($porDiagnostico) > 10): ?>
+                                <label class="sm-pag-size">
+                                    Mostrar
+                                    <select id="diagPorPagina" aria-label="Filas por página">
+                                        <option value="10">10</option>
+                                        <option value="15">15</option>
+                                    </select>
+                                    por página
+                                </label>
+                            <?php endif; ?>
+                        </div>
+                        <table class="ml-stats-table sm-tabla-compacta" id="tablaDiagnostico">
+                            <colgroup><col class="col-nombre"><col class="col-num"><col class="col-num"><col class="col-num"><col class="col-num"></colgroup>
                             <thead>
-                                <tr><th>Diagnóstico</th><th class="num">Pacientes</th><th class="num">%</th><th class="num">Riesgo alto</th><th class="num">Niños</th></tr>
+                                <tr><th>Diagnóstico</th><th class="num">Pacientes</th><th class="num">%</th><th class="num">Riesgo<br>alto</th><th class="num">Niños</th></tr>
                             </thead>
                             <tbody>
                                 <?php if (empty($porDiagnostico)): ?>
@@ -523,20 +620,40 @@
                             </tfoot>
                             <?php endif; ?>
                         </table>
+                        <div class="sm-paginador" id="diagPaginador" hidden>
+                            <span id="diagPagInfo"></span>
+                            <div class="sm-pag-botones" id="diagPagBotones"></div>
+                        </div>
                     </div>
 
-                    <div class="ml-chart-box">
-                        <div class="ml-chart-title">Principales diagnósticos</div>
-                        <div class="ml-chart-canvas" style="height:<?= $alto(min(10, count($porDiagnostico))) ?>px;"><canvas id="chartDiagnostico"></canvas></div>
+                    <!-- Gráficos de a uno: pestañas y flechas para pasar de uno a otro -->
+                    <div class="ml-chart-box" id="carruselPerfil">
+                        <div class="sm-carrusel-nav">
+                            <button type="button" class="sm-carrusel-flecha" data-carrusel="-1" title="Gráfico anterior" aria-label="Gráfico anterior">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <div class="sm-carrusel-tabs" role="tablist">
+                                <button type="button" class="sm-carrusel-tab is-active" data-slide="diagnostico" role="tab">Principales diagnósticos</button>
+                                <button type="button" class="sm-carrusel-tab" data-slide="riesgo" role="tab">Factor de riesgo</button>
+                                <button type="button" class="sm-carrusel-tab" data-slide="tipo" role="tab">Riesgo por tipo</button>
+                            </div>
+                            <button type="button" class="sm-carrusel-flecha" data-carrusel="1" title="Gráfico siguiente" aria-label="Gráfico siguiente">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
 
-                        <!-- Debajo de Principales diagnósticos: columna más ancha, junto a la tabla -->
-                        <div class="ml-chart-title" style="margin-top:22px;">Riesgo según tipo de paciente</div>
-                        <div class="ml-chart-canvas" style="height:240px;"><canvas id="chartRiesgoTipo"></canvas></div>
-                    </div>
-
-                    <div class="ml-chart-box">
-                        <div class="ml-chart-title">Factor de riesgo</div>
-                        <div class="ml-chart-canvas"><canvas id="chartRiesgo"></canvas></div>
+                        <div class="sm-slide is-active" data-slide="diagnostico">
+                            <div class="ml-chart-title">Principales diagnósticos</div>
+                            <div class="ml-chart-canvas" style="height:<?= max(360, min(10, count($porDiagnostico)) * 40 + 40) ?>px;"><canvas id="chartDiagnostico"></canvas></div>
+                        </div>
+                        <div class="sm-slide" data-slide="riesgo">
+                            <div class="ml-chart-title">Factor de riesgo</div>
+                            <div class="ml-chart-canvas" style="height:360px;"><canvas id="chartRiesgo"></canvas></div>
+                        </div>
+                        <div class="sm-slide" data-slide="tipo">
+                            <div class="ml-chart-title">Riesgo según tipo de paciente</div>
+                            <div class="ml-chart-canvas" style="height:300px;"><canvas id="chartRiesgoTipo"></canvas></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -709,10 +826,23 @@
 
                     <div class="ml-stats-body dos-col">
                         <div class="ml-stats-table-wrap">
-                            <div class="ml-chart-title" style="text-align:left;">Pacientes por localidad</div>
-                            <table class="ml-stats-table">
+                            <div class="sm-tabla-head">
+                                <div class="ml-chart-title">Pacientes por localidad</div>
+                                <?php if (count($porLocalidad) > 10): ?>
+                                    <label class="sm-pag-size">
+                                        Mostrar
+                                        <select id="locPorPagina" aria-label="Filas por página">
+                                            <option value="10">10</option>
+                                            <option value="15">15</option>
+                                        </select>
+                                        por página
+                                    </label>
+                                <?php endif; ?>
+                            </div>
+                            <table class="ml-stats-table sm-tabla-compacta" id="tablaLocalidad">
+                                <colgroup><col class="col-nombre"><col class="col-num"><col class="col-num"><col class="col-num"></colgroup>
                                 <thead>
-                                    <tr><th>Localidad</th><th class="num">Pacientes</th><th class="num">Riesgo alto</th><th class="num">En mapa</th></tr>
+                                    <tr><th>Localidad</th><th class="num">Pacientes</th><th class="num">Riesgo<br>alto</th><th class="num">En<br>mapa</th></tr>
                                 </thead>
                                 <tbody>
                                     <?php if (empty($porLocalidad)): ?>
@@ -738,6 +868,10 @@
                                 </tfoot>
                                 <?php endif; ?>
                             </table>
+                            <div class="sm-paginador" id="locPaginador" hidden>
+                                <span id="locPagInfo"></span>
+                                <div class="sm-pag-botones" id="locPagBotones"></div>
+                            </div>
                         </div>
 
                         <div class="ml-chart-box">
@@ -852,12 +986,34 @@
         }
     };
 
+    // Parte un texto largo en varias líneas de largo parecido (sin cortar palabras).
+    // Chart.js dibuja cada elemento del array como una línea de la etiqueta.
+    function partirEnLineas(texto, maxPorLinea) {
+        texto = String(texto || '').trim();
+        if (texto.length <= maxPorLinea) return texto;
+        var palabras = texto.split(/\s+/);
+        var cantLineas = Math.ceil(texto.length / maxPorLinea);
+        var objetivo = Math.ceil(texto.length / cantLineas); // largo parejo por línea
+        var lineas = [], actual = '';
+        palabras.forEach(function (p) {
+            var prueba = actual ? actual + ' ' + p : p;
+            if (actual && prueba.length > objetivo && lineas.length < cantLineas - 1) {
+                lineas.push(actual);
+                actual = p;
+            } else {
+                actual = prueba;
+            }
+        });
+        if (actual) lineas.push(actual);
+        return lineas;
+    }
+
     function crearBarrasH(id, etiquetas, valores, color, mensajeSinDatos) {
         if (sinDatos(valores)) { mostrarSinDatos(id, mensajeSinDatos); return; }
         new Chart(document.getElementById(id), {
             type: 'bar',
             data: {
-                labels: etiquetas.map(function (e) { return acortar(e, 30); }),
+                labels: etiquetas.map(function (e) { return partirEnLineas(e, 26); }),
                 datasets: [{ data: valores, backgroundColor: color, borderRadius: 4, maxBarThickness: 22 }]
             },
             options: {
@@ -879,7 +1035,8 @@
     }
 
     // ══ Gráficos: PERFIL ══
-    function graficosPerfil() {
+    // Cada gráfico se dibuja la primera vez que se muestra en el visor (Chart.js no mide contenedores ocultos)
+    function graficoDiagnostico() {
         crearBarrasH(
             'chartDiagnostico',
             porDiagnostico.map(function (d) { return d.diagnostico; }),
@@ -887,7 +1044,9 @@
             dashboardColors.primary,
             'Sin pacientes de salud mental por diagnóstico para los filtros elegidos'
         );
+    }
 
+    function graficoRiesgo() {
         var seccionesConDatos = porRiesgo.filter(function (r) { return Number(r.pacientes) > 0; }).length;
         if (seccionesConDatos === 0) {
             mostrarSinDatos('chartRiesgo', 'Sin pacientes de salud mental por nivel de riesgo para los filtros elegidos');
@@ -924,8 +1083,10 @@
                 }
             }
         });
+    }
 
-        // Riesgo según tipo: barras apiladas horizontales (ADULTO / NIÑO)
+    // Riesgo según tipo: barras apiladas horizontales (ADULTO / NIÑO)
+    function graficoRiesgoTipo() {
         var tipos = [];
         Object.keys(riesgoPorTipo).forEach(function (r) {
             Object.keys(riesgoPorTipo[r]).forEach(function (t) { if (tipos.indexOf(t) === -1) tipos.push(t); });
@@ -935,7 +1096,8 @@
         riesgos.forEach(function (r) { tipos.forEach(function (t) { valoresRiesgoTipo.push(riesgoPorTipo[r][t] || 0); }); });
         if (sinDatos(valoresRiesgoTipo)) {
             mostrarSinDatos('chartRiesgoTipo', 'Sin pacientes de salud mental por riesgo y tipo para los filtros elegidos');
-        } else
+            return;
+        }
         // Total de pacientes por tipo (para porcentajes y para ocultar etiquetas en segmentos muy finos)
         var totalPorTipo = tipos.map(function (t) {
             return riesgos.reduce(function (s, r) { return s + (riesgoPorTipo[r][t] || 0); }, 0);
@@ -1007,6 +1169,100 @@
             }
         });
     }
+
+    // ── Visor de gráficos del perfil: uno a la vez ──
+    var slidesPerfil = ['diagnostico', 'riesgo', 'tipo'];
+    var dibujarSlide = { diagnostico: graficoDiagnostico, riesgo: graficoRiesgo, tipo: graficoRiesgoTipo };
+    var slidesDibujados = {};
+    var slideActual = 0;
+
+    function mostrarSlide(indice) {
+        var carrusel = document.getElementById('carruselPerfil');
+        if (!carrusel) return;
+        slideActual = (indice + slidesPerfil.length) % slidesPerfil.length;
+        var nombre = slidesPerfil[slideActual];
+        carrusel.querySelectorAll('.sm-slide').forEach(function (s) {
+            s.classList.toggle('is-active', s.dataset.slide === nombre);
+        });
+        carrusel.querySelectorAll('.sm-carrusel-tab').forEach(function (t) {
+            var activo = t.dataset.slide === nombre;
+            t.classList.toggle('is-active', activo);
+            t.setAttribute('aria-selected', activo ? 'true' : 'false');
+        });
+        if (!slidesDibujados[nombre]) {
+            slidesDibujados[nombre] = true;
+            dibujarSlide[nombre]();
+        }
+    }
+
+    (function () {
+        var carrusel = document.getElementById('carruselPerfil');
+        if (!carrusel) return;
+        carrusel.querySelectorAll('.sm-carrusel-tab').forEach(function (t) {
+            t.addEventListener('click', function () { mostrarSlide(slidesPerfil.indexOf(t.dataset.slide)); });
+        });
+        carrusel.querySelectorAll('[data-carrusel]').forEach(function (b) {
+            b.addEventListener('click', function () { mostrarSlide(slideActual + Number(b.dataset.carrusel)); });
+        });
+    })();
+
+    // Se llama al mostrar la pestaña "Perfil de pacientes"
+    function graficosPerfil() {
+        mostrarSlide(slideActual);
+    }
+
+    // ── Paginación de tablas (10 o 15 filas): "Pacientes por diagnóstico" y "Pacientes por localidad" ──
+    // prefijo: ids <prefijo>PorPagina, <prefijo>Paginador, <prefijo>PagInfo, <prefijo>PagBotones
+    function paginarTabla(idTabla, prefijo, nombreItems) {
+        var tabla = document.getElementById(idTabla);
+        var paginador = document.getElementById(prefijo + 'Paginador');
+        if (!tabla || !paginador) return;
+
+        var filas = Array.prototype.slice.call(tabla.tBodies[0].rows).filter(function (f) {
+            return !f.querySelector('.ml-stats-vacio');
+        });
+        var selector = document.getElementById(prefijo + 'PorPagina');
+        var info     = document.getElementById(prefijo + 'PagInfo');
+        var botones  = document.getElementById(prefijo + 'PagBotones');
+        var pagina   = 1;
+
+        function boton(texto, destino, opciones) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'sm-pag-btn' + (opciones.activo ? ' is-active' : '');
+            b.innerHTML = texto;
+            b.disabled = !!opciones.deshabilitado;
+            if (opciones.titulo) b.title = opciones.titulo;
+            b.addEventListener('click', function () { pagina = destino; render(); });
+            return b;
+        }
+
+        function render() {
+            var porPagina = selector ? Number(selector.value) : 10;
+            var totalPaginas = Math.max(1, Math.ceil(filas.length / porPagina));
+            pagina = Math.min(Math.max(1, pagina), totalPaginas);
+            var desde = (pagina - 1) * porPagina;
+            var hasta = Math.min(desde + porPagina, filas.length);
+
+            filas.forEach(function (f, i) { f.style.display = (i >= desde && i < hasta) ? '' : 'none'; });
+
+            paginador.hidden = filas.length <= porPagina;
+            info.textContent = 'Mostrando ' + (desde + 1) + '–' + hasta + ' de ' + filas.length + ' ' + nombreItems;
+
+            botones.innerHTML = '';
+            botones.appendChild(boton('<i class="fas fa-chevron-left"></i>', pagina - 1, { deshabilitado: pagina === 1, titulo: 'Página anterior' }));
+            for (var p = 1; p <= totalPaginas; p++) {
+                botones.appendChild(boton(String(p), p, { activo: p === pagina }));
+            }
+            botones.appendChild(boton('<i class="fas fa-chevron-right"></i>', pagina + 1, { deshabilitado: pagina === totalPaginas, titulo: 'Página siguiente' }));
+        }
+
+        if (selector) selector.addEventListener('change', function () { pagina = 1; render(); });
+        render();
+    }
+
+    paginarTabla('tablaDiagnostico', 'diag', 'diagnósticos');
+    paginarTabla('tablaLocalidad', 'loc', 'localidades');
 
     // ══ Gráficos y mapa: TERRITORIO ══
     var mapa = null;

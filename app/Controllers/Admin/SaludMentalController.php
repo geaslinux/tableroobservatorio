@@ -12,14 +12,20 @@ class SaludMentalController extends BaseController
 {
     private const TABS = ['perfil', 'mapa'];
 
+    // Estado del paciente: por defecto solo activos; "desactivado" son las bajas (fallecidos y bajas del registro)
+    private const ESTADOS = ['activo', 'desactivado', 'todos'];
+
     // ─── Filtros (mismos nombres que ElectrodependienteController para que el Excel respete lo filtrado)
     private function leerFiltros(): array
     {
+        $estado = $this->request->getGet('estado') ?? 'activo';
+
         return [
             'filtro_efector'   => $this->request->getGet('efector')       ?? '',
             'filtro_localidad' => $this->request->getGet('localidad')     ?? '',
             'filtro_tipo'      => $this->request->getGet('tipo')          ?? '',
             'filtro_factor'    => $this->request->getGet('factor_riesgo') ?? '',
+            'filtro_estado'    => in_array($estado, self::ESTADOS, true) ? $estado : 'activo',
         ];
     }
 
@@ -29,8 +35,13 @@ class SaludMentalController extends BaseController
         $builder = $db->table('electrodependiente')
             ->join('localidad l',   'l.localidad_id   = electrodependiente.localidad_id',   'left')
             ->join('efector e',     'e.efector_id     = electrodependiente.efector_id',     'left')
-            ->join('diagnostico d', 'd.diagnostico_id = electrodependiente.diagnostico_id', 'left')
-            ->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
+            ->join('diagnostico d', 'd.diagnostico_id = electrodependiente.diagnostico_id', 'left');
+
+        if ($filtros['filtro_estado'] === 'todos') {
+            $builder->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
+        } else {
+            $builder->where('electrodependiente.estado', $filtros['filtro_estado']);
+        }
 
         if ($filtros['filtro_efector'] !== '')   $builder->where('electrodependiente.efector_id', $filtros['filtro_efector']);
         if ($filtros['filtro_localidad'] !== '') $builder->where('electrodependiente.localidad_id', $filtros['filtro_localidad']);
