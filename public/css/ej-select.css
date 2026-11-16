@@ -1,0 +1,65 @@
+/* ── Desplegables con estilo para los filtros de todos los módulos (public/js/ej-select.js) ──
+   La caja .ej-select lleva las mismas clases que el <select> original (ml-filtro-select, bl-filtro-select…)
+   para heredar su ancho y sus márgenes; acá se anula lo visual de esas clases y se dibuja el botón. */
+.ej-select {
+    position: relative; display: inline-block; vertical-align: middle; max-width: 100%;
+    border: 0 !important; padding: 0 !important; background: none !important; box-shadow: none !important;
+    height: auto !important; outline: none !important;
+}
+.ej-filtro .ej-select { display: block; width: 100%; min-width: 0; }
+.ej-select-original {
+    position: absolute !important; left: 0 !important; top: 0 !important; margin: 0 !important;
+    width: 100% !important; height: 100% !important; min-width: 0 !important;
+    opacity: 0 !important; pointer-events: none !important;
+}
+/* Bulma <div class="select">: sin su flecha ni su alto fijo */
+.select.con-ej-select { height: auto; }
+.select.con-ej-select::after { display: none !important; }
+
+.ej-select-boton {
+    display: flex; align-items: center; gap: 8px; width: 100%; height: 38px; padding: 0 12px; margin: 0;
+    border: 1px solid #d0d7e0; border-radius: 8px; background: #fff;
+    color: #1a2b45; font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1.2; text-align: left;
+    cursor: pointer; transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.ej-select.vacio .ej-select-boton { font-weight: 500; color: #4a5568; }
+.ej-select-boton:hover { border-color: #9fb0c6; }
+.ej-select-boton:focus-visible, .ej-select.abierto .ej-select-boton { outline: none; border-color: #1a2b45; box-shadow: 0 0 0 3px rgba(26,43,69,.12); }
+.ej-select-boton:disabled { cursor: not-allowed; background: #f1f3f6; color: #9aa5b5; }
+.ej-select-texto { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ej-select-boton > i { font-size: 11px; color: #1a2b45; transition: transform .15s; }
+.ej-select.abierto .ej-select-boton > i { transform: rotate(180deg); }
+/* Filtro aplicado (EJESA / electrodependientes marcan .ej-filtro.activo) */
+.ej-filtro.activo .ej-select-boton { border-color: var(--teal, #2ab7a6); background: #f0fbf9; }
+
+/* Lista: se agrega al final de <body> y se ubica con position: fixed junto al botón */
+.ej-select-lista {
+    position: fixed; z-index: 4000;
+    width: max-content; max-width: min(380px, calc(100vw - 16px)); max-height: 300px; overflow-y: auto;
+    margin: 0; padding: 6px; list-style: none;
+    background: #fff; border: 1px solid #d0d7e0; border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(17,30,48,0.22);
+    font-family: inherit; text-align: left;
+    animation: ej-select-in .12s ease-out;
+}
+.ej-select-lista[hidden] { display: none; }
+.ej-select-lista.arriba { animation-name: ej-select-in-arriba; }
+@keyframes ej-select-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes ej-select-in-arriba { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.ej-select-op {
+    display: flex; align-items: center; gap: 9px; min-height: 36px; padding: 7px 10px; margin: 0;
+    border-radius: 8px; color: #2d3748; font-size: 13px; font-weight: 500; cursor: pointer; line-height: 1.3;
+}
+.ej-select-op.todos { color: #5a6578; }
+.ej-select-op.todos + .ej-select-op { margin-top: 5px; position: relative; }
+.ej-select-op.todos + .ej-select-op::before { content: ''; position: absolute; left: 6px; right: 6px; top: -3px; border-top: 1px solid #edf0f4; }
+.ej-select-op.foco { background: rgba(26,43,69,0.07); color: #1a2b45; }
+.ej-select-op[aria-selected="true"] { background: #1a2b45; color: #fff; font-weight: 700; }
+.ej-select-op[aria-selected="true"].foco { background: #24395a; }
+.ej-select-op.deshabilitada { color: #b3bcc8; cursor: default; background: none; }
+.ej-select-op > span { flex: 1; }
+.ej-select-tilde { font-size: 11px; visibility: hidden; }
+.ej-select-op[aria-selected="true"] .ej-select-tilde { visibility: visible; }
+.ej-select-grupo {
+    padding: 8px 10px 4px; font-size: 10px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #718096;
+}

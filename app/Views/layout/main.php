@@ -12,6 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.17/dist/sweetalert2.all.min.js"></script>
     <link rel="icon" href="/imag/logoobse.png">
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/ej-select.css?v=<?= @filemtime(FCPATH . 'css/ej-select.css') ?: '1' ?>">
     <!-- Tarjetas KPI responsivas de todos los módulos (celular y zoom alto) -->
     <link rel="stylesheet" href="/css/kpi-responsive.css">
     <!-- Botón para ocultar / mostrar los filtros en celular -->
@@ -210,6 +211,8 @@
 
     <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
     <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
+    <!-- Desplegables con estilo para los filtros de todos los módulos -->
+    <script src="/js/ej-select.js?v=<?= @filemtime(FCPATH . 'js/ej-select.js') ?: '1' ?>"></script>
     <script src="/js/modal.js"></script>
     <script src="/js/filtros-movil.js"></script>
     <!-- Botones "Filtrar" y "Limpiar" iguales en todos los filtros -->

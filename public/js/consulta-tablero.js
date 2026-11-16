@@ -615,8 +615,12 @@
             const datos = grafico.data.datasets[0];
             datos.data = def.filas.map((_, i) => conteos[d][i] || 0);
             if (def.tipo === 'doughnut') {
+                // Se ocultan las quitadas (quedan tachadas en la leyenda) y las que se quedaron sin atenciones
+                // por lo quitado en otro gráfico (no aparecen en 0 %: la leyenda las filtra)
                 def.filas.forEach((_, i) => {
                     if (grafico.getDataVisibility(i) === excluidos.has(i)) grafico.toggleDataVisibility(i);
+                    const ver = !excluidos.has(i) && (conteos[d][i] || 0) > 0;
+                    if (grafico.getDataVisibility(i) !== ver) grafico.toggleDataVisibility(i);
                 });
             } else {
                 if (!def.colores) def.colores = datos.backgroundColor.slice();
@@ -636,6 +640,8 @@
                 const fuera = excluidos.has(i);
                 if (cantidad && !fuera) presentes++;
                 tr.classList.toggle('ct-cruce-fuera', fuera);
+                // Sin atenciones por lo quitado en otro gráfico: la fila no se muestra (no queda en 0 %)
+                tr.hidden = !fuera && !cantidad;
                 tr.querySelector('[data-cruce-cantidad]').textContent = formato.format(cantidad);
                 const pct = !fuera && total ? 100 * cantidad / total : 0;
                 const barra = tr.querySelector('[data-cruce-barra]');
@@ -735,6 +741,8 @@
                           onClick: cruce ? (evento, item) => alternarCruce(def.dimension, item.index) : Chart.overrides.doughnut.plugins.legend.onClick,
                           labels: {
                             usePointStyle: true, pointStyle: 'rectRounded', boxWidth: 12, boxHeight: 12, padding: 12, color: '#1a2b45',
+                            // Con filtro cruzado no se listan las categorías que quedaron en 0 (salvo las quitadas a mano)
+                            filter: (item, data) => excluidosCruce.get(def.dimension)?.has(item.index) || (Number(data.datasets[0].data[item.index]) || 0) > 0,
                             // La leyenda lleva la cantidad y el porcentaje; los nombres largos se acortan
                             generateLabels: chart => Chart.overrides.doughnut.plugins.legend.labels.generateLabels(chart).map(l => {
                                 const corto = nombres[l.index].replace(/^Servicio( de)? /i, '').replace(/ - (Consultorio Externo )?Hospital /i, ' · ');
