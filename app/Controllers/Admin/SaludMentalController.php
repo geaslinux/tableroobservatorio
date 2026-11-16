@@ -168,6 +168,21 @@ class SaludMentalController extends BaseController
             ->orderBy('electrodependiente.paciente', 'ASC')
             ->get()->getResultArray();
 
+        // Equipos activos de cada paciente (una sola consulta), para el botón "Equipo" de la tarjeta
+        $equiposPor = [];
+        $idsPacientes = array_column($filasPacientes, 'id');
+        if ($idsPacientes) {
+            $equipos = model('EquipamientoModel')
+                ->select('electrodependiente_id, equipamiento, tiempo_uso, marca, modelo, serie, fecha_entrega, medico_tratante')
+                ->whereIn('electrodependiente_id', $idsPacientes)
+                ->where('estado', 'activo')
+                ->orderBy('equipamiento_id', 'ASC')
+                ->findAll();
+            foreach ($equipos as $eq) {
+                $equiposPor[$eq['electrodependiente_id']][] = $eq;
+            }
+        }
+
         $puntos       = [];
         $sinUbicacion = [];
         foreach ($filasPacientes as $f) {
@@ -175,6 +190,7 @@ class SaludMentalController extends BaseController
             $lat    = (float) ($coords[0] ?? 0);
             $lng    = (float) ($coords[1] ?? 0);
             unset($f['coordenadas']);
+            $f['equipos'] = $equiposPor[$f['id']] ?? [];
 
             // Vacías, incompletas o fuera de rango: no se pueden ubicar en el mapa
             if (count($coords) < 2 || ($lat == 0 && $lng == 0) || abs($lat) > 90 || abs($lng) > 180) {
