@@ -12,14 +12,20 @@ class SaludMentalController extends BaseController
 {
     private const TABS = ['perfil', 'mapa'];
 
+    // Estado del paciente: por defecto solo activos; "desactivado" son las bajas (fallecidos y bajas del registro)
+    private const ESTADOS = ['activo', 'desactivado', 'todos'];
+
     // ─── Filtros (mismos nombres que ElectrodependienteController para que el Excel respete lo filtrado)
     private function leerFiltros(): array
     {
+        $estado = $this->request->getGet('estado') ?? 'activo';
+
         return [
             'filtro_efector'   => $this->request->getGet('efector')       ?? '',
             'filtro_localidad' => $this->request->getGet('localidad')     ?? '',
             'filtro_tipo'      => $this->request->getGet('tipo')          ?? '',
             'filtro_factor'    => $this->request->getGet('factor_riesgo') ?? '',
+            'filtro_estado'    => in_array($estado, self::ESTADOS, true) ? $estado : 'activo',
         ];
     }
 
@@ -29,8 +35,13 @@ class SaludMentalController extends BaseController
         $builder = $db->table('electrodependiente')
             ->join('localidad l',   'l.localidad_id   = electrodependiente.localidad_id',   'left')
             ->join('efector e',     'e.efector_id     = electrodependiente.efector_id',     'left')
-            ->join('diagnostico d', 'd.diagnostico_id = electrodependiente.diagnostico_id', 'left')
-            ->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
+            ->join('diagnostico d', 'd.diagnostico_id = electrodependiente.diagnostico_id', 'left');
+
+        if ($filtros['filtro_estado'] === 'todos') {
+            $builder->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
+        } else {
+            $builder->where('electrodependiente.estado', $filtros['filtro_estado']);
+        }
 
         if ($filtros['filtro_efector'] !== '')   $builder->where('electrodependiente.efector_id', $filtros['filtro_efector']);
         if ($filtros['filtro_localidad'] !== '') $builder->where('electrodependiente.localidad_id', $filtros['filtro_localidad']);
@@ -63,6 +74,9 @@ class SaludMentalController extends BaseController
         $kpi = $this->builder($db, $filtros)
             ->select("
                 COUNT(*)                                                         AS pacientes,
+                SUM(electrodependiente.estado = 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido')  AS activos,
+                SUM(electrodependiente.estado <> 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido') AS bajas,
+                SUM(electrodependiente.estado_vital = 'fallecido')               AS fallecidos,
                 SUM(electrodependiente.tipo = 'ADULTO')                          AS adultos,
                 SUM(electrodependiente.tipo <> 'ADULTO')                         AS ninos,
                 SUM(electrodependiente.factor_riesgo = 'ALTO')                   AS riesgo_alto,
@@ -74,6 +88,19 @@ class SaludMentalController extends BaseController
                 SUM(TRIM(COALESCE(electrodependiente.seguimiento, '')) LIKE 'EVALUACION PENDI%') AS eval_pendiente
             ", false)
             ->get()->getRowArray();
+
+        // Activos, Bajas y Fallecidos se cuentan siempre sobre todo el padrón (sin el filtro de estado),
+        // respetando los demás filtros; si no, con "solo activos" las bajas y fallecidos darían 0.
+        $porEstado = $this->builder($db, ['filtro_estado' => 'todos'] + $filtros)
+            ->select("
+                SUM(electrodependiente.estado = 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido')  AS activos,
+                SUM(electrodependiente.estado <> 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido') AS bajas,
+                SUM(electrodependiente.estado_vital = 'fallecido')               AS fallecidos
+            ", false)
+            ->get()->getRowArray();
+        if (is_array($kpi) && is_array($porEstado)) {
+            $kpi = array_merge($kpi, $porEstado);
+        }
         $kpi = array_map('intval', $kpi ?? []);
 
         // ══ PERFIL DE PACIENTES ═════════════════════════════════════════

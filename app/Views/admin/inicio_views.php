@@ -229,13 +229,13 @@
         </div>
         <div class="mcp-stats">
             <div class="mcp-row">
-                <?= $stat($fmt($sm['pacientes']), 'Pacientes<br>electrodep.') ?>
+                <?= $stat($fmt($sm['activos']), 'Electrodep.<br>activos') ?>
                 <?= $stat($fmt($sm['riesgo_alto']), 'Riesgo<br>alto') ?>
                 <?= $stat($fmt($sm['geo']), 'Ubicados<br>en mapa') ?>
                 <?= $stat($fmt($sm['camas']), 'Camas<br>salud mental') ?>
             </div>
             <div class="mcp-pill">
-                <span><i class="fas fa-circle"></i> <?= $dec($sm['pct_alto']) ?>% de pacientes con riesgo alto</span>
+                <span><i class="fas fa-circle"></i> <?= $fmt($sm['bajas']) ?> bajas · <?= $fmt($sm['fallecidos']) ?> fallecidos · <?= $dec($sm['pct_alto']) ?>% con riesgo alto</span>
             </div>
         </div>
     </a>

@@ -6,7 +6,7 @@
 
 <style>
     /* ══════════════════════════════════════════
-       MOBILE ≤ 768px
+       MOBILE ≤ 768p
     ══════════════════════════════════════════ */
     @media (max-width: 768px) {
         .section { padding: 0.75rem 0.5rem !important; }
