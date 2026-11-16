@@ -88,6 +88,19 @@ class SaludMentalController extends BaseController
                 SUM(TRIM(COALESCE(electrodependiente.seguimiento, '')) LIKE 'EVALUACION PENDI%') AS eval_pendiente
             ", false)
             ->get()->getRowArray();
+
+        // Activos, Bajas y Fallecidos se cuentan siempre sobre todo el padrón (sin el filtro de estado),
+        // respetando los demás filtros; si no, con "solo activos" las bajas y fallecidos darían 0.
+        $porEstado = $this->builder($db, ['filtro_estado' => 'todos'] + $filtros)
+            ->select("
+                SUM(electrodependiente.estado = 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido')  AS activos,
+                SUM(electrodependiente.estado <> 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido') AS bajas,
+                SUM(electrodependiente.estado_vital = 'fallecido')               AS fallecidos
+            ", false)
+            ->get()->getRowArray();
+        if (is_array($kpi) && is_array($porEstado)) {
+            $kpi = array_merge($kpi, $porEstado);
+        }
         $kpi = array_map('intval', $kpi ?? []);
 
         // ══ PERFIL DE PACIENTES ═════════════════════════════════════════
