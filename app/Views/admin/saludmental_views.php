@@ -386,6 +386,21 @@
     .sm-paciente-item.is-sin-geo { cursor: default; border-style: dashed; }
     .sm-paciente-item.is-sin-geo:hover { background: #f9f9f9; }
     .sm-paciente-tag.sm-tag-sin-geo { background: #708090; color: #fff; }
+    /* Botón "Equipo" de la tarjeta y su detalle */
+    .sm-btn-equipo {
+        align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+        padding: 5px 10px; border-radius: 7px; border: 1px solid #1a2b45; background: #fff; color: #1a2b45;
+        font-family: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: background .15s, color .15s;
+    }
+    .sm-btn-equipo:hover:not(:disabled), .sm-btn-equipo[aria-expanded="true"] { background: #1a2b45; color: #fff; }
+    .sm-btn-equipo:disabled { border-color: #d0d7e0; background: #f1f3f6; color: #9aa5b5; cursor: not-allowed; }
+    .sm-btn-equipo-flecha { font-size: 9px; transition: transform .15s; }
+    .sm-btn-equipo[aria-expanded="true"] .sm-btn-equipo-flecha { transform: rotate(180deg); }
+    .sm-equipos { margin-top: 6px; padding: 8px 10px; border-radius: 8px; background: #fff; border: 1px solid #e2e8f0; cursor: default; }
+    .sm-equipo { padding: 3px 0 3px 8px; border-left: 3px solid #cfe0f3; font-size: 12px; line-height: 1.45; color: var(--text-main); }
+    .sm-equipo + .sm-equipo { margin-top: 6px; }
+    .sm-equipo strong { color: #13304d; }
+    .sm-equipo small { display: block; color: var(--text-muted); font-size: 11px; }
     .sm-list-vacia      { padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 13px; font-style: italic; }
 
     /* Panel del mapa */
@@ -408,6 +423,12 @@
     .leaflet-popup-content strong { color: #13304d; font-size: 13px; }
     .leaflet-popup-content table  { font-size: 12px; margin-top: 4px; }
     .leaflet-popup-content td     { padding: 1px 4px; vertical-align: top; }
+    /* Equipos dentro del popup del mapa */
+    .sm-pop-equipos { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; max-height: 170px; overflow-y: auto; }
+    .sm-pop-equipos-tit { font-size: 10.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: #1a2b45; margin-bottom: 5px; }
+    .sm-pop-equipos-tit i { margin-right: 3px; }
+    .sm-pop-equipos.sin { font-size: 12px; color: #9aa5b5; font-weight: 600; }
+    .leaflet-popup-content .sm-equipo strong { font-size: 12px; }
     .ml-stats-body.dos-col { grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
     .ml-stats-panel.is-collapsed .ml-stats-content { display: none; }
     @media (max-width: 992px) { .ml-stats-body.dos-col { grid-template-columns: 1fr; } }
@@ -761,6 +782,29 @@
                                 </div>
                                 <div class="sm-busqueda-info" id="busquedaInfo" aria-live="polite"></div>
 
+                                <?php
+                                    // Botón "Equipo" de la tarjeta: muestra los equipos activos; sin equipo queda deshabilitado
+                                    $botonEquipo = function (array $p): string {
+                                        $eqs = $p['equipos'] ?? [];
+                                        if (!$eqs) {
+                                            return '<button type="button" class="sm-btn-equipo" disabled title="Sin equipo asignado"><i class="fas fa-plug-circle-xmark"></i> Sin equipo</button>';
+                                        }
+                                        $h = '<button type="button" class="sm-btn-equipo" aria-expanded="false" title="Ver el equipo asignado"><i class="fas fa-plug"></i> Equipo' . (count($eqs) > 1 ? 's (' . count($eqs) . ')' : '') . ' <i class="fas fa-chevron-down sm-btn-equipo-flecha"></i></button>';
+                                        $d = '';
+                                        foreach ($eqs as $eq) {
+                                            $det = array_filter([
+                                                trim(($eq['marca'] ?? '') . ' ' . ($eq['modelo'] ?? '')),
+                                                !empty($eq['serie']) ? 'Serie ' . $eq['serie'] : '',
+                                                !empty($eq['fecha_entrega']) ? 'Entrega ' . date('d/m/Y', strtotime($eq['fecha_entrega'])) : '',
+                                                !empty($eq['medico_tratante']) ? 'Médico: ' . $eq['medico_tratante'] : '',
+                                            ]);
+                                            $d .= '<div class="sm-equipo"><strong>' . esc($eq['equipamiento'] ?: '—') . '</strong>'
+                                                . (!empty($eq['tiempo_uso']) ? ' · ' . esc($eq['tiempo_uso']) : '')
+                                                . ($det ? '<small>' . esc(implode(' · ', $det)) . '</small>' : '') . '</div>';
+                                        }
+                                        return $h . '<div class="sm-equipos" hidden>' . $d . '</div>';
+                                    };
+                                ?>
                                 <div class="sm-list-container" id="listaPacientes">
                                     <?php if (!empty($puntos)): ?>
                                         <?php foreach ($puntos as $i => $p): ?>
@@ -786,6 +830,7 @@
                                                         <span class="sm-paciente-tag"><?= esc($p['tipo']) ?></span>
                                                     <?php endif; ?>
                                                 </div>
+                                                <?= $botonEquipo($p) ?>
                                             </div>
                                         <?php endforeach; ?>
                                     <?php else: ?>
@@ -817,6 +862,7 @@
                                                     <span class="sm-paciente-tag"><?= esc($p['tipo']) ?></span>
                                                 <?php endif; ?>
                                             </div>
+                                            <?= $botonEquipo($p) ?>
                                         </div>
                                     <?php endforeach; ?>
 
@@ -917,6 +963,24 @@
 <?= $this->endSection() ?>
 
 <?= $this->section('js') ?>
+<script>
+// Botón "Equipo" de las tarjetas de pacientes: muestra u oculta el detalle.
+// Se atiende en la fase de captura para que el clic no llegue a la tarjeta (que centra el mapa).
+document.addEventListener('click', function (e) {
+    var b = e.target.closest ? e.target.closest('#listaPacientes .sm-btn-equipo') : null;
+    if (b) {
+        e.stopPropagation();
+        if (b.disabled) return;
+        var det = b.nextElementSibling;
+        var abrir = det.hidden;
+        det.hidden = !abrir;
+        b.setAttribute('aria-expanded', String(abrir));
+        return;
+    }
+    // Clic dentro del detalle: tampoco mueve el mapa
+    if (e.target.closest && e.target.closest('#listaPacientes .sm-equipos')) e.stopPropagation();
+}, true);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1603,6 +1667,24 @@
 
         cargarDepartamentos();
 
+        // Equipos activos del paciente para el popup (mismo formato que la tarjeta de la lista)
+        function equiposPopup(p) {
+            var eqs = p.equipos || [];
+            if (!eqs.length) return '<div class="sm-pop-equipos sin"><i class="fas fa-plug-circle-xmark"></i> Sin equipo asignado</div>';
+            return '<div class="sm-pop-equipos"><div class="sm-pop-equipos-tit"><i class="fas fa-plug"></i> ' + (eqs.length > 1 ? 'Equipos (' + eqs.length + ')' : 'Equipo') + '</div>' +
+                eqs.map(function (eq) {
+                    var det = [
+                        ((eq.marca || '') + ' ' + (eq.modelo || '')).trim(),
+                        eq.serie ? 'Serie ' + eq.serie : '',
+                        eq.fecha_entrega ? 'Entrega ' + eq.fecha_entrega.slice(0, 10).split('-').reverse().join('/') : '',
+                        eq.medico_tratante ? 'Médico: ' + eq.medico_tratante : ''
+                    ].filter(Boolean).join(' · ');
+                    return '<div class="sm-equipo"><strong>' + escapar(eq.equipamiento || '—') + '</strong>' +
+                        (eq.tiempo_uso ? ' · ' + escapar(eq.tiempo_uso) : '') +
+                        (det ? '<small>' + escapar(det) + '</small>' : '') + '</div>';
+                }).join('') + '</div>';
+        }
+
         var grupo = L.featureGroup();
         puntos.forEach(function (p, i) {
             marcadores[i] = L.marker([p.lat, p.lng], { icon: crearIcono(p.riesgo) })
@@ -1614,8 +1696,8 @@
                     '<tr><td>Hospital:</td><td>' + escapar(p.efector || '—') + '</td></tr>' +
                     '<tr><td>Diagnóstico:</td><td>' + escapar(p.diagnostico || '—') + '</td></tr>' +
                     '<tr><td>Riesgo:</td><td><strong style="color:' + colorRiesgo(p.riesgo) + '">' + escapar(p.riesgo || 'S/D') + '</strong></td></tr>' +
-                    '</table>',
-                    { maxWidth: 260 }
+                    '</table>' + equiposPopup(p),
+                    { maxWidth: 300, minWidth: 240 }
                 )
                 .addTo(grupo);
         });
