@@ -48,6 +48,8 @@
     .kpi-purple { border-left: 6px solid #d6bcfa; }
     .kpi-red    { border-left: 6px solid #feb2b2; }
     .kpi-navy   { border-left: 6px solid #a0aec0; }
+    .kpi-green  { border-left: 6px solid #9ae6b4; }
+    .kpi-amber  { border-left: 6px solid #fbd38d; }
 
     .ml-kpi-icon {
         width: 60px; height: 60px;
@@ -60,6 +62,8 @@
     .kpi-purple .ml-kpi-icon { background: #faf5ff; color: #805ad5; }
     .kpi-red    .ml-kpi-icon { background: #fff5f5; color: #e53e3e; }
     .kpi-navy   .ml-kpi-icon { background: #f7fafc; color: #4a5568; }
+    .kpi-green  .ml-kpi-icon { background: #f0fff4; color: #38a169; }
+    .kpi-amber  .ml-kpi-icon { background: #fffaf0; color: #dd6b20; }
 
     .ml-kpi-label { font-size: 14px; font-weight: 700; color: #718096; text-transform: uppercase; text-align: center; }
     .ml-kpi-value { font-size: 25px; font-weight: 700; color: #2d3748; line-height: 1; margin-top: 2px; }
@@ -540,14 +544,31 @@
 
         <!-- ══════════════ PERFIL DE PACIENTES ══════════════ -->
         <div class="ml-tab-pane <?= $tab === 'perfil' ? 'is-active' : '' ?>" data-pane="perfil">
+            <!-- Activos, bajas y fallecidos por separado (un fallecido cuenta solo como fallecido) -->
             <div class="ml-kpi-cards">
-                <div class="ml-kpi-card kpi-navy">
-                    <div class="ml-kpi-icon"><i class="fas fa-plug"></i></div>
+                <div class="ml-kpi-card kpi-green">
+                    <div class="ml-kpi-icon"><i class="fas fa-users"></i></div>
                     <div class="ml-kpi-content">
-                        <div class="ml-kpi-label">Pacientes</div>
-                        <div class="ml-kpi-value"><?= $fmt($kpi['pacientes']) ?></div>
+                        <div class="ml-kpi-label">Activos</div>
+                        <div class="ml-kpi-value"><?= $fmt($kpi['activos']) ?></div>
                     </div>
                 </div>
+                <div class="ml-kpi-card kpi-amber">
+                    <div class="ml-kpi-icon"><i class="fas fa-user-slash"></i></div>
+                    <div class="ml-kpi-content">
+                        <div class="ml-kpi-label">Bajas</div>
+                        <div class="ml-kpi-value"><?= $fmt($kpi['bajas']) ?></div>
+                    </div>
+                </div>
+                <div class="ml-kpi-card kpi-navy">
+                    <div class="ml-kpi-icon"><i class="fas fa-cross"></i></div>
+                    <div class="ml-kpi-content">
+                        <div class="ml-kpi-label">Fallecidos</div>
+                        <div class="ml-kpi-value"><?= $fmt($kpi['fallecidos']) ?></div>
+                    </div>
+                </div>
+            </div>
+            <div class="ml-kpi-cards">
                 <div class="ml-kpi-card kpi-blue">
                     <div class="ml-kpi-icon"><i class="fas fa-child"></i></div>
                     <div class="ml-kpi-content">

@@ -74,6 +74,9 @@ class SaludMentalController extends BaseController
         $kpi = $this->builder($db, $filtros)
             ->select("
                 COUNT(*)                                                         AS pacientes,
+                SUM(electrodependiente.estado = 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido')  AS activos,
+                SUM(electrodependiente.estado <> 'activo' AND COALESCE(electrodependiente.estado_vital, '') <> 'fallecido') AS bajas,
+                SUM(electrodependiente.estado_vital = 'fallecido')               AS fallecidos,
                 SUM(electrodependiente.tipo = 'ADULTO')                          AS adultos,
                 SUM(electrodependiente.tipo <> 'ADULTO')                         AS ninos,
                 SUM(electrodependiente.factor_riesgo = 'ALTO')                   AS riesgo_alto,
