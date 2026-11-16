@@ -15,6 +15,16 @@
     .ml-breadcrumb strong { color: var(--text-main); font-weight: 600; }
 
     /* ── KPIS ── */
+    /* Perfil: las seis tarjetas en una sola fila */
+    .ml-kpi-cards.ml-kpi-una-fila { flex-wrap: nowrap; gap: 12px; }
+    .ml-kpi-una-fila .ml-kpi-card { flex: 1 1 0; min-width: 0; max-width: none; padding: 12px; gap: 10px; }
+    .ml-kpi-una-fila .ml-kpi-content { min-width: 0; }
+    .ml-kpi-una-fila .ml-kpi-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 1280px) {
+        .ml-kpi-cards.ml-kpi-una-fila { flex-wrap: wrap; }
+        .ml-kpi-una-fila .ml-kpi-card { flex: 1 1 calc(33.333% - 12px); }
+    }
+    @media (max-width: 600px) { .ml-kpi-una-fila .ml-kpi-card { flex: 1 1 100%; } }
     .ml-kpi-cards {
         display: flex; gap: 16px; flex-wrap: wrap;
         margin-bottom: 16px;
@@ -544,15 +554,8 @@
 
         <!-- ══════════════ PERFIL DE PACIENTES ══════════════ -->
         <div class="ml-tab-pane <?= $tab === 'perfil' ? 'is-active' : '' ?>" data-pane="perfil">
-            <!-- Activos, bajas y fallecidos por separado (un fallecido cuenta solo como fallecido) -->
-            <div class="ml-kpi-cards">
-                <div class="ml-kpi-card kpi-green">
-                    <div class="ml-kpi-icon"><i class="fas fa-users"></i></div>
-                    <div class="ml-kpi-content">
-                        <div class="ml-kpi-label">Activos</div>
-                        <div class="ml-kpi-value"><?= $fmt($kpi['activos']) ?></div>
-                    </div>
-                </div>
+            <!-- Una sola fila; activos, bajas y fallecidos por separado (un fallecido cuenta solo como fallecido) -->
+            <div class="ml-kpi-cards ml-kpi-una-fila">
                 <div class="ml-kpi-card kpi-amber">
                     <div class="ml-kpi-icon"><i class="fas fa-user-slash"></i></div>
                     <div class="ml-kpi-content">
@@ -567,8 +570,6 @@
                         <div class="ml-kpi-value"><?= $fmt($kpi['fallecidos']) ?></div>
                     </div>
                 </div>
-            </div>
-            <div class="ml-kpi-cards">
                 <div class="ml-kpi-card kpi-blue">
                     <div class="ml-kpi-icon"><i class="fas fa-child"></i></div>
                     <div class="ml-kpi-content">
@@ -588,6 +589,13 @@
                     <div class="ml-kpi-content">
                         <div class="ml-kpi-label">Con CUD</div>
                         <div class="ml-kpi-value"><?= $fmt($kpi['con_cud']) ?> <small style="font-size:13px; color:#718096;">(<?= $pct($kpi['con_cud'], $kpi['pacientes']) ?>)</small></div>
+                    </div>
+                </div>
+                <div class="ml-kpi-card kpi-green">
+                    <div class="ml-kpi-icon"><i class="fas fa-users"></i></div>
+                    <div class="ml-kpi-content">
+                        <div class="ml-kpi-label">Activos</div>
+                        <div class="ml-kpi-value"><?= $fmt($kpi['activos']) ?></div>
                     </div>
                 </div>
             </div>
