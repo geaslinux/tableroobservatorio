@@ -112,10 +112,64 @@
         return typeof bg === 'string' ? colorTextoSobre(bg) : '#1d2b3c';
     }
 
+    // Suma de las secciones visibles de un gráfico (las tachadas en la leyenda no cuentan).
+    // Uso en los porcentajes de las donas: total = totalVisible(ctx.chart)
+    function totalVisible(chart) {
+        return chart.data.datasets[0].data.reduce(function (a, v, i) {
+            return a + (chart.getDataVisibility(i) ? Number(v) || 0 : 0);
+        }, 0);
+    }
+
+    // Plugin de Chart.js para las donas con secciones separadas (spacing / offset / bordes redondeados):
+    // si en la leyenda se tachan secciones y queda una sola visible, se quita la separación para que
+    // la dona quede cerrada (si no, queda un corte y la sección oculta se ve "escurrirse" por el hueco).
+    // Al volver a mostrar secciones recupera la separación original. Uso: plugins: [..., donaVisible]
+    var donaVisible = {
+        id: 'donaVisible',
+        beforeUpdate: function (chart) {
+            if (chart.config.type !== 'doughnut') return;
+            chart.data.datasets.forEach(function (ds) {
+                if (!ds._separacionOriginal) {
+                    ds._separacionOriginal = { spacing: ds.spacing || 0, offset: ds.offset || 0, borderRadius: ds.borderRadius || 0 };
+                }
+                var visibles = ds.data.filter(function (v, i) { return chart.getDataVisibility(i) && Number(v) > 0; }).length;
+                var o = ds._separacionOriginal;
+                ds.spacing      = visibles > 1 ? o.spacing : 0;
+                ds.offset       = visibles > 1 ? o.offset : 0;
+                ds.borderRadius = visibles > 1 ? o.borderRadius : 0;
+            });
+        },
+        // Falla de Chart.js: una porción más angosta que la separación (spacing) se dibuja "al revés" y pinta
+        // un anillo casi completo de su color. Pasa mientras se anima la porción que se tacha (parpadeo).
+        // Esas porciones y las que se están ocultando no se dibujan; después de dibujar se dejan como estaban.
+        beforeDatasetDraw: function (chart, args) {
+            if (chart.config.type !== 'doughnut') return;
+            args.meta.data.forEach(function (arco, i) {
+                var separacion = (arco.options && arco.options.spacing) || 0;
+                var largo = arco.circumference * Math.max(arco.innerRadius || 0, 1);
+                if (arco.circumference > 0 && (!chart.getDataVisibility(i) || largo <= separacion + 1)) {
+                    arco._circunferenciaReal = arco.circumference;
+                    arco.circumference = 0;
+                }
+            });
+        },
+        afterDatasetDraw: function (chart, args) {
+            if (chart.config.type !== 'doughnut') return;
+            args.meta.data.forEach(function (arco) {
+                if (arco._circunferenciaReal !== undefined) {
+                    arco.circumference = arco._circunferenciaReal;
+                    delete arco._circunferenciaReal;
+                }
+            });
+        }
+    };
+
     global.dashboardColors = dashboardColors;
     global.chartPalette    = chartPalette;
     global.colorPaleta     = colorPaleta;
     global.colorAlfa       = colorAlfa;
     global.colorTextoSobre = colorTextoSobre;
     global.colorEtiqueta   = colorEtiqueta;
+    global.totalVisible    = totalVisible;
+    global.donaVisible     = donaVisible;
 })(window);

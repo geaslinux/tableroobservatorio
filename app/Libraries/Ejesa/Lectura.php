@@ -191,18 +191,20 @@ class Lectura
 
     /**
      * Quiénes son los afectados de un corte (los guardados al activar el protocolo).
-     * Datos para identificar a la persona y su dependencia eléctrica; sin domicilio, coordenadas,
-     * teléfono ni diagnóstico (están en la ficha, con su propio permiso).
+     * Datos para identificar a la persona y su dependencia eléctrica. Por decisión del área
+     * (17/11/2026) incluye DNI, coordenadas y diagnóstico para el mapa del detalle del corte,
+     * que solo ve quien tiene permiso de listado de personas. Sin domicilio ni teléfono.
      */
     public function afectadosDetalle(int $corteId): array
     {
         $personas = $this->db->table('ejesa_corte_afectado a')
             ->select('a.electrodependiente_id, a.riesgo_snapshot, a.nro_servicio_snapshot, a.revision_corte, a.calculado_at,
-                      p.paciente, p.edad, p.tipo, p.factor_riesgo, p.estado, p.estado_vital, p.nro_servicio,
-                      p.servicio_verificado, l.nombre AS localidad, e.nombre AS efector')
+                      p.paciente, p.dni, p.edad, p.tipo, p.factor_riesgo, p.estado, p.estado_vital, p.nro_servicio,
+                      p.servicio_verificado, p.coordenadas, l.nombre AS localidad, e.nombre AS efector, d.nombre AS diagnostico')
             ->join('electrodependiente p', 'p.electrodependiente_id = a.electrodependiente_id', 'left')
             ->join('localidad l', 'l.localidad_id = p.localidad_id', 'left')
             ->join('efector e', 'e.efector_id = p.efector_id', 'left')
+            ->join('diagnostico d', 'd.diagnostico_id = p.diagnostico_id', 'left')
             ->where('a.corte_id', $corteId)
             ->where('a.estado_vinculo', 'VIGENTE')
             ->orderBy('a.riesgo_snapshot', 'ASC')

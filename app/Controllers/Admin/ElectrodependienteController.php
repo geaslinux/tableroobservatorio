@@ -49,10 +49,15 @@ class ElectrodependienteController extends BaseController
                                        ->orLike('electrodependiente.nro_servicio', $filtro_buscar)
                                        ->groupEnd();
 
-        if ($filtro_estado != '') {
-            $model->where('electrodependiente.estado', $filtro_estado);
-        } else {
-            $model->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
+        // Estado: igual que las tarjetas de arriba y la leyenda del mapa, un fallecido cuenta solo como
+        // fallecido (aunque también esté activo o desactivado), así Activo + Desactivado + Fallecido = total
+        $filtro_estado = in_array($filtro_estado, ['activo', 'desactivado', 'fallecido'], true) ? $filtro_estado : '';
+        $model->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
+        if ($filtro_estado === 'fallecido') {
+            $model->where('electrodependiente.estado_vital', 'fallecido');
+        } elseif ($filtro_estado !== '') {
+            $model->where('electrodependiente.estado', $filtro_estado)
+                  ->where("COALESCE(electrodependiente.estado_vital, '') <>", 'fallecido');
         }
 
         return compact(
@@ -84,10 +89,22 @@ class ElectrodependienteController extends BaseController
     {
         $db = \Config\Database::connect();
         $condRiesgo = [];
+        // "Sin dato" junto con niveles (ALTO, MEDIANO, BAJO): esos niveles dentro de los que no tienen
+        // coordenadas. Ej.: Sin dato + ALTO = riesgo alto sin ubicación en el mapa.
+        $niveles = array_values(array_diff($sel['riesgo'], ['SD']));
+        if (in_array('SD', $sel['riesgo'], true) && $niveles) {
+            $model->where("TRIM(COALESCE(electrodependiente.coordenadas, '')) = ''", null, false)
+                  ->where('UPPER(electrodependiente.factor_riesgo) IN (' . implode(',', array_map([$db, 'escape'], $niveles)) . ')', null, false);
+            $sel['riesgo'] = [];
+        }
         foreach ($sel['riesgo'] as $r) {
+            // "Sin dato" (como S/D en Salud mental): riesgo sin cargar o sin coordenadas (no están en el mapa)
             $condRiesgo[] = $r === 'SD'
-                ? "(electrodependiente.factor_riesgo IS NULL OR UPPER(electrodependiente.factor_riesgo) NOT IN ('ALTO','MEDIANO','BAJO'))"
-                : 'UPPER(electrodependiente.factor_riesgo) = ' . $db->escape($r);
+                ? "(electrodependiente.factor_riesgo IS NULL OR UPPER(electrodependiente.factor_riesgo) NOT IN ('ALTO','MEDIANO','BAJO')"
+                  . " OR TRIM(COALESCE(electrodependiente.coordenadas, '')) = '')"
+                // Un nivel solo (sin "Sin dato"): los de ese riesgo que están en el mapa (con coordenadas),
+                // igual que el número del botón. Los que no tienen coordenadas se ven con Sin dato + nivel.
+                : '(UPPER(electrodependiente.factor_riesgo) = ' . $db->escape($r) . " AND TRIM(COALESCE(electrodependiente.coordenadas, '')) <> '')";
         }
         if ($condRiesgo) {
             $model->where('(' . implode(' OR ', $condRiesgo) . ')', null, false);
@@ -113,8 +130,9 @@ class ElectrodependienteController extends BaseController
     {
         helper('auth');
 
-        $config  = config('Obse');
-        $perPage = $config->regPerPage ?? 15;
+        // 15 pacientes por página: cada fila es alta (equipos, servicio, titular) y con 40 la lista
+        // quedaba muy larga. El resto de los módulos sigue usando Obse::$regPerPage.
+        $perPage = 15;
 
         $userId     = user()->id;
         $visitModel = model('UserLastVisitModel');
@@ -154,14 +172,14 @@ class ElectrodependienteController extends BaseController
                 SUM(CASE WHEN electrodependiente.coordenadas IS NOT NULL AND electrodependiente.coordenadas <> '' THEN 1 ELSE 0 END) AS con_ubicacion", false)
             ->get()->getRowArray() ?: [];
 
-        // ── Mapa: todos los pacientes con coordenadas que cumplen los filtros (no solo la página) ──
+        // ── Mapa: todos los pacientes que cumplen los filtros (no solo la página). Los que tienen
+        // coordenadas van como pin; los demás solo como tarjeta, con "Sin dato" en la leyenda ──
         $modeloMapa = (new \App\Models\ElectrodependienteModel())->conRelaciones();
         $this->aplicarFiltros($modeloMapa, false);
         $pacientesMapa = $modeloMapa
             ->select('electrodependiente.electrodependiente_id AS id, electrodependiente.paciente, electrodependiente.dni, electrodependiente.edad,
                       electrodependiente.factor_riesgo AS riesgo, electrodependiente.estado, electrodependiente.estado_vital, electrodependiente.coordenadas, electrodependiente.nro_servicio')
-            ->where('electrodependiente.coordenadas IS NOT NULL', null, false)
-            ->where('electrodependiente.coordenadas <>', '')
+            ->orderBy('electrodependiente.paciente', 'ASC')
             ->asArray()->findAll();
         // Total sin la selección de la leyenda (para "N sin coordenadas cargadas" bajo el mapa)
         $modeloTotal = new \App\Models\ElectrodependienteModel();

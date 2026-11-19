@@ -164,6 +164,11 @@
     }
 
     .ml-chart-box { display: flex; flex-direction: column; min-width: 0; }
+    /* Estado del padrón: tres gráficos del mismo ancho (uno debajo del otro en pantallas chicas) */
+    .ml-stats-body.sm-estado-graficos { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+    @media (max-width: 1100px) { .ml-stats-body.sm-estado-graficos { grid-template-columns: 1fr; } }
+    .sm-estado-nota { padding: 0 18px 14px; font-size: 11px; color: var(--text-muted); text-align: right; }
+    .ml-stats-panel.is-collapsed .sm-estado-nota { display: none; }
     .ml-chart-canvas { position: relative; width: 100%; height: 330px; }
     .ml-chart-title {
         font-size: 10.5px; font-weight: 700; text-transform: uppercase;
@@ -225,11 +230,13 @@
     /* ── Tablas compactas (diagnóstico y localidad): ancho fijo, primera columna angosta
           que pasa a dos o más líneas parejas, números centrados en columnas de 70px ── */
     .sm-tabla-compacta { table-layout: fixed; font-size: 12.5px; }
-    #tablaDiagnostico { width: 520px; } /* 240 + 4 × 70 */
-    #tablaLocalidad   { width: 410px; } /* 200 + 3 × 70 */
-    #tablaDiagnostico col.col-nombre { width: 240px; }
-    #tablaLocalidad   col.col-nombre { width: 200px; }
+    /* Ocupan el espacio disponible sin pasarse de su ancho ideal (nunca aparece desplazamiento lateral):
+       la columna del nombre se queda con lo que dejan las columnas numéricas de 70px */
+    #tablaDiagnostico { width: 100%; max-width: 520px; } /* 240 + 4 × 70 */
+    #tablaLocalidad   { width: 100%; max-width: 410px; } /* 200 + 3 × 70 */
+    @media (max-width: 992px) { #tablaDiagnostico, #tablaLocalidad { max-width: none; } }
     .sm-tabla-compacta col.col-num { width: 70px; }
+    @media (max-width: 420px) { .sm-tabla-compacta col.col-num { width: 58px; } }
     .sm-tabla-compacta thead th { font-size: 9.5px; padding: 8px; vertical-align: middle; line-height: 1.25; white-space: normal; }
     .sm-tabla-compacta tbody td,
     .sm-tabla-compacta tfoot td { padding: 7px 8px; }
@@ -334,8 +341,7 @@
     .sm-legend-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 
     /* Búsqueda de pacientes por nombre y por DNI */
-    .sm-busquedas { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; margin-bottom: 6px; }
-    @media (max-width: 480px) { .sm-busquedas { grid-template-columns: 1fr; } }
+    .sm-busquedas { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 6px; }
     .sm-busqueda {
         position: relative; display: flex; align-items: center; min-width: 0;
     }
@@ -401,6 +407,28 @@
     .sm-equipo + .sm-equipo { margin-top: 6px; }
     .sm-equipo strong { color: #13304d; }
     .sm-equipo small { display: block; color: var(--text-muted); font-size: 11px; }
+    /* Leyenda como filtro: riesgo y estado con cantidades (como el mapa del listado de electrodependientes) */
+    .sm-leyenda-filtros { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 12px; }
+    .sm-leyenda-sep { width: 1px; height: 22px; background: var(--border); }
+    @media (max-width: 768px) { .sm-leyenda-sep { display: none; } }
+    .sm-legend-filtro { justify-content: flex-start; gap: 6px; margin-bottom: 0; }
+    .sm-legend-rotulo { font-size: 11px; font-weight: 700; color: var(--text-main); margin-right: 2px; }
+    .sm-legend-filtro .sm-legend-btn { border-color: var(--border); background: #fff; }
+    .sm-legend-btn small { color: var(--text-muted); font-weight: 600; }
+    .sm-legend-btn:disabled { opacity: .35; cursor: default; }
+    .sm-legend-btn[aria-pressed="true"] { background: #eefaf8; border-color: var(--teal); box-shadow: inset 0 0 0 1px var(--teal); }
+    .sm-legend-filtro.has-filter .sm-legend-btn[aria-pressed="false"] { opacity: .45; }
+    .sm-legend-filtro.has-filter .sm-legend-btn[aria-pressed="true"] { opacity: 1; }
+    .sm-ver-todos { border: 0; background: none; font: inherit; font-size: 11px; font-weight: 700; color: var(--teal); cursor: pointer; text-decoration: underline; padding: 3px 4px; }
+    /* Tarjeta: mismos datos que la ficha del pin */
+    .sm-paciente-datos { font-size: 12px; color: var(--text-main); border-collapse: collapse; margin-top: 2px; }
+    .sm-paciente-datos td { padding: 1px 4px 1px 0; vertical-align: top; }
+    .sm-paciente-datos td:first-child { color: var(--text-muted); white-space: nowrap; padding-right: 10px; }
+    .sm-paciente-item.is-baja { opacity: .8; }
+    .sm-paciente-tag.sm-tag-baja { background: #4a5568; color: #fff; }
+    .sm-paciente-tag.sm-tag-desactivado { background: #a0aec0; color: #fff; }
+    .sm-paciente-acciones { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+    .sm-paciente-acciones .sm-equipos { flex-basis: 100%; margin-top: 0; }
     .sm-list-vacia      { padding: 30px 12px; text-align: center; color: var(--text-muted); font-size: 13px; font-style: italic; }
 
     /* Panel del mapa */
@@ -539,7 +567,7 @@
                 <div class="ml-filtro-group">
                     <span class="ml-filtro-label">Estado</span>
                     <select name="estado" class="ml-filtro-select">
-                        <?php foreach (['activo' => 'Activos', 'desactivado' => 'Dados de baja', 'todos' => 'Todos'] as $v => $t): ?>
+                        <?php foreach (['activo' => 'Activos', 'desactivado' => 'Dados de baja', 'fallecido' => 'Fallecidos', 'todos' => 'Todos'] as $v => $t): ?>
                             <option value="<?= $v ?>" <?= $filtro_estado === $v ? 'selected' : '' ?>><?= $t ?></option>
                         <?php endforeach; ?>
                     </select>
@@ -707,6 +735,27 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Estado del padrón: activos, dados de baja y fallecidos; por tipo y por riesgo.
+                 Todo el padrón (respeta hospital, localidad, tipo y riesgo, pero no el filtro de estado) -->
+            <div class="ml-panel ml-stats-panel" data-stats-panel>
+                <?= $headerStats('ESTADO DEL PADRÓN') ?>
+                <div class="ml-stats-body sm-estado-graficos">
+                    <div class="ml-chart-box">
+                        <div class="ml-chart-title">Pacientes por estado</div>
+                        <div class="ml-chart-canvas" style="height:300px;"><canvas id="chartEstado"></canvas></div>
+                    </div>
+                    <div class="ml-chart-box">
+                        <div class="ml-chart-title">Estado por tipo de paciente</div>
+                        <div class="ml-chart-canvas" style="height:300px;"><canvas id="chartEstadoTipo"></canvas></div>
+                    </div>
+                    <div class="ml-chart-box">
+                        <div class="ml-chart-title">Riesgo según estado</div>
+                        <div class="ml-chart-canvas" style="height:300px;"><canvas id="chartEstadoRiesgo"></canvas></div>
+                    </div>
+                </div>
+                <div class="sm-estado-nota">Incluye a todo el padrón: no depende del filtro "Estado". Un fallecido cuenta solo como fallecido.</div>
+            </div>
         </div>
 
         <!-- ══════════════ TERRITORIO Y MAPA ══════════════ -->
@@ -746,36 +795,47 @@
                 <?= $headerStats('DISTRIBUCIÓN TERRITORIAL') ?>
                 <div class="ml-stats-content">
                     <div class="sm-mapa-wrap">
+                        <!-- Leyenda como filtro (igual que el mapa del listado de electrodependientes): sin nada
+                             elegido se ven todos; dentro de un grupo vale cualquiera de los elegidos y entre
+                             grupos tienen que cumplirse los dos. "S/D" = los que no están en el mapa (sin
+                             coordenadas o sin riesgo); S/D + ALTO = riesgo alto sin coordenadas. -->
+                        <div class="sm-leyenda-filtros" id="filtroLeyenda">
+                            <div class="sm-legend-group sm-legend-filtro" id="filtroRiesgo" data-grupo="riesgo">
+                                <span class="sm-legend-rotulo">Riesgo:</span>
+                                <?php foreach ($coloresRiesgo as $r => $c): ?>
+                                    <button type="button" class="sm-legend-item sm-legend-btn" data-riesgo="<?= esc($r, 'attr') ?>" aria-pressed="false"
+                                            title="<?= $r === 'S/D' ? 'Pacientes que no están en el mapa (sin coordenadas o sin riesgo cargado). Con un nivel elegido: ese nivel sin coordenadas' : 'Ver solo riesgo ' . esc($r, 'attr') . ' (se puede combinar)' ?>">
+                                        <span class="sm-legend-color" style="background:<?= $c ?>;"></span>
+                                        <?= esc($r) ?> <small>0</small>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                            <div class="sm-legend-group sm-legend-filtro" id="filtroEstado" data-grupo="estado">
+                                <span class="sm-legend-rotulo">Estado:</span>
+                                <button type="button" class="sm-legend-item sm-legend-btn" data-estado="activo" aria-pressed="false" title="Ver solo los activos">
+                                    <i class="fas fa-user-check" style="color:#2f855a;"></i> Activos <small>0</small>
+                                </button>
+                                <button type="button" class="sm-legend-item sm-legend-btn" data-estado="fallecido" aria-pressed="false" title="Ver solo los fallecidos (pin atenuado)">
+                                    <i class="fas fa-cross" style="color:#4a5568;"></i> Fallecidos <small>0</small>
+                                </button>
+                                <button type="button" class="sm-legend-item sm-legend-btn" data-estado="desactivado" aria-pressed="false" title="Ver solo los desactivados (pin atenuado)">
+                                    <i class="fas fa-user-slash" style="color:#718096;"></i> Desactivados <small>0</small>
+                                </button>
+                                <button type="button" class="sm-ver-todos" id="btnVerTodos" hidden><i class="fas fa-undo"></i> Ver todos</button>
+                            </div>
+                        </div>
+
                         <div class="sm-view-grid">
 
                             <!-- COLUMNA IZQUIERDA: LISTA DE PACIENTES -->
                             <div>
-                                <!-- Leyenda de riesgo (sobre la lista): cada botón filtra lista y mapa; otro clic lo quita -->
-                                <div class="sm-legend-group" id="filtroRiesgo">
-                                    <?php foreach ($coloresRiesgo as $r => $c): ?>
-                                        <button type="button" class="sm-legend-item sm-legend-btn" data-riesgo="<?= esc($r, 'attr') ?>"
-                                                aria-pressed="false" title="<?= $r === 'S/D' ? 'Mostrar pacientes sin datos: riesgo sin cargar o sin coordenadas' : 'Mostrar solo riesgo ' . esc($r, 'attr') ?>">
-                                            <span class="sm-legend-color" style="background:<?= $c ?>;"></span>
-                                            <?= esc($r) ?>
-                                        </button>
-                                    <?php endforeach; ?>
-                                </div>
-
-                                <!-- Búsqueda por nombre y por DNI: filtran la lista y el mapa mientras se escribe -->
+                                <!-- Buscador único por nombre o DNI (igual al del mapa de EJESA): filtra la lista y el mapa mientras se escribe -->
                                 <div class="sm-busquedas">
                                     <div class="sm-busqueda">
                                         <i class="fas fa-search"></i>
-                                        <input type="search" id="buscarPaciente" placeholder="Buscar por nombre…"
-                                               autocomplete="off" aria-label="Buscar paciente por nombre">
-                                        <button type="button" id="limpiarBusqueda" title="Limpiar búsqueda" aria-label="Limpiar búsqueda por nombre" hidden>
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <div class="sm-busqueda">
-                                        <i class="fas fa-id-card"></i>
-                                        <input type="search" id="buscarDni" placeholder="Buscar por DNI…" inputmode="numeric"
-                                               autocomplete="off" aria-label="Buscar paciente por DNI">
-                                        <button type="button" id="limpiarDni" title="Limpiar búsqueda" aria-label="Limpiar búsqueda por DNI" hidden>
+                                        <input type="search" id="buscarPaciente" placeholder="Buscar por nombre o DNI…"
+                                               autocomplete="off" aria-label="Buscar paciente por nombre o DNI">
+                                        <button type="button" id="limpiarBusqueda" title="Limpiar búsqueda" aria-label="Limpiar búsqueda" hidden>
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
@@ -804,69 +864,43 @@
                                         }
                                         return $h . '<div class="sm-equipos" hidden>' . $d . '</div>';
                                     };
+
+                                    // Tarjeta del paciente: los mismos datos que la ficha del pin (como el mapa de electrodependientes)
+                                    $tarjetaPaciente = function (array $p, string $atributos, bool $sinGeo) use ($coloresRiesgo, $botonEquipo): string {
+                                        $r = strtoupper($p['riesgo'] ?? '');
+                                        $r = isset($coloresRiesgo[$r]) ? $r : 'S/D';
+                                        $fallecido = ($p['estado_vital'] ?? '') === 'fallecido';
+                                        $baja = !$fallecido && ($p['estado'] ?? '') !== 'activo';
+                                        $edad = ($p['edad'] !== null && $p['edad'] !== '' ? esc($p['edad']) : '—') . (!empty($p['tipo']) ? ' (' . esc($p['tipo']) . ')' : '');
+                                        $etiquetas = ($sinGeo ? '<span class="sm-paciente-tag sm-tag-sin-geo"><i class="fas fa-location-crosshairs"></i> Sin coordenadas</span>' : '')
+                                            . ($fallecido ? '<span class="sm-paciente-tag sm-tag-baja"><i class="fas fa-cross"></i> Fallecido</span>' : '')
+                                            . ($baja ? '<span class="sm-paciente-tag sm-tag-desactivado"><i class="fas fa-user-slash"></i> Desactivado</span>' : '');
+                                        return '<div class="sm-paciente-item' . ($sinGeo ? ' is-sin-geo' : '') . ($fallecido || $baja ? ' is-baja' : '') . '" ' . $atributos
+                                            . ' title="' . ($sinGeo ? 'Sin coordenadas: no figura en el mapa' : 'Ver en el mapa') . '"' . ($sinGeo ? ' style="display:none;"' : '') . '>'
+                                            . '<div class="sm-paciente-nombre">' . esc($p['paciente']) . '</div>'
+                                            . '<table class="sm-paciente-datos">'
+                                            . '<tr><td>DNI:</td><td class="sm-paciente-dni"><span>' . esc($p['dni'] ?: '—') . '</span></td></tr>'
+                                            . '<tr><td>Edad:</td><td>' . $edad . '</td></tr>'
+                                            . '<tr><td>Localidad:</td><td>' . esc($p['localidad'] ?: '—') . '</td></tr>'
+                                            . '<tr><td>Hospital:</td><td>' . esc($p['efector'] ?: '—') . '</td></tr>'
+                                            . '<tr><td>Diagnóstico:</td><td>' . esc($p['diagnostico'] ?: '—') . '</td></tr>'
+                                            . '<tr><td>Riesgo:</td><td><strong style="color:' . $coloresRiesgo[$r] . '">' . esc($p['riesgo'] ?: 'S/D') . '</strong></td></tr>'
+                                            . '</table>'
+                                            . ($etiquetas ? '<div class="sm-paciente-tags">' . $etiquetas . '</div>' : '')
+                                            . '<div class="sm-paciente-acciones">' . $botonEquipo($p)
+                                            . '</div></div>';
+                                    };
                                 ?>
                                 <div class="sm-list-container" id="listaPacientes">
-                                    <?php if (!empty($puntos)): ?>
-                                        <?php foreach ($puntos as $i => $p): ?>
-                                            <?php
-                                                $riesgoKey = strtoupper($p['riesgo'] ?? '');
-                                                $riesgoKey = isset($coloresRiesgo[$riesgoKey]) ? $riesgoKey : 'S/D';
-                                                $colorR    = $coloresRiesgo[$riesgoKey];
-                                            ?>
-                                            <div class="sm-paciente-item" data-punto="<?= $i ?>" data-riesgo="<?= esc($riesgoKey, 'attr') ?>" title="Ver en el mapa">
-                                                <div class="sm-paciente-nombre"><?= esc($p['paciente']) ?></div>
-                                                <?php if (!empty($p['dni'])): ?>
-                                                    <div class="sm-paciente-dni"><i class="fas fa-id-card"></i> DNI <span><?= esc($p['dni']) ?></span></div>
-                                                <?php endif; ?>
-                                                <div class="sm-paciente-info">
-                                                    <i class="fas fa-map-marker-alt"></i> <?= esc($p['localidad'] ?: '—') ?> |
-                                                    <i class="fas fa-hospital"></i> <?= esc($p['efector'] ?: '—') ?>
-                                                </div>
-                                                <div class="sm-paciente-tags">
-                                                    <span class="sm-paciente-tag" style="background:<?= $colorR ?>; color:#fff;">
-                                                        Riesgo <?= esc($p['riesgo'] ?: 'S/D') ?>
-                                                    </span>
-                                                    <?php if (!empty($p['tipo'])): ?>
-                                                        <span class="sm-paciente-tag"><?= esc($p['tipo']) ?></span>
-                                                    <?php endif; ?>
-                                                </div>
-                                                <?= $botonEquipo($p) ?>
-                                            </div>
-                                        <?php endforeach; ?>
-                                    <?php else: ?>
-                                        <div class="sm-list-vacia">Sin pacientes con coordenadas para los filtros elegidos</div>
-                                    <?php endif; ?>
-
-                                    <!-- Pacientes sin coordenadas: no están en el mapa; se muestran al elegir "S/D" (sin datos) -->
+                                    <?php foreach ($puntos as $i => $p): ?>
+                                        <?= $tarjetaPaciente($p, 'data-punto="' . $i . '"', false) ?>
+                                    <?php endforeach; ?>
+                                    <!-- Pacientes sin coordenadas: no están en el mapa; aparecen con "S/D", al buscar o con un filtro de arriba -->
                                     <?php foreach ($sinUbicacion ?? [] as $j => $p): ?>
-                                        <?php
-                                            $riesgoKey = strtoupper($p['riesgo'] ?? '');
-                                            $riesgoKey = isset($coloresRiesgo[$riesgoKey]) ? $riesgoKey : 'S/D';
-                                        ?>
-                                        <div class="sm-paciente-item is-sin-geo" data-sin="<?= $j ?>" data-riesgo="S/D"
-                                             title="Sin coordenadas: no figura en el mapa" style="display:none;">
-                                            <div class="sm-paciente-nombre"><?= esc($p['paciente']) ?></div>
-                                            <?php if (!empty($p['dni'])): ?>
-                                                <div class="sm-paciente-dni"><i class="fas fa-id-card"></i> DNI <span><?= esc($p['dni']) ?></span></div>
-                                            <?php endif; ?>
-                                            <div class="sm-paciente-info">
-                                                <i class="fas fa-map-marker-alt"></i> <?= esc($p['localidad'] ?: '—') ?> |
-                                                <i class="fas fa-hospital"></i> <?= esc($p['efector'] ?: '—') ?>
-                                            </div>
-                                            <div class="sm-paciente-tags">
-                                                <span class="sm-paciente-tag sm-tag-sin-geo"><i class="fas fa-location-crosshairs"></i> Sin coordenadas</span>
-                                                <span class="sm-paciente-tag" style="background:<?= $coloresRiesgo[$riesgoKey] ?>; color:#fff;">
-                                                    Riesgo <?= esc($p['riesgo'] ?: 'S/D') ?>
-                                                </span>
-                                                <?php if (!empty($p['tipo'])): ?>
-                                                    <span class="sm-paciente-tag"><?= esc($p['tipo']) ?></span>
-                                                <?php endif; ?>
-                                            </div>
-                                            <?= $botonEquipo($p) ?>
-                                        </div>
+                                        <?= $tarjetaPaciente($p, 'data-sin="' . $j . '"', true) ?>
                                     <?php endforeach; ?>
 
-                                    <div class="sm-list-vacia" id="listaSinRiesgo" style="display:none;">Sin pacientes con este nivel de riesgo</div>
+                                    <div class="sm-list-vacia" id="listaSinRiesgo" style="display:none;">Sin pacientes con lo elegido</div>
                                 </div>
                             </div>
 
@@ -992,6 +1026,7 @@ document.addEventListener('click', function (e) {
 
     var porDiagnostico = <?= json_encode(array_slice($porDiagnostico, 0, 10)) ?>;
     var porRiesgo      = <?= json_encode($porRiesgo) ?>;
+    var estadoPadron   = <?= json_encode($estadoPadron ?? [], JSON_UNESCAPED_UNICODE) ?>; // [{estado, tipo, riesgo, pacientes}]
     var riesgoPorTipo  = <?= json_encode($riesgoPorTipo) ?>;
     var porHospital    = <?= json_encode($porHospital) ?>;
     var puntos         = <?= json_encode($puntos) ?>;
@@ -1051,7 +1086,8 @@ document.addEventListener('click', function (e) {
     // ── Plugin: total en el centro de las donas ──
     var centerTextPlugin = {
         id: 'centerText',
-        afterDraw: function (chart) {
+        // afterDatasetsDraw: después de las porciones y antes del tooltip (el tooltip queda encima)
+        afterDatasetsDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
             var arco = chart.getDatasetMeta(0).data[0];
             if (!arco) return;
@@ -1157,7 +1193,7 @@ document.addEventListener('click', function (e) {
                     borderRadius: 5
                 }]
             },
-            plugins: [centerTextPlugin],
+            plugins: [centerTextPlugin, donaVisible],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -1168,7 +1204,7 @@ document.addEventListener('click', function (e) {
                         color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 12 },
                         formatter: function (value, ctx) {
-                            var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
+                            var total = totalVisible(ctx.chart); // solo las secciones visibles: con una sola, 100%
                             var p = total ? Math.round(value * 100 / total) : 0;
                             return p > 4 ? p + '%' : '';
                         }
@@ -1299,9 +1335,172 @@ document.addEventListener('click', function (e) {
         });
     })();
 
+    // ══ Gráficos: ESTADO DEL PADRÓN ══
+    // Colores propios (no los del riesgo, que aparecen en el gráfico de al lado)
+    var ESTADOS_PADRON = [
+        { clave: 'ACTIVOS',    texto: 'Activos',       color: '#2f855a' },
+        { clave: 'BAJAS',      texto: 'Dados de baja', color: '#d4a72c' },
+        { clave: 'FALLECIDOS', texto: 'Fallecidos',    color: '#4a5568' }
+    ];
+    // Relleno rayado en diagonal para "Sin dato": se distingue como dato faltante y no como una categoría más
+    function rayado(fondo, linea) {
+        var c = document.createElement('canvas');
+        c.width = c.height = 8;
+        var x = c.getContext('2d');
+        x.fillStyle = fondo;
+        x.fillRect(0, 0, 8, 8);
+        x.strokeStyle = linea;
+        x.lineWidth = 1.5;
+        x.beginPath();
+        x.moveTo(0, 8); x.lineTo(8, 0);
+        x.moveTo(-2, 2); x.lineTo(2, -2);
+        x.moveTo(6, 10); x.lineTo(10, 6);
+        x.stroke();
+        return x.createPattern(c, 'repeat');
+    }
+    // Suma de pacientes de estadoPadron que cumplen el filtro (por ejemplo { estado: 'ACTIVOS', tipo: 'NIÑOS' })
+    function sumaPadron(filtro) {
+        return estadoPadron.reduce(function (s, f) {
+            for (var k in filtro) { if (f[k] !== filtro[k]) return s; }
+            return s + (parseInt(f.pacientes, 10) || 0);
+        }, 0);
+    }
+
+    // 1. Dona: activos, dados de baja y fallecidos
+    function graficoEstado() {
+        var valores = ESTADOS_PADRON.map(function (e) { return sumaPadron({ estado: e.clave }); });
+        if (sinDatos(valores)) { mostrarSinDatos('chartEstado', 'Sin pacientes para los filtros elegidos'); return; }
+        var secciones = valores.filter(function (v) { return v > 0; }).length;
+        new Chart(document.getElementById('chartEstado'), {
+            type: 'doughnut',
+            data: {
+                labels: ESTADOS_PADRON.map(function (e) { return e.texto; }),
+                datasets: [{
+                    data: valores,
+                    backgroundColor: ESTADOS_PADRON.map(function (e) { return e.color; }),
+                    borderWidth: 0,
+                    spacing: secciones > 1 ? 6 : 0,
+                    offset: secciones > 1 ? 10 : 0,
+                    borderRadius: 5
+                }]
+            },
+            plugins: [centerTextPlugin, donaVisible],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14, font: { size: 11, weight: 'bold' } } },
+                    tooltip: {
+                        callbacks: {
+                            title: function () { return ''; },   // el nombre ya va en la línea
+                            label: function (ctx) {
+                                var total = totalVisible(ctx.chart);
+                                var p = total ? (ctx.parsed * 100 / total).toFixed(1).replace('.', ',') : 0;
+                                return ' ' + ctx.label + ': ' + ctx.parsed.toLocaleString('es-AR') + ' (' + p + '%)';
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: window.colorEtiqueta || '#1d2b3c',
+                        font: { weight: 'bold', size: 12 },
+                        formatter: function (value, ctx) {
+                            var total = totalVisible(ctx.chart);
+                            var p = total ? Math.round(value * 100 / total) : 0;
+                            return p > 4 ? p + '%' : '';
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Barras horizontales apiladas: una barra por estado, un segmento por serie (tipo o riesgo)
+    function barrasEstado(id, series, campo, mensajeSinDatos) {
+        var datos = series.map(function (s) {
+            return ESTADOS_PADRON.map(function (e) { var f = { estado: e.clave }; f[campo] = s.clave; return sumaPadron(f); });
+        });
+        var todos = [].concat.apply([], datos);
+        if (sinDatos(todos)) { mostrarSinDatos(id, mensajeSinDatos); return; }
+        var totalPorEstado = ESTADOS_PADRON.map(function (e, i) {
+            return datos.reduce(function (s, d) { return s + d[i]; }, 0);
+        });
+        // Solo las series con pacientes (por ejemplo, sin "S/D" si no hay)
+        var visibles = series.map(function (s, i) { return { s: s, d: datos[i] }; })
+            .filter(function (x) { return x.d.some(function (v) { return v > 0; }); });
+
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels: ESTADOS_PADRON.map(function (e, i) { return e.texto + ' (' + totalPorEstado[i].toLocaleString('es-AR') + ')'; }),
+                datasets: visibles.map(function (x) {
+                    return {
+                        label: x.s.texto, data: x.d, backgroundColor: x.s.color,
+                        borderColor: '#ffffff', borderWidth: { right: 2 }, borderSkipped: false, borderRadius: 6,
+                        barPercentage: 0.85, categoryPercentage: 0.8, maxBarThickness: 42
+                    };
+                })
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { right: 6 } },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 14, font: { size: 11, weight: 'bold' } } },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var total = totalPorEstado[ctx.dataIndex] || 0;
+                                var p = total ? (ctx.parsed.x * 100 / total).toFixed(1).replace('.', ',') : 0;
+                                return ' ' + ctx.dataset.label + ': ' + ctx.parsed.x.toLocaleString('es-AR') + ' (' + p + '% de ' + ESTADOS_PADRON[ctx.dataIndex].texto.toLowerCase() + ')';
+                            }
+                        }
+                    },
+                    datalabels: {
+                        color: window.colorEtiqueta || '#1d2b3c',
+                        font: { weight: 'bold', size: 11 },
+                        // El número solo si el segmento tiene lugar (≥ 8% de su barra)
+                        display: function (ctx) {
+                            var v = ctx.dataset.data[ctx.dataIndex], total = totalPorEstado[ctx.dataIndex] || 0;
+                            return v > 0 && total > 0 && v / total >= 0.08;
+                        }
+                    }
+                },
+                scales: {
+                    x: { stacked: true, beginAtZero: true, grid: { color: '#eef0f3' }, border: { display: false }, ticks: { precision: 0, maxTicksLimit: 5, color: '#8a94a6', font: { size: 10 } } },
+                    y: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { color: '#2d3748', font: { size: 11, weight: 'bold' } } }
+                }
+            }
+        });
+    }
+
+    // 2. Estado por tipo de paciente (adultos y niños)
+    function graficoEstadoTipo() {
+        barrasEstado('chartEstadoTipo', [
+            { clave: 'ADULTOS', texto: 'Adultos',  color: '#2f5fb3' },
+            { clave: 'NIÑOS',   texto: 'Niños',    color: '#7cb8f2' },
+            { clave: 'S/D',     texto: 'Sin dato', color: rayado('#e9edf2', '#b8c2cf') }
+        ], 'tipo', 'Sin pacientes por estado y tipo para los filtros elegidos');
+    }
+
+    // 3. Riesgo según estado
+    function graficoEstadoRiesgo() {
+        barrasEstado('chartEstadoRiesgo', ['ALTO', 'MEDIANO', 'BAJO', 'S/D'].map(function (r) {
+            return { clave: r, texto: r, color: coloresRiesgo[r] };
+        }), 'riesgo', 'Sin pacientes por estado y riesgo para los filtros elegidos');
+    }
+
     // Se llama al mostrar la pestaña "Perfil de pacientes"
+    var estadoDibujado = false;
     function graficosPerfil() {
         mostrarSlide(slideActual);
+        if (!estadoDibujado) {
+            estadoDibujado = true;
+            graficoEstado();
+            graficoEstadoTipo();
+            graficoEstadoRiesgo();
+        }
     }
 
     // ── Paginación de tablas (10 o 15 filas): "Pacientes por diagnóstico" y "Pacientes por localidad" ──
@@ -1365,11 +1564,11 @@ document.addEventListener('click', function (e) {
     }
 
     // Pin en forma de gota, igual al del mapa de Bases; el color indica el riesgo
-    function crearIcono(r) {
+    function crearIcono(r, apagado) {
         var c = colorRiesgo(r);
         return L.divIcon({
             className: '',
-            html: '<div style="width:24px; height:24px; background:' + c + '; border-radius:50% 50% 50% 0; border:2px solid #fff; transform:rotate(-45deg); box-shadow:0 0 4px rgba(0,0,0,0.4);"></div>',
+            html: '<div style="width:24px; height:24px; background:' + c + '; border-radius:50% 50% 50% 0; border:2px solid #fff; transform:rotate(-45deg); box-shadow:0 0 4px rgba(0,0,0,0.4);' + (apagado ? ' opacity:.55;' : '') + '"></div>',
             iconSize: [24, 24], iconAnchor: [12, 24], popupAnchor: [0, -22]
         });
     }
@@ -1441,7 +1640,6 @@ document.addEventListener('click', function (e) {
 
     var marcadores = [];
     var grupoPacientes = null;   // capa con los pines de pacientes (se crea en graficosMapa)
-    var filtroRiesgoActivo = null;
     var textoBusqueda      = '';
     var textoDni           = '';
 
@@ -1516,17 +1714,70 @@ document.addEventListener('click', function (e) {
         return html + (abierto ? '</mark>' : '');
     }
 
-    // Filtra lista y pines por nivel de riesgo, nombre y DNI (se combinan)
+    // ¿Hay algún filtro de la barra de arriba (además del estado "Activos" que viene por defecto)?
+    // Entonces la lista muestra a todos los que cumplen el filtro, también los que no tienen coordenadas.
+    var FILTRO_ARRIBA = <?= ($filtro_efector !== '' || $filtro_localidad !== '' || $filtro_tipo !== '' || $filtro_factor !== '' || in_array($filtro_estado, ['desactivado', 'fallecido'], true)) ? 'true' : 'false' ?>;
+
+    // Un fallecido cuenta solo como fallecido (igual que las tarjetas de arriba)
+    function estadoDe(p) {
+        if (p.estado_vital === 'fallecido') return 'fallecido';
+        return p.estado === 'activo' ? 'activo' : 'desactivado';
+    }
+    function seleccion(attr) {
+        var sel = {}, hay = false;
+        document.querySelectorAll('#filtroLeyenda .sm-legend-btn[data-' + attr + ']').forEach(function (b) {
+            if (b.getAttribute('aria-pressed') === 'true') { sel[b.dataset[attr]] = true; hay = true; }
+        });
+        return hay ? sel : null;
+    }
+    // ¿El paciente pasa la selección de riesgo de la leyenda?
+    // · Nada elegido: los del mapa; los que no tienen coordenadas también al buscar o con un filtro de arriba.
+    // · "S/D" solo: los que no están en el mapa (sin coordenadas) y los del mapa sin riesgo cargado.
+    // · "S/D" + niveles: esos niveles dentro de los que no tienen coordenadas (S/D + ALTO).
+    // · Solo niveles: esos niveles en el mapa.
+    function riesgoVisible(p, conPin, selR, hayBusqueda) {
+        if (!selR) return conPin || hayBusqueda || FILTRO_ARRIBA;
+        var r = riesgoDe(p);
+        if (selR['S/D']) {
+            var niveles = Object.keys(selR).filter(function (k) { return k !== 'S/D'; });
+            if (!niveles.length) return conPin ? r === 'S/D' : true;
+            return !conPin && r !== 'S/D' && !!selR[r];
+        }
+        return conPin && !!selR[r];
+    }
+
+    // Filtra lista y pines por la leyenda (riesgo y estado), el nombre y el DNI (se combinan)
     function aplicarFiltros() {
-        var riesgo      = filtroRiesgoActivo;
         var busqueda    = normalizar(textoBusqueda);
         var busquedaDni = soloDigitos(textoDni);
+        var hayBusqueda = !!busqueda || !!busquedaDni;
+        var selR = seleccion('riesgo'), selE = seleccion('estado');
+        var conSD = !!(selR && selR['S/D']);
+        function buscado(p) { return coincideNombre(p.paciente, busqueda) && coincideDni(p.dni, busquedaDni); }
+        function ver(p, conPin) { return buscado(p) && riesgoVisible(p, conPin, selR, hayBusqueda) && (!selE || selE[estadoDe(p)]); }
 
-        function coincide(p, riesgoPaciente) {
-            return (!riesgo || riesgoPaciente === riesgo)
-                && coincideNombre(p.paciente, busqueda)
-                && coincideDni(p.dni, busquedaDni);
-        }
+        // Cantidades de la leyenda: cada botón dice cuántos se verían al elegirlo
+        var c = { 'ALTO': 0, 'MEDIANO': 0, 'BAJO': 0, 'S/D': 0, activo: 0, fallecido: 0, desactivado: 0 };
+        puntos.forEach(function (p) {
+            if (!buscado(p)) return;
+            if (!conSD) c[riesgoDe(p)]++;
+            else if (riesgoDe(p) === 'S/D') c['S/D']++;
+            if (riesgoVisible(p, true, selR, hayBusqueda)) c[estadoDe(p)]++;
+        });
+        sinUbicacion.forEach(function (p) {
+            if (!buscado(p)) return;
+            c['S/D']++;
+            if (conSD && riesgoDe(p) !== 'S/D') c[riesgoDe(p)]++;
+            if (riesgoVisible(p, false, selR, hayBusqueda)) c[estadoDe(p)]++;
+        });
+        document.querySelectorAll('#filtroLeyenda .sm-legend-btn').forEach(function (b) {
+            var k = b.dataset.riesgo || b.dataset.estado, sm = b.querySelector('small');
+            if (sm) sm.textContent = c[k].toLocaleString('es-AR');
+            b.disabled = !c[k] && b.getAttribute('aria-pressed') !== 'true';
+        });
+        document.getElementById('filtroRiesgo').classList.toggle('has-filter', !!selR);
+        document.getElementById('filtroEstado').classList.toggle('has-filter', !!selE);
+        document.getElementById('btnVerTodos').hidden = !selR && !selE;
 
         var visibles = 0;
         document.querySelectorAll('#listaPacientes .sm-paciente-item').forEach(function (item) {
@@ -1534,10 +1785,7 @@ document.addEventListener('click', function (e) {
             var p = sinGeo
                 ? (sinUbicacion[parseInt(item.dataset.sin, 10)] || {})
                 : (puntos[parseInt(item.dataset.punto, 10)] || {});
-            // Los pacientes sin coordenadas solo aparecen con el filtro "S/D" (sin datos)
-            var mostrar = sinGeo
-                ? (riesgo === 'S/D' && coincideNombre(p.paciente, busqueda) && coincideDni(p.dni, busquedaDni))
-                : coincide(p, item.dataset.riesgo);
+            var mostrar = ver(p, !sinGeo);
             item.style.display = mostrar ? '' : 'none';
             if (mostrar) visibles++;
             if (!mostrar) item.classList.remove('is-active');
@@ -1548,30 +1796,27 @@ document.addEventListener('click', function (e) {
             if (dniEl && p.dni) dniEl.innerHTML = resaltarDni(p.dni, mostrar ? busquedaDni : '');
         });
 
-        var hayBusqueda = !!busqueda || !!busquedaDni;
-        var hayFiltro   = !!riesgo || hayBusqueda;
+        var hayFiltro = !!selR || !!selE || hayBusqueda || FILTRO_ARRIBA;
         var vacio = document.getElementById('listaSinRiesgo');
         if (vacio) {
-            var criterios = [];
-            if (busqueda)    criterios.push('nombre "' + textoBusqueda.trim() + '"');
-            if (busquedaDni) criterios.push('DNI "' + textoDni.trim() + '"');
-            vacio.style.display = (hayFiltro && visibles === 0) ? '' : 'none';
-            vacio.textContent = hayBusqueda
-                ? 'Ningún paciente coincide con ' + criterios.join(' y ') + (riesgo ? ' con riesgo ' + riesgo : '')
-                : (riesgo === 'S/D'
-                    ? 'No hay pacientes sin riesgo cargado ni sin coordenadas'
-                    : 'Sin pacientes con este nivel de riesgo');
+            vacio.style.display = visibles === 0 ? '' : 'none';
+            vacio.textContent = !puntos.length && !sinUbicacion.length ? 'Sin pacientes para los filtros elegidos'
+                : hayBusqueda ? 'Ningún paciente coincide con ' + (busquedaDni ? 'el DNI "' + textoDni.trim() + '"' : 'el nombre "' + textoBusqueda.trim() + '"')
+                : 'Sin pacientes con lo elegido en la leyenda';
         }
         var info = document.getElementById('busquedaInfo');
-        var total = puntos.length + (riesgo === 'S/D' ? sinUbicacion.length : 0);
-        if (info) info.textContent = hayFiltro && visibles > 0 ? visibles + ' de ' + total + ' pacientes' : '';
+        var incluyeSinGeo = selR ? conSD : (hayBusqueda || FILTRO_ARRIBA);
+        var total = puntos.length + (incluyeSinGeo ? sinUbicacion.length : 0);
+        if (info) info.textContent = hayFiltro && visibles > 0
+            ? visibles.toLocaleString('es-AR') + ' de ' + total.toLocaleString('es-AR') + ' pacientes' + (incluyeSinGeo ? ' (incluye los que no están en el mapa)' : '')
+            : '';
 
         if (grupoPacientes) {
             var visiblesMapa = [];
             puntos.forEach(function (p, i) {
                 var m = marcadores[i];
                 if (!m) return;
-                var mostrar = coincide(p, riesgoDe(p));
+                var mostrar = ver(p, true);
                 if (mostrar && !grupoPacientes.hasLayer(m)) grupoPacientes.addLayer(m);
                 if (!mostrar && grupoPacientes.hasLayer(m)) grupoPacientes.removeLayer(m);
                 if (mostrar) visiblesMapa.push(m);
@@ -1590,29 +1835,18 @@ document.addEventListener('click', function (e) {
         }
     }
 
-    // Botones de riesgo: se mantiene el nombre de la función usada en el resto del archivo
-    function aplicarFiltroRiesgo(riesgo) {
-        filtroRiesgoActivo = riesgo;
-        aplicarFiltros();
-
-        var grupoBtns = document.getElementById('filtroRiesgo');
-        if (grupoBtns) {
-            grupoBtns.classList.toggle('has-filter', !!riesgo);
-            grupoBtns.querySelectorAll('.sm-legend-btn').forEach(function (b) {
-                var activo = b.dataset.riesgo === riesgo;
-                b.classList.toggle('is-active', activo);
-                b.setAttribute('aria-pressed', activo ? 'true' : 'false');
-                b.title = activo ? 'Quitar filtro (mostrar todos)' : 'Mostrar solo riesgo ' + b.dataset.riesgo;
-            });
-        }
-    }
-
-    document.querySelectorAll('#filtroRiesgo .sm-legend-btn').forEach(function (btn) {
+    // Botones de la leyenda: cada clic agrega o quita ese valor; "Ver todos" limpia la selección
+    document.querySelectorAll('#filtroLeyenda .sm-legend-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            // Segundo clic sobre el mismo nivel: se quita el filtro y vuelve la lista completa
-            aplicarFiltroRiesgo(filtroRiesgoActivo === btn.dataset.riesgo ? null : btn.dataset.riesgo);
+            btn.setAttribute('aria-pressed', btn.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+            aplicarFiltros();
         });
     });
+    document.getElementById('btnVerTodos').addEventListener('click', function () {
+        document.querySelectorAll('#filtroLeyenda .sm-legend-btn').forEach(function (b) { b.setAttribute('aria-pressed', 'false'); });
+        aplicarFiltros();
+    });
+    aplicarFiltros();   // conteos de la leyenda al cargar
 
     // Búsquedas dinámicas por nombre y por DNI (se combinan entre sí y con el filtro de riesgo)
     function conectarBusqueda(idInput, idLimpiar, guardar) {
@@ -1652,8 +1886,13 @@ document.addEventListener('click', function (e) {
         });
     }
 
-    conectarBusqueda('buscarPaciente', 'limpiarBusqueda', function (v) { textoBusqueda = v; });
-    conectarBusqueda('buscarDni', 'limpiarDni', function (v) { textoDni = v; });
+    // Un solo buscador: si se escriben solo números (con puntos o espacios) busca por DNI; si no, por nombre
+    // (mismo criterio que MapaPacientes en public/js/mapa-pacientes.js, usado en el mapa de EJESA)
+    conectarBusqueda('buscarPaciente', 'limpiarBusqueda', function (v) {
+        var esDni = /^[\d.\s-]+$/.test(v.trim()) && soloDigitos(v) !== '';
+        textoBusqueda = esDni ? '' : v;
+        textoDni      = esDni ? v : '';
+    });
 
     function graficosMapa() {
         var mapaWrap = document.getElementById('mapaWrap');
@@ -1687,7 +1926,7 @@ document.addEventListener('click', function (e) {
 
         var grupo = L.featureGroup();
         puntos.forEach(function (p, i) {
-            marcadores[i] = L.marker([p.lat, p.lng], { icon: crearIcono(p.riesgo) })
+            marcadores[i] = L.marker([p.lat, p.lng], { icon: crearIcono(p.riesgo, estadoDe(p) !== 'activo') })
                 .bindPopup(
                     '<strong>' + escapar(p.paciente) + '</strong><table>' +
                     (p.dni ? '<tr><td>DNI:</td><td>' + escapar(p.dni) + '</td></tr>' : '') +
@@ -1696,23 +1935,33 @@ document.addEventListener('click', function (e) {
                     '<tr><td>Hospital:</td><td>' + escapar(p.efector || '—') + '</td></tr>' +
                     '<tr><td>Diagnóstico:</td><td>' + escapar(p.diagnostico || '—') + '</td></tr>' +
                     '<tr><td>Riesgo:</td><td><strong style="color:' + colorRiesgo(p.riesgo) + '">' + escapar(p.riesgo || 'S/D') + '</strong></td></tr>' +
-                    '</table>' + equiposPopup(p),
+                    '</table>' + (estadoDe(p) !== 'activo' ? '<div style="margin-top:4px;color:#718096;font-size:12px;"><em>' + (estadoDe(p) === 'fallecido' ? 'Fallecido' : 'Desactivado') + '</em></div>' : '') + equiposPopup(p),
                     { maxWidth: 300, minWidth: 240 }
                 )
                 .addTo(grupo);
         });
         grupo.addTo(mapa);
         grupoPacientes = grupo;
-        if (filtroRiesgoActivo || textoBusqueda || textoDni) aplicarFiltros();   // si se filtró antes de abrir el mapa
+        aplicarFiltros();   // pines y conteos según la leyenda, el buscador y los filtros de arriba
 
         if (puntos.length > 0) mapa.fitBounds(grupo.getBounds(), { padding: [30, 30] });
         else mapa.setView([-23.3128, -65.3097], 7);   // Centro de Jujuy (igual que el mapa de Bases)
 
-        // Clic en un paciente de la lista: centra el mapa en su pin y abre el popup
+        // Clic en un paciente de la lista: centra el mapa en su pin y abre el popup.
+        // Otro clic en el mismo paciente: cierra el popup y vuelve a la vista general del mapa.
         document.querySelectorAll('.sm-paciente-item').forEach(function (item) {
             item.addEventListener('click', function () {
                 var m = marcadores[parseInt(item.dataset.punto, 10)];
                 if (!m) return;
+                if (item.classList.contains('is-active') && m.isPopupOpen()) {
+                    item.classList.remove('is-active');
+                    mapa.closePopup();
+                    var visibles = [];
+                    grupoPacientes.eachLayer(function (x) { visibles.push(x.getLatLng()); });
+                    if (visibles.length) mapa.fitBounds(L.latLngBounds(visibles), { padding: [30, 30] });
+                    else mapa.setView([-23.3128, -65.3097], 7);
+                    return;
+                }
                 document.querySelectorAll('.sm-paciente-item.is-active').forEach(function (a) { a.classList.remove('is-active'); });
                 item.classList.add('is-active');
                 if (mapaWrap.classList.contains('is-hidden')) btnMapa.click();

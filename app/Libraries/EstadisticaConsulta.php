@@ -95,9 +95,15 @@ final class EstadisticaConsulta
         return $salida;
     }
 
+    /** Indicadores principales con los filtros actuales (los usa el tablero y el panel de inicio). */
+    public function kpi(): array
+    {
+        return $this->base()->select("COUNT(*) AS atenciones, COUNT(DISTINCT a.paciente_id) AS pacientes, COUNT(DISTINCT a.profesional_id) AS medicos, COALESCE(SUM(NULLIF(TRIM(a.procedimiento), '') IS NOT NULL),0) AS procedimientos, MIN(a.fecha) AS desde, MAX(a.fecha) AS hasta", false)->get()->getRowArray() ?? [];
+    }
+
     public function resumen(): array
     {
-        $kpi = $this->base()->select("COUNT(*) AS atenciones, COUNT(DISTINCT a.paciente_id) AS pacientes, COUNT(DISTINCT a.profesional_id) AS medicos, COALESCE(SUM(NULLIF(TRIM(a.procedimiento), '') IS NOT NULL),0) AS procedimientos, MIN(a.fecha) AS desde, MAX(a.fecha) AS hasta", false)->get()->getRowArray();
+        $kpi = $this->kpi();
         $serie = $this->base()->select("DATE_FORMAT(a.fecha, '%Y-%m') AS nombre, COUNT(*) AS cantidad", false)->groupBy('nombre')->orderBy('nombre')->get()->getResultArray();
         if ($serie) {
             $porMes = array_column($serie, 'cantidad', 'nombre');

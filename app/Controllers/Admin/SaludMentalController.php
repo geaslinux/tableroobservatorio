@@ -13,7 +13,7 @@ class SaludMentalController extends BaseController
     private const TABS = ['perfil', 'mapa'];
 
     // Estado del paciente: por defecto solo activos; "desactivado" son las bajas (fallecidos y bajas del registro)
-    private const ESTADOS = ['activo', 'desactivado', 'todos'];
+    private const ESTADOS = ['activo', 'desactivado', 'fallecido', 'todos'];
 
     // ─── Filtros (mismos nombres que ElectrodependienteController para que el Excel respete lo filtrado)
     private function leerFiltros(): array
@@ -37,10 +37,14 @@ class SaludMentalController extends BaseController
             ->join('efector e',     'e.efector_id     = electrodependiente.efector_id',     'left')
             ->join('diagnostico d', 'd.diagnostico_id = electrodependiente.diagnostico_id', 'left');
 
-        if ($filtros['filtro_estado'] === 'todos') {
-            $builder->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
-        } else {
-            $builder->where('electrodependiente.estado', $filtros['filtro_estado']);
+        // Estado: un fallecido cuenta solo como fallecido (igual que las tarjetas Bajas / Fallecidos
+        // y el listado de electrodependientes), así Activos + Dados de baja + Fallecidos = Todos
+        $builder->whereIn('electrodependiente.estado', ['activo', 'desactivado']);
+        if ($filtros['filtro_estado'] === 'fallecido') {
+            $builder->where('electrodependiente.estado_vital', 'fallecido');
+        } elseif ($filtros['filtro_estado'] !== 'todos') {
+            $builder->where('electrodependiente.estado', $filtros['filtro_estado'])
+                    ->where("COALESCE(electrodependiente.estado_vital, '') <>", 'fallecido');
         }
 
         if ($filtros['filtro_efector'] !== '')   $builder->where('electrodependiente.efector_id', $filtros['filtro_efector']);
@@ -136,6 +140,18 @@ class SaludMentalController extends BaseController
             $riesgoPorTipo[$f['riesgo']][$f['tipo'] ?: 'S/D'] = (int) $f['pacientes'];
         }
 
+        // Estado del padrón por tipo y por riesgo (gráficos "Estado del padrón" del perfil).
+        // Como las tarjetas Bajas / Fallecidos: todo el padrón, sin el filtro de estado; un fallecido
+        // cuenta solo como fallecido.
+        $estadoSql = "CASE WHEN electrodependiente.estado_vital = 'fallecido' THEN 'FALLECIDOS'
+                           WHEN electrodependiente.estado = 'activo' THEN 'ACTIVOS' ELSE 'BAJAS' END";
+        $tipoSql   = "CASE WHEN electrodependiente.tipo = 'ADULTO' THEN 'ADULTOS'
+                           WHEN TRIM(COALESCE(electrodependiente.tipo, '')) = '' THEN 'S/D' ELSE 'NIÑOS' END";
+        $estadoPadron = $this->builder($db, ['filtro_estado' => 'todos'] + $filtros)
+            ->select("{$estadoSql} AS estado, {$tipoSql} AS tipo, {$riesgoSql} AS riesgo, COUNT(*) AS pacientes", false)
+            ->groupBy("{$estadoSql}, {$tipoSql}, {$riesgoSql}", false)
+            ->get()->getResultArray();
+
         // ══ TERRITORIO Y MAPA ═══════════════════════════════════════════
         $porLocalidad = $this->builder($db, $filtros)
             ->select("
@@ -159,9 +175,9 @@ class SaludMentalController extends BaseController
         $filasPacientes = $this->builder($db, $filtros)
             ->select("
                 electrodependiente.electrodependiente_id AS id,
-                electrodependiente.paciente, electrodependiente.edad, electrodependiente.tipo,
                 electrodependiente.paciente, electrodependiente.dni,
                 electrodependiente.edad, electrodependiente.tipo,
+                electrodependiente.estado, electrodependiente.estado_vital,
                 electrodependiente.coordenadas, electrodependiente.factor_riesgo AS riesgo,
                 l.nombre AS localidad, e.nombre AS efector, d.nombre AS diagnostico
             ", false)
@@ -212,6 +228,7 @@ class SaludMentalController extends BaseController
             'kpi'            => $kpi,
             'porDiagnostico' => $porDiagnostico,
             'porRiesgo'      => $porRiesgo,
+            'estadoPadron'   => $estadoPadron,
             'riesgoPorTipo'  => $riesgoPorTipo,
             'porLocalidad'   => $porLocalidad,
             'porHospital'    => $porHospital,

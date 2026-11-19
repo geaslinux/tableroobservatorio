@@ -585,7 +585,8 @@
         // Plugins para la dona
         var centerTextPlugin = {
             id: 'centerText',
-            afterDraw: function (chart) {
+            // afterDatasetsDraw: después de las porciones y antes del tooltip (el tooltip queda encima)
+            afterDatasetsDraw: function (chart) {
                 if (chart.config.type !== 'doughnut') return;
                 var arco = chart.getDatasetMeta(0).data[0];
                 if (!arco) return;

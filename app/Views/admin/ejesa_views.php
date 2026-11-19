@@ -95,8 +95,9 @@ foreach ($localidades ?? [] as $l) {
 <div class="ej-breadcrumb">
     <a href="<?= base_url(route_to('home')); ?>" class="fas fa-home" aria-label="Inicio"></a>
     <a href="<?= base_url(route_to('inicio_views')); ?>">Inicio</a> ›
-    <a href="<?= base_url(route_to('saludmental_views')); ?>">Salud mental — Electrodependientes</a> ›
+    <a href="<?= base_url(route_to('saludmental_views')); ?>">Salud mental</a> ›
     <strong>EJESA</strong>
+    <span hidden data-topbar-padre="Salud mental" data-topbar-vista="EJESA"></span>
 </div>
 
 <div class="ej-panel">

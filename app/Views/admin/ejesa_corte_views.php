@@ -6,8 +6,13 @@
 <link rel="stylesheet" href="/css/panel-pestanas.css">
 <link rel="stylesheet" href="/css/ejesa.css">
 <link rel="stylesheet" href="/css/ejesa.css?v=<?= @filemtime(FCPATH . 'css/ejesa.css') ?: '1' ?>">
-<?php if ($geometria): ?>
+<?php
+// El mapa se muestra si el corte tiene zona dibujada o personas afectadas guardadas
+$hayMapa = $geometria || !empty($afectados);
+?>
+<?php if ($hayMapa): ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="/css/mapa-pacientes.css?v=<?= @filemtime(FCPATH . 'css/mapa-pacientes.css') ?: '1' ?>">
 <?php endif; ?>
 
 <?php
@@ -23,9 +28,11 @@ $volverUrl = base_url(route_to('ejesa_views')) . '?tab=' . urlencode(in_array($v
 
 <div class="ej-breadcrumb">
     <a href="<?= base_url(route_to('home')); ?>" class="fas fa-home" aria-label="Inicio"></a>
-    <a href="<?= base_url(route_to('saludmental_views')); ?>">Electrodependientes</a> ›
+    <a href="<?= base_url(route_to('inicio_views')); ?>">Inicio</a> ›
+    <a href="<?= base_url(route_to('saludmental_views')); ?>">Salud mental</a> ›
     <a href="<?= $volverUrl ?>">EJESA</a> ›
     <strong>Corte #<?= (int) $c['corte_id'] ?></strong>
+    <span hidden data-topbar-padre="Salud mental" data-topbar-vista="EJESA"></span>
 </div>
 
 <div class="ej-panel">
@@ -123,10 +130,76 @@ $volverUrl = base_url(route_to('ejesa_views')) . '?tab=' . urlencode(in_array($v
             </div>
         </div>
 
-        <?php if ($geometria): ?>
+        <?php if ($hayMapa):
+            // Mismos colores de riesgo que el mapa de Salud mental (PENDIENTE = sin evaluación)
+            $coloresRiesgo = ['ALTO' => '#D96C6C', 'MEDIANO' => '#F2A272', 'BAJO' => '#5BB8A6', 'PENDIENTE' => '#708090'];
+            $personasMapa = [];
+            $conCoordenadas = 0;
+            foreach ($afectados as $p) {
+                if (!isset($p['paciente'])) continue;   // sin ficha: no hay datos para mostrar
+                $partes = array_map('trim', explode(',', (string) ($p['coordenadas'] ?? '')));
+                $lat = (float) ($partes[0] ?? 0);
+                $lng = (float) ($partes[1] ?? 0);
+                $valida = count($partes) >= 2 && !($lat == 0 && $lng == 0) && abs($lat) <= 90 && abs($lng) <= 180;
+                if ($valida) $conCoordenadas++;
+                $personasMapa[] = [
+                    'paciente'    => $p['paciente'],
+                    'dni'         => $p['dni'] ?? '',
+                    'edad'        => $p['edad'] ?? '',
+                    'tipo'        => $p['tipo'] ?? '',
+                    'localidad'   => $p['localidad'] ?? '',
+                    'efector'     => $p['efector'] ?? '',
+                    'diagnostico' => $p['diagnostico'] ?? '',
+                    'riesgo'      => Calculo::riesgo($p['riesgo_snapshot']),
+                    'lat'         => $valida ? $lat : null,
+                    'lng'         => $valida ? $lng : null,
+                    'historial'   => $puedeVerFicha ? base_url(route_to('electrodependiente_historial', $p['electrodependiente_id'])) : '',
+                ];
+            }
+        ?>
         <div class="ej-bloque">
-            <div class="ej-bloque-titulo"><span><i class="fas fa-draw-polygon"></i> Zona del corte</span><span class="ej-chip neutro">sin ubicación de personas</span></div>
-            <div class="ej-bloque-body"><div id="ej-mapa"></div></div>
+            <div class="ej-bloque-titulo">
+                <span><i class="fas fa-map-marked-alt"></i> Ubicación de las personas afectadas</span>
+                <span class="ej-chip neutro"><?= $num($conCoordenadas) ?> de <?= $num(count($personasMapa)) ?> en el mapa</span>
+            </div>
+            <div class="ej-bloque-body">
+                <div class="mp-grid">
+                    <!-- Lista de personas: leyenda de riesgo (filtra), buscador y tarjetas -->
+                    <div>
+                        <div class="mp-leyenda" id="mpRiesgo">
+                            <?php foreach ($coloresRiesgo as $r => $color): ?>
+                                <button type="button" class="mp-leyenda-item mp-leyenda-btn" data-riesgo="<?= $r ?>" aria-pressed="false" title="Mostrar solo riesgo <?= $r ?>">
+                                    <span class="mp-leyenda-color" style="background:<?= $color ?>;"></span> <?= $r ?>
+                                </button>
+                            <?php endforeach; ?>
+                        </div>
+                        <div class="mp-busqueda">
+                            <i class="fas fa-search"></i>
+                            <input type="search" id="mpBuscar" placeholder="Buscar por nombre o DNI…" autocomplete="off" aria-label="Buscar persona por nombre o DNI">
+                            <button type="button" id="mpLimpiar" title="Limpiar búsqueda" aria-label="Limpiar búsqueda" hidden><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="mp-busqueda-info" id="mpInfo" aria-live="polite"></div>
+                        <div class="mp-lista" id="mpLista"></div>
+                    </div>
+
+                    <!-- Mapa: regiones sanitarias, zona del corte y pines por riesgo -->
+                    <div>
+                        <div class="mp-leyenda">
+                            <?php foreach (['CENTRO' => '#90CAF9', 'VALLE' => '#A5D6A7', 'RAMAL I' => '#F48FB1', 'RAMAL II' => '#CE93D8', 'QUEBRADA' => '#FFAB91', 'PUNA' => '#f1e571'] as $nombre => $color): ?>
+                                <div class="mp-leyenda-item"><span class="mp-leyenda-color" style="background:<?= $color ?>;"></span> <?= $nombre ?></div>
+                            <?php endforeach; ?>
+                            <?php if ($geometria): ?>
+                                <div class="mp-leyenda-item"><span class="mp-leyenda-color" style="background:rgba(197,48,48,.25); border:2px solid #c53030;"></span> ZONA DEL CORTE</div>
+                            <?php endif; ?>
+                        </div>
+                        <div class="mp-mapa-panel">
+                            <div class="mp-mapa-header"><span><i class="fas fa-map-marked-alt"></i> UBICACIÓN DE PACIENTES</span></div>
+                            <div class="mp-mapa" id="ej-mapa"></div>
+                        </div>
+                        <div class="mp-nota">Solo personas con coordenadas cargadas (<?= $num($conCoordenadas) ?> de <?= $num(count($personasMapa)) ?>). Ubicación orientativa: el domicilio no prueba de qué red eléctrica depende la persona.</div>
+                    </div>
+                </div>
+            </div>
         </div>
         <?php endif; ?>
 
@@ -169,16 +242,19 @@ $volverUrl = base_url(route_to('ejesa_views')) . '?tab=' . urlencode(in_array($v
 <?= $this->endSection() ?>
 
 <?= $this->section('js') ?>
-<?php if ($geometria): ?>
+<?php if ($hayMapa): ?>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/mapa-pacientes.js?v=<?= @filemtime(FCPATH . 'js/mapa-pacientes.js') ?: '1' ?>"></script>
 <script>
 (function () {
-    var zona = <?= json_encode(json_decode((string) $geometria, true)) ?>;
-    if (!zona || zona.type !== 'Polygon') return;
-    var mapa = L.map('ej-mapa');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(mapa);
-    var capa = L.geoJSON(zona, { style: { color: '#c53030', weight: 2, fillOpacity: .2 } }).addTo(mapa);
-    mapa.fitBounds(capa.getBounds(), { padding: [20, 20] });
+    var zona = <?= json_encode($geometria ? json_decode((string) $geometria, true) : null) ?>;
+    MapaPacientes.iniciar({
+        mapa: 'ej-mapa', lista: 'mpLista', buscador: 'mpBuscar', limpiar: 'mpLimpiar', info: 'mpInfo', leyenda: 'mpRiesgo',
+        personas: <?= json_encode($personasMapa, JSON_UNESCAPED_UNICODE) ?>,
+        colores: <?= json_encode($coloresRiesgo) ?>,
+        zona: zona && zona.type === 'Polygon' ? zona : null,
+        departamentos: '<?= base_url('geojson/jujuy_departamentos.json') ?>'
+    });
 })();
 </script>
 <?php endif; ?>

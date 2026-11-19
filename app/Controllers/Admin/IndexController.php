@@ -112,10 +112,12 @@ class IndexController extends BaseController
             ->get()->getRowArray();
         $sm = array_map('intval', $sm ?? []);
 
-        // Ubicados en el mapa: misma validación de coordenadas que el panel de Salud mental
+        // Activos ubicados en el mapa: mismos pacientes que "Electrodep. activos" y
+        // misma validación de coordenadas que el mapa del panel de Salud mental
         $sm['geo'] = 0;
         $coordenadas = $db->table('electrodependiente')->select('coordenadas')
-            ->whereIn('estado', ['activo', 'desactivado'])
+            ->where('estado', 'activo')
+            ->where("COALESCE(estado_vital, '') <>", 'fallecido')
             ->where("TRIM(COALESCE(coordenadas, '')) <>", '')
             ->get()->getResultArray();
         foreach ($coordenadas as $c) {
@@ -148,12 +150,35 @@ class IndexController extends BaseController
         ];
         $ser['variacion'] = $transfAnt > 0 ? round(($ser['transfusiones'] - $transfAnt) * 100 / $transfAnt, 1) : null;
 
+        // ══ ATENCIONES DE CONSULTA ══════════════════════════════════════
+        // Mismo cálculo y mismo alcance que el tablero de atenciones (solo los formularios del usuario).
+        // Usa el año actual, igual que el filtro con el que abre el tablero.
+        $con = null;
+        if (has_permission('LISTADO PERSONA')) {
+            try {
+                $anioCon = (int) date('Y');
+                $rango = ['desde' => $anioCon . '-01-01', 'hasta' => $anioCon . '-12-31'];
+                $kpi = (new \App\Libraries\EstadisticaConsulta((int) user_id(), $rango))->kpi();
+                $con = array_map('intval', [
+                    'atenciones'     => $kpi['atenciones'] ?? 0,
+                    'pacientes'      => $kpi['pacientes'] ?? 0,
+                    'medicos'        => $kpi['medicos'] ?? 0,
+                    'procedimientos' => $kpi['procedimientos'] ?? 0,
+                ]) + ['anio' => $anioCon, 'rango' => $rango];
+                $con['pct_proc'] = $con['atenciones'] > 0 ? round($con['procedimientos'] * 100 / $con['atenciones'], 1) : 0;
+            } catch (\Throwable $e) {
+                log_message('error', 'Inicio, atenciones de consulta: ' . $e->getMessage());
+                $con = null;
+            }
+        }
+
         return view('admin/inicio_views', [
             'pre'  => $pre,
             'hosp' => $hosp,
             'pac'  => $pac,
             'sm'   => $sm,
             'ser'  => $ser,
+            'con'  => $con,
         ]);
     }
 
