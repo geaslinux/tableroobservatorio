@@ -60,7 +60,7 @@ $volverUrl = base_url(route_to('ejesa_views')) . '?tab=' . urlencode(in_array($v
             <div class="ej-bloque-body">
                 <div class="ej-ficha">
                     <div class="f-cuando"><span><i class="far fa-calendar"></i> Fecha y hora</span><strong><?= esc(Calculo::rango($c['inicio_at'], $c['fin_estimado_at'])) ?></strong></div>
-                    <div class="f-cuando"><span><i class="far fa-clock"></i> <?= $c['estado_visible'] === 'PROGRAMADO' ? 'Faltan' : 'Inicio / fin estimado' ?></span><?= $c['estado_visible'] === 'PROGRAMADO' ? esc($c['faltan']) : esc(Calculo::fecha($c['inicio_at'])) . ' → ' . esc(Calculo::fecha($c['fin_estimado_at'])) ?></div>
+                    <div class="f-cuando"><span><i class="far fa-clock"></i> <?= $c['estado_visible'] === 'PROGRAMADO' ? ((int) $c['faltan'] === 1 ? 'Falta' : 'Faltan') : 'Inicio / fin estimado' ?></span><?= $c['estado_visible'] === 'PROGRAMADO' ? esc($c['faltan']) : esc(Calculo::fecha($c['inicio_at'])) . ' → ' . esc(Calculo::fecha($c['fin_estimado_at'])) ?></div>
                     <div class="f-donde"><span><i class="fas fa-map-marker-alt"></i> Localidad</span><?= esc($c['localidad'] ?: 'Localidad sin indicar') ?></div>
                     <div class="f-donde"><span><i class="fas fa-draw-polygon"></i> Zona</span><?= esc($c['zona_descripcion'] ?: '—') ?></div>
                     <div class="f-donde"><span><i class="fas fa-tools"></i> Motivo</span><?= esc($c['motivo'] ?: '—') ?></div>

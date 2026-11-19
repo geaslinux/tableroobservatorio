@@ -286,7 +286,7 @@ foreach ($localidades ?? [] as $l) {
                     <?php if ($enCursoProx): ?>
                         <span class="ej-proximo-faltan"><i class="fas fa-bolt"></i> En curso: lleva <?= esc(Calculo::horas($prox['horas']['sin_luz'])) ?> sin luz</span>
                     <?php else: ?>
-                        <span class="ej-proximo-faltan"><i class="far fa-hourglass"></i> Faltan <?= esc($prox['faltan']) ?></span>
+                        <span class="ej-proximo-faltan"><i class="far fa-hourglass"></i> <?= esc(Calculo::faltanTexto($prox['faltan'])) ?></span>
                     <?php endif; ?>
                     <div class="ej-proximo-datos">
                         <div><span class="lbl">Localidad</span><?= esc($prox['localidad'] ?: 'Localidad sin indicar') ?></div>

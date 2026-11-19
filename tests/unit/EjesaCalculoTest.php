@@ -297,6 +297,15 @@ final class EjesaCalculoTest extends CIUnitTestCase
         $this->assertSame('2 d 5 h', Calculo::faltan('2026-11-12 17:00:00', self::AHORA));
         $this->assertSame('3 h 20 min', Calculo::faltan('2026-11-10 15:20:00', self::AHORA));
         $this->assertSame('', Calculo::faltan('2026-11-10 11:00:00', self::AHORA));
+
+        // El verbo va en singular cuando el primer número es 1
+        $this->assertSame('Falta 1 min', Calculo::faltanTexto('1 min'));
+        $this->assertSame('Falta 1 h 20 min', Calculo::faltanTexto('1 h 20 min'));
+        $this->assertSame('Falta 1 d 3 h', Calculo::faltanTexto('1 d 3 h'));
+        $this->assertSame('Faltan 15 min', Calculo::faltanTexto('15 min'));
+        $this->assertSame('Faltan 2 d 5 h', Calculo::faltanTexto('2 d 5 h'));
+        $this->assertSame('Faltan 10 min', Calculo::faltanTexto('10 min'));
+        $this->assertSame('', Calculo::faltanTexto(''));
         $this->assertSame('10/11/2026 09:00', Calculo::fecha(Calculo::utcALocal('2026-11-10 12:00:00')));
         $this->assertSame('Mar 10/11 08:00 a 13:00', Calculo::rango('2026-11-10 08:00:00', '2026-11-10 13:00:00'));
         $this->assertStringStartsWith('Reprogramado: inicio 05/11/2026 07:00 → 05/11/2026 08:00',

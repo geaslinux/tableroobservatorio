@@ -140,6 +140,19 @@ final class Calculo
         return $h > 0 ? $h . ' h ' . $m . ' min' : $m . ' min';
     }
 
+    /**
+     * "Falta 1 min" / "Faltan 15 min": el verbo concuerda con el primer número del tiempo que queda
+     * ("Falta 1 h 20 min", "Faltan 2 d 5 h"). Recibe el texto de faltan(); '' si ya pasó.
+     */
+    public static function faltanTexto(string $faltan): string
+    {
+        if ($faltan === '') {
+            return '';
+        }
+
+        return ((int) $faltan === 1 ? 'Falta ' : 'Faltan ') . $faltan;
+    }
+
     /** "NOVIEMBRE 2026" a partir de una fecha local. */
     public static function mes(string $local): string
     {
