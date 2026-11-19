@@ -231,7 +231,7 @@
             <div class="mcp-row">
                 <?= $stat($fmt($sm['activos']), 'Electrodep.<br>activos') ?>
                 <?= $stat($fmt($sm['riesgo_alto']), 'Riesgo<br>alto') ?>
-                <?= $stat($fmt($sm['geo']), 'Ubicados<br>en mapa') ?>
+                <?= $stat($fmt($sm['geo']) . '<small>/' . $fmt($sm['activos']) . '</small>', 'Activos<br>en mapa') ?>
                 <?= $stat($fmt($sm['camas']), 'Camas<br>salud mental') ?>
             </div>
             <div class="mcp-pill">
@@ -267,16 +267,29 @@
 
     <!-- ATENCIONES DE CONSULTA -->
     <?php if (has_permission('LISTADO PERSONA')): ?>
-    <a href="<?= base_url(route_to('consulta_tablero')); ?>" class="module-card-prehosp card-consulta">
+    <!-- El tablero abre filtrado en el año actual, el mismo que muestran estos datos -->
+    <a href="<?= base_url(route_to('consulta_tablero')) ?>" class="module-card-prehosp card-consulta">
         <div class="mcp-header">
             <i class="fas fa-notes-medical mc-icon"></i>
             <div class="mc-title">Atenciones de consulta</div>
             <div class="mc-sub">Médicos · Diagnósticos · Procedimientos</div>
         </div>
         <div class="mcp-stats">
-            <div class="mcp-pill">
-                <span><i class="fas fa-arrow-right"></i> Ver tablero de atenciones</span>
-            </div>
+            <?php if ($con): ?>
+                <div class="mcp-row">
+                    <?= $stat($fmt($con['atenciones']), 'Atenciones', $con['anio']) ?>
+                    <?= $stat($fmt($con['pacientes']), 'Pacientes<br>atendidos', $con['anio']) ?>
+                    <?= $stat($fmt($con['medicos']), 'Médicos<br>con atenciones', $con['anio']) ?>
+                    <?= $stat($fmt($con['procedimientos']), 'Con<br>procedimiento', $con['anio']) ?>
+                </div>
+                <div class="mcp-pill">
+                    <span><i class="fas fa-circle"></i> <?= $dec($con['pct_proc']) ?>% con procedimiento (<?= esc($con['anio']) ?>)</span>
+                </div>
+            <?php else: ?>
+                <div class="mcp-pill">
+                    <span><i class="fas fa-arrow-right"></i> Ver tablero de atenciones</span>
+                </div>
+            <?php endif; ?>
         </div>
     </a>
     <?php endif; ?>

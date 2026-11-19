@@ -5,6 +5,8 @@
 <?= $this->section('content') ?>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="/css/ejesa.css?v=<?= @filemtime(FCPATH . 'css/ejesa.css') ?: '1' ?>">
+<!-- Tarjetas, buscador y leyendas del mapa (mismo diseño que el mapa de territorio de Salud mental) -->
+<link rel="stylesheet" href="/css/mapa-pacientes.css?v=<?= @filemtime(FCPATH . 'css/mapa-pacientes.css') ?: '1' ?>">
 
 <style>
     /* Listado de pacientes electrodependientes, SOLO CONSULTA (sin alta, edición ni baja).
@@ -14,9 +16,18 @@
     .ep-buscar-input { position: relative; }
     .ep-buscar-input i { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12px; }
     .ep-buscar-input input { padding-left: 30px !important; }
-    @media (min-width: 768px) {
+    /* Tablet: 4 columnas (Buscar ocupa dos) y los botones en su propia fila, a la derecha */
+    @media (min-width: 768px) and (max-width: 1199px) {
+        .ep-filtros .ej-filtro-fila { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .ep-filtros .ep-buscar { grid-column: span 2; }
+        .ep-filtros .ej-filtro-acciones { grid-column: 1 / -1; justify-content: flex-end; }
+    }
+    /* Escritorio ancho: todos los filtros en una fila */
+    @media (min-width: 1200px) {
         .ep-filtros .ej-filtro-fila { grid-template-columns: 2fr repeat(6, minmax(0, 1fr)) auto; }
         .ep-filtros .ep-buscar { grid-column: auto; }
+    }
+    @media (min-width: 768px) {
         .ep-tabla td.ep-paciente { min-width: 230px; }
         .ep-tabla td.ep-servicio { min-width: 150px; }
         .ep-tabla .ep-acciones { flex-wrap: nowrap; }
@@ -67,6 +78,12 @@
     /* Mapa */
     #mapa-electro { height: 420px; width: 100%; border-radius: 10px; z-index: 1; }
     @media (min-width: 768px) { #mapa-electro { height: 560px; } }
+    /* Tarjetas al costado del mapa: el mismo alto que el mapa */
+    #col-mapa .mp-lista { max-height: 560px; }
+    #col-mapa .mp-item.is-baja { opacity: .75; }
+    #col-mapa .mp-tag.baja { background: #4a5568; }
+    #col-mapa .mp-tag.desactivado { background: #a0aec0; }
+    @media (max-width: 767px) { #col-mapa .mp-lista { max-height: 320px; } }
     /* Fondo en blanco y negro (como el mapa de Bases): solo las teselas; departamentos y pines conservan su color */
     #mapa-electro .leaflet-tile-pane { filter: grayscale(100%); }
     .ep-leyenda { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; font-size: 12px; color: var(--text-muted); margin-bottom: 10px; }
@@ -86,6 +103,24 @@
     .ep-capa:disabled { opacity: .35; cursor: default; }
     .ep-leyenda-sep { width: 1px; height: 20px; background: var(--border); }
     .ep-leyenda-nota { margin-left: auto; font-size: 11.5px; }
+    .ep-leyenda .ep-rotulo { color: var(--text-main); font-weight: 700; }
+    .ep-leyenda .ep-grupo-botones { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    /* Pantallas angostas: Riesgo en una fila y Estado en otra (cada una entera, sin partirse), con los
+       rótulos del mismo ancho para que los botones queden alineados; si una fila no entra, los botones
+       que sobran pasan abajo, alineados debajo del primero (nunca se recortan). La nota de "sin coordenadas" va debajo, a la izquierda */
+    @media (max-width: 991px) {
+        .ep-leyenda { flex-direction: column; align-items: stretch; gap: 8px; }
+        .ep-leyenda .ep-leyenda-sep { display: none; }
+        .ep-leyenda .ep-grupo { flex-wrap: nowrap; align-items: flex-start; }
+        .ep-leyenda .ep-grupo-botones { flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
+        .ep-leyenda .ep-grupo { gap: 6px; }
+        .ep-leyenda .ep-grupo .ep-rotulo { flex: 0 0 auto; min-width: 3.6em; padding-top: 4px; }
+        .ep-leyenda .ep-grupo-botones { gap: 6px; }
+        .ep-leyenda .ep-capa { padding: 3px 9px; font-size: 11.5px; gap: 4px; }
+        .ep-leyenda .ep-capa { white-space: nowrap; flex-shrink: 0; }
+        #btnVerTodos { align-self: flex-start; }
+        .ep-leyenda-nota { margin-left: 0; }
+    }
     .leaflet-popup-content strong { color: #13304d; font-size: 0.92rem; }
     .leaflet-popup-content table  { font-size: 0.80rem; margin-top: 4px; }
     .leaflet-popup-content td     { padding: 1px 4px; }
@@ -155,7 +190,13 @@ $selR = $mapaSel['riesgo'] ?? [];
 $selE = $mapaSel['estado'] ?? [];
 $txtR = ['ALTO' => 'ALTO', 'MEDIANO' => 'MEDIANO', 'BAJO' => 'BAJO', 'SD' => 'Sin dato'];
 $txtE = ['activo' => 'Activos', 'fallecido' => 'Fallecidos', 'desactivado' => 'Desactivados'];
-if ($selR) $chips[] = ['Mapa · riesgo: ' . implode(' o ', array_map(static fn ($v) => $txtR[$v], $selR)), 'm_riesgo'];
+// "Sin dato" junto con niveles: esos niveles dentro de los que no tienen coordenadas
+$nivelesSel = array_values(array_diff($selR, ['SD']));
+if ($selR && in_array('SD', $selR, true) && $nivelesSel) {
+    $chips[] = ['Mapa · sin dato (sin coordenadas) de riesgo ' . implode(' o ', $nivelesSel), 'm_riesgo'];
+} elseif ($selR) {
+    $chips[] = ['Mapa · riesgo: ' . implode(' o ', array_map(static fn ($v) => $txtR[$v], $selR)), 'm_riesgo'];
+}
 if ($selE) $chips[] = ['Mapa · estado: ' . implode(' o ', array_map(static fn ($v) => $txtE[$v], $selE)), 'm_estado'];
 
 // Riesgo con los colores fijos del módulo (ALTO rojo, MEDIANO amarillo, BAJO verde, sin dato gris)
@@ -173,7 +214,9 @@ $total = $k['total'] ?? 0;
     <a href="<?= base_url(route_to('home')); ?>" class="fas fa-home" aria-label="Inicio"></a>
     <a href="<?= base_url(route_to('inicio_views')); ?>">Inicio</a> ›
     <a href="<?= base_url(route_to('saludmental_views')); ?>">Salud mental</a> ›
+    <a href="<?= base_url(route_to('ejesa_views')); ?>">EJESA</a> ›
     <strong>Electrodependientes</strong>
+    <span hidden data-topbar-padre="Salud mental" data-topbar-vista="EJESA"></span>
 </div>
 
 <div class="ej-panel">
@@ -294,7 +337,7 @@ $total = $k['total'] ?? 0;
                 </div>
                 <div class="ej-filtro <?= $filtro_estado ? 'activo' : '' ?>">
                     <label for="f-estado">Estado</label>
-                    <select id="f-estado" name="estado"><option value="">Todos</option><option value="activo" <?= $filtro_estado == 'activo' ? 'selected' : '' ?>>Activo</option><option value="desactivado" <?= $filtro_estado == 'desactivado' ? 'selected' : '' ?>>Desactivado</option></select>
+                    <select id="f-estado" name="estado"><option value="">Todos</option><option value="activo" <?= $filtro_estado == 'activo' ? 'selected' : '' ?>>Activo</option><option value="desactivado" <?= $filtro_estado == 'desactivado' ? 'selected' : '' ?>>Desactivado</option><option value="fallecido" <?= $filtro_estado == 'fallecido' ? 'selected' : '' ?>>Fallecido</option></select>
                 </div>
                 <div class="ej-filtro-acciones">
                     <button type="submit" class="bl-btn teal" title="Filtrar"><i class="fas fa-filter"></i> Filtrar</button>
@@ -319,7 +362,10 @@ $total = $k['total'] ?? 0;
         <?php
         // Pacientes georreferenciados (todos los que cumplen los filtros). Coordenadas "lat, lng";
         // las que no son válidas (por ejemplo, cargadas sin punto decimal) no se dibujan y se avisa.
+        // Los que no tienen coordenadas (o las tienen mal cargadas) van a $sinUbicacionMapa: no tienen pin,
+        // pero aparecen como tarjeta al elegir "Sin dato" en la leyenda (como S/D en Salud mental).
         $puntosMapa = [];
+        $sinUbicacionMapa = [];
         $coordInvalidas = 0;
         $cuentaMapa = ['ALTO' => 0, 'MEDIANO' => 0, 'BAJO' => 0, 'SD' => 0];
         $cuentaBaja = ['fallecido' => 0, 'desactivado' => 0];
@@ -327,15 +373,28 @@ $total = $k['total'] ?? 0;
             $c = array_map('trim', explode(',', (string) $p['coordenadas']));
             $lat = isset($c[0]) && is_numeric($c[0]) ? (float) $c[0] : null;
             $lng = isset($c[1]) && is_numeric($c[1]) ? (float) $c[1] : null;
-            if ($lat === null || $lng === null || abs($lat) > 90 || abs($lng) > 180 || ($lat == 0 && $lng == 0)) {
+            $sinCoordenadas = trim((string) $p['coordenadas']) === '';
+            $valida = !$sinCoordenadas && $lat !== null && $lng !== null && abs($lat) <= 90 && abs($lng) <= 180 && !($lat == 0 && $lng == 0);
+            if (!$sinCoordenadas && !$valida) {
                 $coordInvalidas++;
-                continue;
             }
             $r = strtoupper((string) $p['riesgo']);
             $r = in_array($r, ['ALTO', 'MEDIANO', 'BAJO'], true) ? $r : 'SD';
-            $cuentaMapa[$r]++;
             // Un fallecido cuenta solo como fallecido aunque también esté desactivado
             $baja = ($p['estado_vital'] ?? '') === 'fallecido' ? 'fallecido' : ($p['estado'] !== 'activo' ? 'desactivado' : null);
+            if (!$valida) {
+                $cuentaMapa['SD']++;
+                $sinUbicacionMapa[] = [
+                    'id' => (int) $p['id'], 'paciente' => $p['paciente'], 'dni' => $p['dni'] ?? '', 'edad' => $p['edad'] ?? '',
+                    'localidad' => $p['localidad_nombre'] ?? '', 'efector' => $p['efector_nombre'] ?? '', 'diagnostico' => $p['diagnostico_nombre'] ?? '',
+                    'riesgo' => $r, 'fallecido' => ($p['estado_vital'] ?? '') === 'fallecido', 'activo' => $p['estado'] === 'activo', 'baja' => $baja,
+                    'servicio' => (string) ($p['nro_servicio'] ?? ''),
+                    'lat' => null, 'lng' => null, 'coordInvalida' => !$sinCoordenadas,
+                    'historial' => base_url(route_to('electrodependiente_historial', (int) $p['id'])),
+                ];
+                continue;
+            }
+            $cuentaMapa[$r]++;
             if ($baja) {
                 $cuentaBaja[$baja]++;
             }
@@ -359,16 +418,19 @@ $total = $k['total'] ?? 0;
             <div class="ej-bloque-body">
                 <div class="ep-leyenda">
                     <span class="ep-grupo" data-grupo="riesgo">
-                    <span style="color:var(--text-main);">Riesgo:</span>
+                    <span class="ep-rotulo">Riesgo:</span>
+                    <span class="ep-grupo-botones">
                     <?php foreach (['ALTO' => ['#D96C6C', 'ALTO'], 'MEDIANO' => ['#F2A272', 'MEDIANO'], 'BAJO' => ['#5BB8A6', 'BAJO'], 'SD' => ['#708090', 'Sin dato']] as $r => [$color, $txt]): ?>
-                        <button type="button" class="ep-capa" data-riesgo="<?= $r ?>" aria-pressed="<?= in_array($r, $selR, true) ? 'true' : 'false' ?>" title="Ver solo este nivel (se puede combinar)" <?= $cuentaMapa[$r] ? '' : 'disabled' ?>>
+                        <button type="button" class="ep-capa" data-riesgo="<?= $r ?>" aria-pressed="<?= in_array($r, $selR, true) ? 'true' : 'false' ?>" title="<?= $r === 'SD' ? 'Pacientes sin riesgo cargado o sin coordenadas (los que no están en el mapa)' : 'Ver solo este nivel (se puede combinar)' ?>" <?= $cuentaMapa[$r] ? '' : 'disabled' ?>>
                             <i class="punto" style="background:<?= $color ?>;"></i><?= $txt ?> <small><?= $cuentaMapa[$r] ?></small>
                         </button>
                     <?php endforeach; ?>
                     </span>
+                    </span>
                     <span class="ep-leyenda-sep" aria-hidden="true"></span>
                     <span class="ep-grupo" data-grupo="estado">
-                    <span style="color:var(--text-main);">Estado:</span>
+                    <span class="ep-rotulo">Estado:</span>
+                    <span class="ep-grupo-botones">
                     <button type="button" class="ep-capa" data-estado="activo" aria-pressed="<?= in_array('activo', $selE, true) ? 'true' : 'false' ?>" title="Ver solo los pacientes activos" <?= $cuentaActivos ? '' : 'disabled' ?>>
                         <i class="fas fa-user-check" style="color:#2f855a;"></i>Activos <small><?= $cuentaActivos ?></small>
                     </button>
@@ -379,12 +441,34 @@ $total = $k['total'] ?? 0;
                         <i class="fas fa-user-slash" style="color:#718096;"></i>Desactivados <small><?= $cuentaBaja['desactivado'] ?></small>
                     </button>
                     </span>
+                    </span>
                     <button type="button" class="ep-limpiar" id="btnVerTodos" hidden><i class="fas fa-undo"></i> Ver todos</button>
                     <span class="ep-leyenda-nota">
-                        <?= $num(max(0, ($totalMapa ?? ($k['total'] ?? 0)) - count($puntosMapa) - $coordInvalidas)) ?> sin coordenadas cargadas<?= $coordInvalidas ? ' · <strong style="color:#c05621;">' . $coordInvalidas . ' con coordenadas inválidas</strong> (por ejemplo, sin punto decimal): no se dibujan' : '' ?>
+                        <?= $num(count($sinUbicacionMapa) - $coordInvalidas) ?> sin coordenadas cargadas (en "Sin dato")<?= $coordInvalidas ? ' · <strong style="color:#c05621;">' . $coordInvalidas . ' con coordenadas inválidas</strong> (por ejemplo, sin punto decimal): no se dibujan' : '' ?>
                     </span>
                 </div>
-                <div id="mapa-electro"></div>
+                <div class="mp-grid">
+                    <!-- Izquierda: buscador por nombre o DNI y tarjetas de los pacientes del mapa -->
+                    <div>
+                        <div class="mp-busqueda">
+                            <i class="fas fa-search"></i>
+                            <input type="search" id="mpBuscar" placeholder="Buscar por nombre o DNI…" autocomplete="off"
+                                   value="<?= esc($filtro_buscar) ?>" aria-label="Buscar paciente por nombre o DNI">
+                            <button type="button" id="mpLimpiar" title="Limpiar búsqueda" aria-label="Limpiar búsqueda" <?= $filtro_buscar === '' ? 'hidden' : '' ?>><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="mp-busqueda-info" id="mpInfo" aria-live="polite"></div>
+                        <div class="mp-lista" id="mpLista"></div>
+                    </div>
+                    <!-- Derecha: leyenda de regiones y mapa -->
+                    <div>
+                        <div class="mp-leyenda">
+                            <?php foreach (['CENTRO' => '#90CAF9', 'VALLE' => '#A5D6A7', 'RAMAL I' => '#F48FB1', 'RAMAL II' => '#CE93D8', 'QUEBRADA' => '#FFAB91', 'PUNA' => '#f1e571'] as $nombre => $color): ?>
+                                <div class="mp-leyenda-item"><span class="mp-leyenda-color" style="background:<?= $color ?>;"></span> <?= $nombre ?></div>
+                            <?php endforeach; ?>
+                        </div>
+                        <div id="mapa-electro"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -487,6 +571,11 @@ $total = $k['total'] ?? 0;
 
     // Pacientes georreferenciados que cumplen los filtros (todas las páginas)
     var pacientesGeo = <?= json_encode($puntosMapa, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    // Pacientes sin coordenadas (o mal cargadas): sin pin; aparecen como tarjeta al elegir "Sin dato"
+    var pacientesSinGeo = <?= json_encode($sinUbicacionMapa, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+    // ¿Hay algún filtro de la barra de arriba (o de una tarjeta de indicadores)? Entonces las tarjetas
+    // del mapa muestran a todos los que cumplen el filtro, como la tabla, aunque no tengan coordenadas
+    var FILTRO_ARRIBA = <?= ($filtro_tipo || $filtro_localidad || $filtro_efector || $filtro_factor || $filtro_cud || $filtro_estado || $filtro_obra_social || $filtro_diagnostico || $filtro_seguimiento) ? 'true' : 'false' ?>;
 
     var mapa = null, marcadores = {}, registros = [], capaVisible = null;
     var bloqueMapa = document.getElementById('col-mapa');
@@ -542,6 +631,112 @@ $total = $k['total'] ?? 0;
             .catch(function (error) { console.error('Error al cargar los departamentos:', error); });
     }
 
+    // ── Tarjetas a la izquierda del mapa (mismos datos que la ficha del pin) ──
+    var listaTarjetas = document.getElementById('mpLista');
+    var vacioTarjetas = document.createElement('div');
+    vacioTarjetas.className = 'mp-vacia';
+    vacioTarjetas.hidden = true;
+    function crearTarjeta(p, m) {
+        var el = document.createElement('div');
+        el.className = 'mp-item' + (p.baja ? ' is-baja' : '') + (m ? '' : ' is-sin-geo');
+        el.title = m ? 'Ver en el mapa' : (p.coordInvalida ? 'Coordenadas mal cargadas: no figura en el mapa' : 'Sin coordenadas: no figura en el mapa');
+        el.innerHTML = '<div class="mp-nombre">' + escapar(p.paciente) + '</div>'
+            + '<table class="mp-datos">'
+            + '<tr><td>DNI:</td><td>' + escapar(p.dni || '—') + '</td></tr>'
+            + '<tr><td>Edad:</td><td>' + escapar(p.edad || '—') + '</td></tr>'
+            + '<tr><td>Localidad:</td><td>' + escapar(p.localidad || '—') + '</td></tr>'
+            + '<tr><td>Hospital:</td><td>' + escapar(p.efector || '—') + '</td></tr>'
+            + '<tr><td>Diagnóstico:</td><td>' + escapar(p.diagnostico || '—') + '</td></tr>'
+            + '<tr><td>Riesgo:</td><td><strong style="color:' + COLOR_RIESGO[p.riesgo] + '">' + (p.riesgo === 'SD' ? 'Sin dato' : p.riesgo) + '</strong></td></tr>'
+            + '</table>'
+            + '<div class="mp-acciones" style="margin-top:2px;">'
+            + (m ? '' : '<span class="mp-tag"><i class="fas fa-location-crosshairs"></i> ' + (p.coordInvalida ? 'Coordenadas mal cargadas' : 'Sin coordenadas') + '</span>')
+            + (p.fallecido ? '<span class="mp-tag baja"><i class="fas fa-cross"></i> Fallecido</span>' : (!p.activo ? '<span class="mp-tag desactivado"><i class="fas fa-user-slash"></i> Desactivado</span>' : ''))
+            + '</div>'
+            + '<div class="mp-acciones"><a class="mp-btn-historial" href="' + escapar(p.historial) + '" title="Ver el historial del paciente (solo lectura)"><i class="fas fa-history"></i> Ver historial</a></div>';
+        listaTarjetas.appendChild(el);
+        if (!m) return el;   // sin pin: la tarjeta no lleva al mapa
+        // Clic en la tarjeta: centra el mapa en el pin y abre su ficha.
+        // Otro clic en la misma tarjeta: cierra la ficha y vuelve a la vista general del mapa.
+        el.addEventListener('click', function (e) {
+            if (e.target.closest('a')) return;
+            if (el.classList.contains('is-active')) {
+                m.closePopup();
+                el.classList.remove('is-active');
+                vistaGeneral();
+                return;
+            }
+            if (!capaVisible.hasLayer(m)) capaVisible.addLayer(m);
+            mapa.setView(m.getLatLng(), Math.max(mapa.getZoom(), 14));
+            m.openPopup();
+        });
+        // Al abrir la ficha del pin se marca su tarjeta
+        m.on('popupopen', function () {
+            listaTarjetas.querySelectorAll('.mp-item.is-active').forEach(function (a) { a.classList.remove('is-active'); });
+            el.classList.add('is-active');
+            if (el.offsetParent) {
+                var arriba = el.offsetTop - listaTarjetas.offsetTop;
+                if (arriba < listaTarjetas.scrollTop || arriba > listaTarjetas.scrollTop + listaTarjetas.clientHeight - 40) listaTarjetas.scrollTop = arriba - 8;
+            }
+        });
+        m.on('popupclose', function () { el.classList.remove('is-active'); });
+        return el;
+    }
+    // Vista general: encuadra todos los pines visibles (o Jujuy si no hay ninguno)
+    function vistaGeneral() {
+        var vis = [];
+        capaVisible.eachLayer(function (x) { vis.push(x.getLatLng()); });
+        if (vis.length) mapa.fitBounds(L.latLngBounds(vis).pad(0.12), { maxZoom: 14 });
+        else mapa.setView([-23.3, -65.6], 7);
+    }
+    // Muestra solo las tarjetas que cumplen el buscador y la leyenda (x.ver lo calcula aplicarCapas)
+    function actualizarTarjetas() {
+        var n = 0;
+        registros.forEach(function (x) {
+            x.tarjeta.hidden = !x.ver;
+            if (x.ver) n++;
+        });
+        if (!vacioTarjetas.parentNode) listaTarjetas.appendChild(vacioTarjetas);
+        vacioTarjetas.hidden = n > 0;
+        vacioTarjetas.textContent = !registros.length ? 'Sin pacientes para los filtros elegidos'
+            : textoBusqueda() ? 'Ningún paciente coincide con "' + inputBuscar.value.trim() + '"' : 'Sin pacientes con lo elegido en la leyenda';
+        var selR = seleccion('riesgo');
+        var conSD = selR ? !!selR.SD : (!!textoBusqueda() || FILTRO_ARRIBA);
+        var total = pacientesGeo.length + (conSD ? pacientesSinGeo.length : 0);
+        document.getElementById('mpInfo').textContent = (n < total || conSD) ? n.toLocaleString('es-AR') + ' de ' + total.toLocaleString('es-AR') + ' pacientes' + (conSD ? ' (incluye los que no están en el mapa)' : '') : '';
+    }
+
+    // Buscador del mapa: es el mismo buscador del listado (escribir en uno escribe en el otro),
+    // así el mapa, las tarjetas, la tabla y el Excel quedan siempre con la misma búsqueda
+    (function () {
+        var mp = document.getElementById('mpBuscar'), limpiar = document.getElementById('mpLimpiar');
+        if (!mp || !inputBuscarGlobal()) return;
+        function inputBuscarGlobal() { return document.getElementById('f-buscar'); }
+        mp.addEventListener('input', function () {
+            var f = inputBuscarGlobal();
+            f.value = mp.value;
+            limpiar.hidden = mp.value === '';
+            f.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        mp.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') limpiar.click();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                var primera = registros.filter(function (x) { return x.m && !x.tarjeta.hidden; })[0];
+                if (primera) primera.tarjeta.click();
+            }
+        });
+        limpiar.addEventListener('click', function () {
+            mp.value = '';
+            mp.dispatchEvent(new Event('input', { bubbles: true }));
+            mp.focus();
+        });
+        inputBuscarGlobal().addEventListener('input', function () {
+            var f = inputBuscarGlobal();
+            if (mp.value !== f.value) { mp.value = f.value; limpiar.hidden = f.value === ''; }
+        });
+    })();
+
     function iniciarMapa() {
         if (mapa || typeof L === 'undefined') return;
         mapa = L.map('mapa-electro', { zoomControl: true });
@@ -568,9 +763,15 @@ $total = $k['total'] ?? 0;
             });
             m.on('popupclose', function () { resaltar(p.id, false); });
             marcadores[p.id] = m;
-            registros.push({ m: m, p: p });
+            registros.push({ m: m, p: p, tarjeta: crearTarjeta(p, m) });
             todos.addLayer(m);
         });
+        pacientesSinGeo.forEach(function (p) {
+            registros.push({ m: null, p: p, tarjeta: crearTarjeta(p, null) });
+        });
+        // Tarjetas en orden alfabético por nombre
+        registros.slice().sort(function (a, b) { return String(a.p.paciente).localeCompare(String(b.p.paciente), 'es'); })
+            .forEach(function (x) { listaTarjetas.appendChild(x.tarjeta); });
         aplicarCapas();
         if (!textoBusqueda() && pacientesGeo.length) mapa.fitBounds(todos.getBounds().pad(0.12), { maxZoom: 14 });
         else encuadrar();
@@ -606,10 +807,41 @@ $total = $k['total'] ?? 0;
         return p._txt.indexOf(q) !== -1;
     }
     function estadoDe(p) { return p.baja || 'activo'; }
-    // Conteos de la leyenda y del título según lo que coincide con el buscador
+    // ¿El paciente pasa la selección de riesgo de la leyenda? (igual que el filtro del servidor)
+    // · Nada elegido: los del mapa; los que no tienen coordenadas también al buscar o con un filtro
+    //   de la barra de arriba (así las tarjetas muestran a los mismos pacientes que la tabla).
+    // · "Sin dato" solo: los que no tienen coordenadas (y los del mapa con riesgo sin cargar).
+    // · "Sin dato" + niveles: esos niveles dentro de los que no tienen coordenadas (Sin dato + ALTO).
+    // · Solo niveles: esos niveles en el mapa.
+    function riesgoVisible(p, conPin, selR, q) {
+        if (!selR) return conPin || !!q || FILTRO_ARRIBA;
+        if (selR.SD) {
+            var niveles = Object.keys(selR).filter(function (k) { return k !== 'SD'; });
+            if (!niveles.length) return conPin ? p.riesgo === 'SD' : true;
+            return !conPin && p.riesgo !== 'SD' && !!selR[p.riesgo];
+        }
+        return conPin && !!selR[p.riesgo];
+    }
+    // Conteos de la leyenda y del título según lo que coincide con el buscador.
+    // Riesgo: los del mapa por nivel; "Sin dato" suma además a los que no tienen coordenadas.
+    // Estado: los del mapa; con un riesgo elegido cuenta solo ese riesgo, y con "Sin dato" elegido
+    // suma a los que no tienen coordenadas (así Activos / Fallecidos / Desactivados muestran los que faltan).
+    // Con "Sin dato" elegido, ALTO / MEDIANO / BAJO cuentan dentro de los que no tienen coordenadas.
     function actualizarCuentas() {
-        var q = textoBusqueda(), c = { ALTO: 0, MEDIANO: 0, BAJO: 0, SD: 0, activo: 0, fallecido: 0, desactivado: 0 }, n = 0;
-        pacientesGeo.forEach(function (p) { if (coincide(p, q)) { c[p.riesgo]++; c[estadoDe(p)]++; n++; } });
+        var q = textoBusqueda(), selR = seleccion('riesgo'), c = { ALTO: 0, MEDIANO: 0, BAJO: 0, SD: 0, activo: 0, fallecido: 0, desactivado: 0 }, n = 0;
+        var conSD = !!(selR && selR.SD);
+        pacientesGeo.forEach(function (p) {
+            if (!coincide(p, q)) return;
+            n++;
+            if (!conSD) c[p.riesgo]++;
+            if (riesgoVisible(p, true, selR, q)) c[estadoDe(p)]++;
+        });
+        pacientesSinGeo.forEach(function (p) {
+            if (!coincide(p, q)) return;
+            c.SD++;
+            if (conSD && p.riesgo !== 'SD') c[p.riesgo]++;
+            if (riesgoVisible(p, false, selR, q)) c[estadoDe(p)]++;   // mismo criterio que las tarjetas
+        });
         document.querySelectorAll('.ep-capa').forEach(function (b) {
             var k = b.dataset.riesgo || b.dataset.estado, sm = b.querySelector('small');
             if (sm) sm.textContent = c[k];
@@ -635,10 +867,12 @@ $total = $k['total'] ?? 0;
         btnVerTodos.hidden = !selR && !selE;
         if (!capaVisible) return;
         registros.forEach(function (x) {
-            var ver = coincide(x.p, q) && (!selR || selR[x.p.riesgo]) && (!selE || selE[estadoDe(x.p)]);
+            var ver = x.ver = coincide(x.p, q) && riesgoVisible(x.p, !!x.m, selR, q) && (!selE || selE[estadoDe(x.p)]);
+            if (!x.m) return;
             if (ver && !capaVisible.hasLayer(x.m)) capaVisible.addLayer(x.m);
             if (!ver && capaVisible.hasLayer(x.m)) capaVisible.removeLayer(x.m);
         });
+        actualizarTarjetas();
     }
     // La tabla, los indicadores y el Excel se filtran en el servidor (?m_riesgo=…&m_estado=…),
     // así abarca todas las páginas. Al volver, el mapa se reabre (?mapa=1).

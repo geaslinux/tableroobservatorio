@@ -44,7 +44,7 @@
         var caja = document.createElement('div');
         caja.className = ('ej-select ' + sel.className).trim();
         // Como el select nativo: al menos el ancho que ocupaba (nunca más que su contenedor)
-        if (ancho > 0) caja.style.minWidth = ancho + 'px';
+        if (ancho > 0) caja.style.minWidth = 'min(' + ancho + 'px, 100%)';   // nunca más ancho que su celda
 
         var boton = document.createElement('button');
         boton.type = 'button';

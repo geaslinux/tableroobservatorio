@@ -33,6 +33,7 @@ Objetivo de la pestaña: que cualquiera entienda en 10 segundos
 - Panel `/admin/ejesa` (`EjesaVController`), enlazado como pestaña "EJESA · Cortes" desde Salud mental y con botón en el listado de Electrodependientes.
 - Lee por la conexión `ejesa` (`app/Config/Database.php`); para que sea de solo `SELECT` configurar `database.ejesa.username/password` en `.env` y comprobar con `php spark ejesa:solo-lectura`.
 - Este sistema ya tiene el ABM de pacientes con nombres (permiso `LISTADO PERSONA`), así que **el detalle de cada corte y la pestaña Impacto muestran quiénes son los afectados** (nombre, edad, riesgo, localidad, hospital, equipos, estado) con enlace a la ficha. Nunca DNI, domicilio, teléfono, coordenadas ni diagnóstico, y nunca en el Excel ni en el JavaScript: ahí solo cantidades.
+- **Excepción decidida por el área (17/11/2026): mapa del detalle del corte** (`admin/ejesa_corte_views.php`, ruta con permiso `LISTADO PERSONA`). Muestra la ubicación de los afectados guardados con el mismo diseño que el mapa de territorio de Salud mental (`public/css/mapa-pacientes.css` y `public/js/mapa-pacientes.js`): pines por riesgo, regiones, zona del corte, buscador por nombre o DNI y tarjetas con nombre, DNI, edad, localidad, hospital, diagnóstico, riesgo y "Ver historial". Para eso el HTML/JS de esa página lleva DNI, coordenadas y diagnóstico. Sigue prohibido el domicilio, el teléfono y cualquier dato personal en el Excel, en el panel general `/admin/ejesa` y en la auditoría.
 
 ---
 

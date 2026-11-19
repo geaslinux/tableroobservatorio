@@ -391,10 +391,18 @@
             return;
         }
 
-        // 2. Buscar si hay un sub-ítem activo (ej: Base, Móviles)
+        // 2. Título fijado por la vista: <span hidden data-topbar-padre="SALUD MENTAL" data-topbar-vista="EJESA"></span>
+        //    (para pantallas que no son un ítem del menú lateral, como las de EJESA)
+        const fijo = document.querySelector('[data-topbar-vista]');
+
+        // 3. Buscar si hay un sub-ítem activo (ej: Base, Móviles)
         const activeSub = document.querySelector('.sidebar .nav-sub.active');
 
-        if (activeSub) {
+        if (fijo) {
+            const padre = (fijo.dataset.topbarPadre || '').trim();
+            parentSpan.textContent = padre ? `${padre.toUpperCase()} - ` : '';
+            viewSpan.textContent = fijo.dataset.topbarVista.toUpperCase();
+        } else if (activeSub) {
             let subText = activeSub.textContent.replace(/[^\w\sáéíóúüñÁÉÍÓÚÜÑ]/g, '').replace(/\s+/g, ' ').trim();
 
             const subGroup = activeSub.closest('.nav-sub-group');

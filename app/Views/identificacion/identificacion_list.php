@@ -194,6 +194,8 @@
     }
     .at-chart-box.is-large { height: auto; }
     .at-chart-canvas { position: relative; width: 100%; height: 330px; }
+    /* Dona: ancho acotado y centrado para que la leyenda quede junto al gráfico */
+    #containerTorta .at-chart-canvas { max-width: 640px; height: 360px; margin: 0 auto; }
     .at-chart-canvas canvas { height: 100% !important; width: 100% !important; }
     .at-chart-title {
         font-size: 10.5px; font-weight: 700; text-transform: uppercase;
@@ -748,7 +750,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var centerTextPlugin = {
             id: 'centerText',
-            afterDraw: function (chart) {
+            // afterDatasetsDraw: después de las porciones y antes del tooltip (el tooltip queda encima)
+            afterDatasetsDraw: function (chart) {
                 if (chart.config.type !== 'doughnut') return;
                 var arco = chart.getDatasetMeta(0).data[0];
                 if (!arco) return;
@@ -776,27 +779,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         };
 
-        var donutSeparatorPlugin = {
-            id: 'donutSeparator',
-            afterDatasetDraw: function(chart, args) {
-                if (chart.config.type !== 'doughnut' || args.index !== 0) return;
-                var arcs = chart.getDatasetMeta(0).data;
-                if (!arcs.length) return;
-                var ctx = chart.ctx;
-                ctx.save();
-                ctx.strokeStyle = '#ffffff';
-                ctx.lineWidth = 1;
-                ctx.lineCap = 'butt';
-                arcs.forEach(function(arc) {
-                    var angle = arc.endAngle;
-                    ctx.beginPath();
-                    ctx.moveTo(arc.x + Math.cos(angle) * arc.innerRadius, arc.y + Math.sin(angle) * arc.innerRadius);
-                    ctx.lineTo(arc.x + Math.cos(angle) * arc.outerRadius, arc.y + Math.sin(angle) * arc.outerRadius);
-                    ctx.stroke();
-                });
-                ctx.restore();
-            }
-        };
+        // Porcentaje de una sección sobre lo visible (las tachadas en la leyenda no cuentan)
+        function porcentajeTorta(chart, valor) {
+            var total = totalVisible(chart);
+            return total > 0 ? (Number(valor) || 0) * 100 / total : 0;
+        }
 
         crearGrafico(elTorta, 'Sin identificaciones para los filtros elegidos', {
             type: 'doughnut',
@@ -806,22 +793,47 @@ document.addEventListener('DOMContentLoaded', function () {
                     data: dataTorta,
                     backgroundColor: colorsTorta,
                     borderColor: '#ffffff',
-                    // Separación con borde blanco: con "spacing", Chart.js dibuja las
-                    // porciones muy chicas como un aro completo
-                    borderWidth: seccionesConDatos > 1 ? 3 : 0,
-                    hoverOffset: seccionesConDatos > 1 ? 8 : 0,
-                    borderRadius: 4
+                    borderWidth: 0,
+                    // Mismo estilo que las donas de los paneles: secciones separadas y redondeadas.
+                    // El plugin donaVisible (dashboard-colors.js) evita que las secciones muy chicas
+                    // se dibujen como un aro completo y cierra la dona si queda una sola visible.
+                    spacing: seccionesConDatos > 1 ? 6 : 0,
+                    offset: seccionesConDatos > 1 ? 10 : 0,
+                    hoverOffset: seccionesConDatos > 1 ? 16 : 0,
+                    borderRadius: 5
                 }]
             },
-            plugins: [centerTextPlugin, donutSeparatorPlugin],
+            plugins: [centerTextPlugin, donaVisible],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '60%',
+                cutout: '62%',
+                layout: { padding: 12 },
                 plugins: {
                     legend: {
                         position: window.matchMedia('(max-width: 600px)').matches ? 'bottom' : 'right',
-                        labels: { boxWidth: 12, padding: 8, font: { size: 11 } }
+                        labels: {
+                            usePointStyle: true, pointStyle: 'circle', boxWidth: 9, boxHeight: 9,
+                            padding: 12, font: { size: 12 }, color: '#3c4858',
+                            // Cada departamento / ejercicio con su cantidad: "CAPITAL (22)"
+                            generateLabels: function (chart) {
+                                var items = Chart.overrides.doughnut.plugins.legend.labels.generateLabels(chart);
+                                items.forEach(function (it) {
+                                    var v = Number(chart.data.datasets[0].data[it.index]) || 0;
+                                    it.text = it.text + ' (' + v.toLocaleString('es-AR') + ')';
+                                });
+                                return items;
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var pct = porcentajeTorta(ctx.chart, ctx.parsed);
+                                return ' ' + ctx.label + ': ' + Number(ctx.parsed).toLocaleString('es-AR') +
+                                    ' (' + pct.toLocaleString('es-AR', { maximumFractionDigits: 1 }) + '%)';
+                            }
+                        }
                     },
                     datalabels: {
                             color: function (ctx) {
@@ -848,23 +860,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             // 2. CÁLCULO DINÁMICO Y FORMATO SEGURO:
                             formatter: function(value, context) {
-                                // Obtiene los datos del dataset actual de forma segura
-                                var dataset = context.chart.data.datasets[context.datasetIndex].data;
-                                
-                                // Suma el total dinámicamente en tiempo real
-                                var totalSum = dataset.reduce(function(acc, curr) {
-                                    var num = Number(curr);
-                                    return acc + (isNaN(num) ? 0 : num);
-                                }, 0);
+                                // Porcentaje sobre las secciones visibles (con una sola visible, 100%)
+                                var percentage = porcentajeTorta(context.chart, value);
 
-                                // Si la suma total es 0, no dibuja nada
-                                if (totalSum === 0) return null;
-
-                                var percentage = (Number(value) / totalSum) * 100;
-
-                                // Oculta porcentajes menores o iguales al 2% para evitar que el texto
-                                // se encime en sectores demasiado angostos
-                                if (percentage <= 2) return null;
+                                // Oculta los porcentajes de las secciones angostas (menos del 5%) para que
+                                // el texto no se salga; el valor se ve en la leyenda y en el tooltip
+                                if (percentage < 5) return null;
 
                                 // Formato con localización local (Argentina / Latam)
                                 // Redondea a entero si es exacto, o muestra máximo 1 decimal si es necesario

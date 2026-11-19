@@ -1,0 +1,110 @@
+/* =============================================================================
+   Mapa de pacientes compartido: lista de tarjetas a la izquierda, mapa a la derecha,
+   leyenda de riesgo (filtra), leyenda de regiones y buscador único por nombre o DNI.
+   Mismo diseño que la "Distribución territorial" de Salud mental.
+   Lo usa el detalle del corte de EJESA (admin/ejesa_corte_views.php) junto con
+   public/js/mapa-pacientes.js. Necesita Leaflet 1.9.4.
+   ============================================================================= */
+
+.mp-grid {
+    display: grid;
+    grid-template-columns: 350px minmax(0, 1fr);
+    gap: 15px;
+    align-items: start;
+}
+
+/* Leyendas */
+.mp-leyenda { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin-bottom: 10px; }
+.mp-leyenda-item  { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: #2d3748; }
+.mp-leyenda-color { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+/* Leyenda de riesgo como filtro: un clic filtra lista y mapa, otro clic lo quita */
+.mp-leyenda-btn {
+    font: inherit; font-size: 11px; font-weight: 600; color: #2d3748;
+    background: transparent; border: 1px solid transparent; border-radius: 999px;
+    padding: 3px 9px; cursor: pointer;
+    transition: background .15s, border-color .15s, opacity .15s;
+}
+.mp-leyenda-btn:hover { background: #f0f5f9; border-color: #d0d7e0; }
+.mp-leyenda-btn.is-active { background: #eefaf8; border-color: var(--teal, #2ab7a6); }
+.mp-leyenda.has-filter .mp-leyenda-btn:not(.is-active) { opacity: .45; }
+.mp-leyenda-btn:focus-visible { outline: 2px solid var(--teal, #2ab7a6); outline-offset: 2px; }
+
+/* Buscador único: nombre o DNI */
+.mp-busqueda { position: relative; display: flex; align-items: center; min-width: 0; margin-bottom: 6px; }
+.mp-busqueda > .fa-search { position: absolute; left: 12px; color: #718096; font-size: 13px; pointer-events: none; }
+.mp-busqueda input {
+    width: 100%; height: 38px;
+    padding: 0 36px 0 34px;
+    border: 1px solid #d0d7e0; border-radius: 10px;
+    font-size: 13px; color: #2d3748; background: #fff;
+    outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.mp-busqueda input:focus { border-color: var(--teal, #2ab7a6); box-shadow: 0 0 0 3px rgba(42, 183, 166, 0.15); }
+.mp-busqueda input::-webkit-search-cancel-button { display: none; }
+.mp-busqueda button {
+    position: absolute; right: 6px;
+    width: 26px; height: 26px; border: 0; border-radius: 50%;
+    background: #eef0f3; color: #718096; cursor: pointer;
+    display: grid; place-items: center; font-size: 11px;
+}
+.mp-busqueda button:hover { background: #e2e6ec; color: #2d3748; }
+.mp-busqueda button[hidden], .mp-item[hidden], .mp-vacia[hidden] { display: none; }
+.mp-busqueda-info { font-size: 11px; color: #718096; margin: 0 2px 8px; min-height: 14px; }
+.mp-item mark { background: #fff3bf; color: inherit; padding: 0 1px; border-radius: 2px; }
+
+/* Lista de tarjetas */
+.mp-lista {
+    display: flex; flex-direction: column; gap: 10px;
+    max-height: 600px; overflow-y: auto; padding-right: 5px;
+}
+.mp-item {
+    background: #f9f9f9; border: 1px solid #e2e8f0;
+    border-radius: 8px; padding: 12px;
+    display: flex; flex-direction: column; gap: 4px;
+    cursor: pointer; transition: background .15s, border-color .15s;
+}
+.mp-item:hover     { background: #f0f5f9; }
+.mp-item.is-active { border-color: var(--teal, #2ab7a6); background: #eefaf8; }
+.mp-item.is-sin-geo { cursor: default; border-style: dashed; }
+.mp-item.is-sin-geo:hover { background: #f9f9f9; }
+.mp-nombre { font-weight: 700; color: #13304d; font-size: 14px; }
+.mp-datos  { font-size: 12px; color: #2d3748; border-collapse: collapse; margin-top: 2px; }
+.mp-datos td { padding: 1px 4px 1px 0; vertical-align: top; }
+.mp-datos td:first-child { color: #718096; white-space: nowrap; padding-right: 8px; }
+.mp-tag { align-self: flex-start; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600; background: #708090; color: #fff; }
+.mp-acciones { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.mp-vacia { padding: 30px 12px; text-align: center; color: #718096; font-size: 13px; font-style: italic; }
+
+/* Botón "Ver historial" (tarjeta y popup) */
+.mp-btn-historial {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 7px; border: 1px solid #1a2b45; background: #fff; color: #1a2b45;
+    font-size: 11.5px; font-weight: 700; text-decoration: none; transition: background .15s, color .15s;
+}
+.mp-btn-historial:hover { background: #1a2b45; color: #fff; text-decoration: none; }
+
+/* Panel del mapa */
+.mp-mapa-panel { background: #fff; border: 0.5px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+.mp-mapa-header {
+    padding: 10px 16px;
+    font-size: 12px; font-weight: 700; color: #718096;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    background: #f4f6f9; border-bottom: 0.5px solid #e2e8f0;
+}
+.mp-mapa-header i { color: var(--teal, #2ab7a6); }
+.mp-mapa { width: 100%; height: 600px; z-index: 1; }
+.mp-mapa .leaflet-tile-pane { filter: grayscale(100%); }
+.mp-nota { margin-top: 8px; font-size: 11px; color: #718096; text-align: right; }
+
+/* Popup */
+.mp-mapa .leaflet-popup-content strong { color: #13304d; font-size: 13px; }
+.mp-mapa .leaflet-popup-content .mp-datos { margin-top: 4px; }
+.mp-mapa .leaflet-popup-content .mp-btn-historial { margin-top: 8px; }
+.mp-mapa .leaflet-popup-content .mp-btn-historial:hover { color: #fff; }
+
+@media (max-width: 992px) {
+    .mp-grid { grid-template-columns: 1fr; }
+    .mp-lista { max-height: 320px; }
+}
+@media (max-width: 600px) { .mp-mapa { height: 420px; } }

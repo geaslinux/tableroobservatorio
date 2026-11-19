@@ -630,7 +630,8 @@
     // ── Plugin: total en el centro de las donas ──
     var centerTextPlugin = {
         id: 'centerText',
-        afterDraw: function (chart) {
+        // afterDatasetsDraw: después de las porciones y antes del tooltip (el tooltip queda encima)
+        afterDatasetsDraw: function (chart) {
             if (chart.config.type !== 'doughnut') return;
             var arco = chart.getDatasetMeta(0).data[0];
             if (!arco) return;
@@ -675,7 +676,7 @@
                     borderRadius: 5
                 }]
             },
-            plugins: [centerTextPlugin],
+            plugins: [centerTextPlugin, donaVisible],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -687,7 +688,7 @@
                         color: window.colorEtiqueta || '#1d2b3c', // blanco u oscuro según el segmento (dashboard-colors.js)
                         font: { weight: 'bold', size: 11 },
                         formatter: function (value, ctx) {
-                            var total = ctx.chart.data.datasets[0].data.reduce(function (a, b) { return a + b; }, 0);
+                            var total = totalVisible(ctx.chart); // solo las secciones visibles: con una sola, 100%
                             var p = total ? Math.round(value * 100 / total) : 0;
                             return p > 4 ? p + '%' : '';
                         }
